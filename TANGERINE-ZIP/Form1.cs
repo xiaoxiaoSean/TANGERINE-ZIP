@@ -94,7 +94,6 @@ namespace TANGERINE_ZIP
         return Color.White;
     });
         }
-
         private void FileBox_ViewChanged(
             object? sender,
             EventArgs e)
@@ -219,7 +218,6 @@ namespace TANGERINE_ZIP
         private async Task LoadArchiveAsync(string zippath)
         {
             isDoingJob = true;
-
             try
             {
                 List<string> items =

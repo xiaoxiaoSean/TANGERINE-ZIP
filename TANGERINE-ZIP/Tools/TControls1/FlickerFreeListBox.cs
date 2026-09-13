@@ -13,7 +13,7 @@ namespace TANGERINE_ZIP.Tools.TControls1
         private const int WM_HSCROLL = 0x0114;
         private const int WM_MOUSEWHEEL = 0x020A;
         private const int WM_KEYDOWN = 0x0100;
-
+            
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
         private Func<int, Color>? _itemColorProvider;
