@@ -190,7 +190,7 @@ namespace TANGERINE_ZIP.Tools.TControls1
 
             e.Graphics.DrawString(
                 text,
-                e.Font,
+                e.Font ?? Font,
                 brush,
                 textBounds,
                 stringFormat);
@@ -295,7 +295,7 @@ namespace TANGERINE_ZIP.Tools.TControls1
         /*
          * 强制刷新。
          */
-        public void RefreshItems()
+        public new void RefreshItems()
         {
             Invalidate(true);
             Update();

@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using TANGERINE_ZIP.Tools;
 using TANGERINE_ZIP.Tools.LightTool;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ScrollBar;
-//first 5 letters of stage code:FFPCF
+// Stage head: F0002
 namespace TANGERINE_ZIP
 {
     public partial class FreeFilePickerForm : Form
@@ -36,24 +36,24 @@ namespace TANGERINE_ZIP
         void LoadPath(string inputPath)
         {
             fileListBox.Items.Clear();            
-string[] files = null;
-            string[] folders=null;
+            string[] files;
+            string[] folders;
             try
             {
                 files = Directory.GetFiles(inputPath);
             }
-            catch (Exception ex)//FFPCF01
+            catch (Exception ex) //F00020001
             {
-                MessageBox.Show(MessageTipGenerator.GenerateTip("FFPCF01", ex.Message));
+                MessageBox.Show(MessageTipGenerator.GenerateTip("F00020001", ex.Message)); //F00020001
                 return;
             }
             try
             {
                 folders = Directory.GetDirectories(inputPath);
             }
-            catch (Exception ex)//FFPCF02
+            catch (Exception ex) //F00020002
             {
-                MessageBox.Show(MessageTipGenerator.GenerateTip("FFPCF02", ex.Message));
+                MessageBox.Show(MessageTipGenerator.GenerateTip("F00020002", ex.Message)); //F00020002
                 return;
             }           
             string[] allItems = PathSorter.MergeAndSort(files, folders);
@@ -85,9 +85,9 @@ DriveInfo[] drives;
             {
                 drives = DriveInfo.GetDrives();
             }
-            catch (Exception ex)//FFPCF01
+            catch (Exception ex) //F00020003
             {
-                MessageBox.Show(MessageTipGenerator.GenerateTip("FFPCF01", ex.Message));
+                MessageBox.Show(MessageTipGenerator.GenerateTip("F00020003", ex.Message)); //F00020003
                 return;
             }
 
@@ -144,6 +144,8 @@ DriveInfo[] drives;
         }
         private void FreeFilePickerForm_Load(object sender, EventArgs e)
         {
+            DarkTheme.Apply(this);
+            Text = LanguageManager.Get("FreeFilePickerFormTitle");
             #region set light effect
             _lightOverlay = new TangerineLightOverlay(this);
             _lightOverlay.TargetFps = 60;

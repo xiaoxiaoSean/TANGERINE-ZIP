@@ -9,7 +9,7 @@ namespace TANGERINE_ZIP.Tools
         {
             Unknown = 0,
 
-            // 压缩格式
+            // Archive and compression formats
             Zip = 1,
             Rar = 2,
             SevenZip = 3,
@@ -20,19 +20,19 @@ namespace TANGERINE_ZIP.Tools
             Lz4 = 8,
             Zstd = 9,
 
-            // 镜像
+            // Disk image formats
             Iso = 20,
             Wim = 21,
             Vhd = 22,
             Vhdx = 23,
             Dmg = 24,
 
-            // 可执行文件
+            // Executable formats
             Exe = 40,
             Elf = 41,
             JavaClass = 42,
 
-            // photo
+            // Image formats
             Png = 60,
             Jpeg = 61,
             Gif = 62,
@@ -41,28 +41,28 @@ namespace TANGERINE_ZIP.Tools
             WebP = 65,
             Ico = 66,
 
-            // sound
+            // Audio formats
             Mp3 = 80,
             Wav = 81,
             Flac = 82,
             Ogg = 83,
 
-            // video
+            // Video formats
             Mp4 = 100,
             Avi = 101,
             Mkv = 102,
             WebM = 103,
 
-            // document
+            // Document formats
             Pdf = 120,
             Rtf = 121,
 
-            // Office(OpenXML is zip essentially)
+            // Office Open XML formats (ZIP containers)
             Docx = 140,
             Xlsx = 141,
             Pptx = 142,
 
-            // data baase
+            // Database formats
             Sqlite = 160
         }
         public static bool IsCompressedFile(string path)
@@ -79,14 +79,16 @@ namespace TANGERINE_ZIP.Tools
                 FileType.BZip2 or
                 FileType.Xz or
                 FileType.Lz4 or
-                FileType.Zstd => true,
+                FileType.Zstd or
+                FileType.Iso or
+                FileType.Wim => true,
 
                 _ => false
             };
         }
         public static FileType DetectFileType(string path)
         {
-            const int BufferSize = 32768;
+            const int BufferSize = 36864;
 
             byte[] buffer = new byte[BufferSize];
             if (path==string.Empty)
@@ -101,12 +103,14 @@ namespace TANGERINE_ZIP.Tools
 
 
             // =========================
-            // 压缩格式
+            // Archive and compression formats
             // =========================
 
 
-            // ZIP
-            if (Match(h, 0x50, 0x4B, 0x03, 0x04))
+            // ZIP local header, empty archive, or spanned archive
+            if (Match(h, 0x50, 0x4B, 0x03, 0x04) ||
+                Match(h, 0x50, 0x4B, 0x05, 0x06) ||
+                Match(h, 0x50, 0x4B, 0x07, 0x08))
                 return FileType.Zip;
 
 
@@ -153,10 +157,14 @@ namespace TANGERINE_ZIP.Tools
                 0x04, 0x22, 0x4D, 0x18))
                 return FileType.Lz4;
 
+            // TAR (POSIX ustar signature at offset 257)
+            if (h.Length >= 262 && MatchAscii(h.Slice(257), "ustar"))
+                return FileType.Tar;
+
 
 
             // =========================
-            // 镜像
+            // Disk image formats
             // =========================
 
 
@@ -195,7 +203,7 @@ namespace TANGERINE_ZIP.Tools
 
 
             // =========================
-            // 程序
+            // Executable formats
             // =========================
 
 
@@ -220,7 +228,7 @@ namespace TANGERINE_ZIP.Tools
 
 
             // =========================
-            // 图片
+            // Image formats
             // =========================
 
 
@@ -270,7 +278,7 @@ namespace TANGERINE_ZIP.Tools
 
 
             // =========================
-            // 音频
+            // Audio formats
             // =========================
 
 
@@ -297,7 +305,7 @@ namespace TANGERINE_ZIP.Tools
 
 
             // =========================
-            // 视频
+            // Video formats
             // =========================
 
 
@@ -328,7 +336,7 @@ namespace TANGERINE_ZIP.Tools
 
 
             // =========================
-            // 文档
+            // Document formats
             // =========================
 
 
@@ -342,7 +350,7 @@ namespace TANGERINE_ZIP.Tools
 
 
             // =========================
-            // 数据库
+            // Database formats
             // =========================
 
 
@@ -352,7 +360,28 @@ namespace TANGERINE_ZIP.Tools
 
 
 
-            return FileType.Unknown;
+            // Some valid containers (notably old TAR variants) have no mandatory magic bytes.
+            return DetectFileTypeFromExtension(path);
+        }
+
+        public static FileType DetectFileTypeFromExtension(string path)
+        {
+            string extension = Path.GetExtension(path).ToLowerInvariant();
+            return extension switch
+            {
+                ".zip" => FileType.Zip,
+                ".rar" => FileType.Rar,
+                ".7z" => FileType.SevenZip,
+                ".tar" => FileType.Tar,
+                ".gz" => FileType.GZip,
+                ".bz2" => FileType.BZip2,
+                ".xz" => FileType.Xz,
+                ".lz4" => FileType.Lz4,
+                ".zst" or ".zstd" => FileType.Zstd,
+                ".iso" => FileType.Iso,
+                ".wim" => FileType.Wim,
+                _ => FileType.Unknown
+            };
         }
 
 

@@ -263,4 +263,38 @@ Stage Code is :</value>
   <data name="Confirm" xml:space="preserve">
     <value>Confirm</value>
   </data>
+  <data name="ApplicationTitle" xml:space="preserve"><value>Tangerine ZIP</value></data>
+  <data name="SelectFilesToCompress" xml:space="preserve"><value>Select files to compress</value></data>
+  <data name="SelectArchive" xml:space="preserve"><value>Select an archive or image</value></data>
+  <data name="ArchiveDialogFilter" xml:space="preserve"><value>Supported files|*.zip;*.rar;*.7z;*.tar;*.gz;*.bz2;*.xz;*.lz4;*.zst;*.zstd;*.iso;*.wim|All files|*.*</value></data>
+  <data name="AllFilesFilter" xml:space="preserve"><value>All files|*.*</value></data>
+  <data name="SelectOutputArchive" xml:space="preserve"><value>Select output archive</value></data>
+  <data name="CreateArchiveFilter" xml:space="preserve"><value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR (read-only)|*.rar</value></data>
+  <data name="CompressingText" xml:space="preserve"><value>Compressing</value></data>
+  <data name="CompressionCompleted" xml:space="preserve"><value>Compression completed.</value></data>
+  <data name="NoSelectedEntries" xml:space="preserve"><value>Select at least one archive entry.</value></data>
+  <data name="OperationCancelled" xml:space="preserve"><value>Operation cancelled.</value></data>
+  <data name="ProgressStatus" xml:space="preserve"><value>{0}: {1} ({2}%)</value></data>
+  <data name="OverwritePolicyPrompt" xml:space="preserve"><value>For existing files: Yes = overwrite all, No = skip all, Cancel = stop.</value></data>
+  <data name="CurrentDirectoryFormat" xml:space="preserve"><value>Current location: {0}</value></data>
+  <data name="RarCreateUnsupported" xml:space="preserve"><value>RAR creation is unavailable because the proprietary RAR format provides no licensed third-party writer. RAR extraction is supported.</value></data>
+  <data name="SingleInputRequired" xml:space="preserve"><value>This stream format requires exactly one input file.</value></data>
+  <data name="UnsupportedFormat" xml:space="preserve"><value>The selected output format is unsupported.</value></data>
+  <data name="UnsafeArchivePath" xml:space="preserve"><value>The archive contains an unsafe path outside the destination folder.</value></data>
+  <data name="ExtractedFileName" xml:space="preserve"><value>extracted-file</value></data>
+  <data name="WimImage" xml:space="preserve"><value>Image</value></data>
+  <data name="Format_Zip" xml:space="preserve"><value>ZIP</value></data>
+  <data name="Format_Rar" xml:space="preserve"><value>RAR</value></data>
+  <data name="Format_SevenZip" xml:space="preserve"><value>7Z</value></data>
+  <data name="Format_Tar" xml:space="preserve"><value>TAR</value></data>
+  <data name="Format_GZip" xml:space="preserve"><value>GZ</value></data>
+  <data name="Format_BZip2" xml:space="preserve"><value>BZ2</value></data>
+  <data name="Format_Xz" xml:space="preserve"><value>XZ</value></data>
+  <data name="Format_Lz4" xml:space="preserve"><value>LZ4</value></data>
+  <data name="Format_Zstd" xml:space="preserve"><value>ZSTD</value></data>
+  <data name="Format_Iso" xml:space="preserve"><value>ISO</value></data>
+  <data name="Format_Wim" xml:space="preserve"><value>WIM</value></data>
+  <data name="OutputConflictsInput" xml:space="preserve"><value>The output file cannot also be an input file.</value></data>
+  <data name="YouAreCurrentlyAt" xml:space="preserve"><value>you are currently at </value></data>
+  <data name="Root" xml:space="preserve"><value>root</value></data>
 </root>

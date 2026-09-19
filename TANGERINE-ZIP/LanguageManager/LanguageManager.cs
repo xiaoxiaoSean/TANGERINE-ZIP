@@ -1,5 +1,6 @@
 ﻿using System.Resources;
 using System.Reflection;
+using System.Globalization;
 
 public static class LanguageManager
 {
@@ -10,6 +11,8 @@ public static class LanguageManager
 
     public static string Get(string key)
     {
-        return rm.GetString(key) ?? key;
+        return rm.GetString(key, CultureInfo.CurrentUICulture)
+            ?? rm.GetString(key, CultureInfo.GetCultureInfo("en-US"))
+            ?? key;
     }
 }

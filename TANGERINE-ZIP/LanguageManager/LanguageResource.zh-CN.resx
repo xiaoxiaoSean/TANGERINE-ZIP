@@ -271,4 +271,36 @@
   <data name="Root" xml:space="preserve">
     <value>根</value>
   </data>
+  <data name="ApplicationTitle" xml:space="preserve"><value>Tangerine ZIP</value></data>
+  <data name="SelectFilesToCompress" xml:space="preserve"><value>选择要压缩的文件</value></data>
+  <data name="SelectArchive" xml:space="preserve"><value>选择压缩包或镜像</value></data>
+  <data name="ArchiveDialogFilter" xml:space="preserve"><value>支持的文件|*.zip;*.rar;*.7z;*.tar;*.gz;*.bz2;*.xz;*.lz4;*.zst;*.zstd;*.iso;*.wim|所有文件|*.*</value></data>
+  <data name="AllFilesFilter" xml:space="preserve"><value>所有文件|*.*</value></data>
+  <data name="SelectOutputArchive" xml:space="preserve"><value>选择输出压缩包</value></data>
+  <data name="CreateArchiveFilter" xml:space="preserve"><value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR（只读）|*.rar</value></data>
+  <data name="CompressingText" xml:space="preserve"><value>正在压缩</value></data>
+  <data name="CompressionCompleted" xml:space="preserve"><value>压缩完成。</value></data>
+  <data name="NoSelectedEntries" xml:space="preserve"><value>请至少选择一个归档项目。</value></data>
+  <data name="OperationCancelled" xml:space="preserve"><value>操作已取消。</value></data>
+  <data name="ProgressStatus" xml:space="preserve"><value>{0}：{1}（{2}%）</value></data>
+  <data name="OverwritePolicyPrompt" xml:space="preserve"><value>遇到已存在文件时：是＝全部覆盖，否＝全部跳过，取消＝停止。</value></data>
+  <data name="CurrentDirectoryFormat" xml:space="preserve"><value>当前位置：{0}</value></data>
+  <data name="RarCreateUnsupported" xml:space="preserve"><value>RAR 是专有格式，没有授权给第三方的写入器，无法创建 RAR；已支持解压 RAR。</value></data>
+  <data name="SingleInputRequired" xml:space="preserve"><value>此流压缩格式必须且只能选择一个输入文件。</value></data>
+  <data name="UnsupportedFormat" xml:space="preserve"><value>不支持所选输出格式。</value></data>
+  <data name="UnsafeArchivePath" xml:space="preserve"><value>压缩包含有指向目标文件夹之外的不安全路径。</value></data>
+  <data name="ExtractedFileName" xml:space="preserve"><value>已解压文件</value></data>
+  <data name="WimImage" xml:space="preserve"><value>映像</value></data>
+  <data name="Format_Zip" xml:space="preserve"><value>ZIP</value></data>
+  <data name="Format_Rar" xml:space="preserve"><value>RAR</value></data>
+  <data name="Format_SevenZip" xml:space="preserve"><value>7Z</value></data>
+  <data name="Format_Tar" xml:space="preserve"><value>TAR</value></data>
+  <data name="Format_GZip" xml:space="preserve"><value>GZ</value></data>
+  <data name="Format_BZip2" xml:space="preserve"><value>BZ2</value></data>
+  <data name="Format_Xz" xml:space="preserve"><value>XZ</value></data>
+  <data name="Format_Lz4" xml:space="preserve"><value>LZ4</value></data>
+  <data name="Format_Zstd" xml:space="preserve"><value>ZSTD</value></data>
+  <data name="Format_Iso" xml:space="preserve"><value>ISO</value></data>
+  <data name="Format_Wim" xml:space="preserve"><value>WIM</value></data>
+  <data name="OutputConflictsInput" xml:space="preserve"><value>输出文件不能同时作为输入文件。</value></data>
 </root>

@@ -7,6 +7,7 @@ using System.Text;
 using System.Windows.Forms;
 using TANGERINE_ZIP.Resources;
 using TANGERINE_ZIP.Tools.LightTool;
+using TANGERINE_ZIP.Tools;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ScrollBar;
 namespace TANGERINE_ZIP
 {
@@ -24,6 +25,7 @@ namespace TANGERINE_ZIP
         private TangerineLightOverlay? _lightOverlay;
         private void TZIPForm_Load(object sender, EventArgs e)
         {
+            DarkTheme.Apply(this);
             this.WindowState= FormWindowState.Maximized;
             _lightOverlay = new TangerineLightOverlay(this);
             _lightOverlay.TargetFps = 12000;

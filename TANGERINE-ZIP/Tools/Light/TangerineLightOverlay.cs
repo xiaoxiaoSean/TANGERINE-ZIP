@@ -65,10 +65,6 @@ namespace TANGERINE_ZIP.Tools.LightTool
 
         private bool _renderBusy;
 
-        private int _lastMouseClientX;
-
-        private int _lastMouseClientY;
-
         private long _lastMouseTimestamp;
 
         private readonly Stopwatch _frameStopwatch =

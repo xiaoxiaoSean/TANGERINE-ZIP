@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using TANGERINE_ZIP.Tools.LightTool;
+using TANGERINE_ZIP.Tools;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ScrollBar;
 
 namespace TANGERINE_ZIP
@@ -26,6 +27,7 @@ namespace TANGERINE_ZIP
         private float _normalEdgeStrength;
         private void OverWriteOrNotForm_Load(object sender, EventArgs e)
         {
+            DarkTheme.Apply(this);
             #region set light effect
             _lightOverlay = new TangerineLightOverlay(this);
             _lightOverlay.TargetFps = 60;
