@@ -18,15 +18,20 @@ public partial class Form1 : Form
 #endif
     private readonly ToolStripMenuItem _extractNestedTarMenuItem;
     private readonly ToolStripMenuItem _stopWorkMenuItem;
+    private readonly ToolStripMenuItem _contextMenuToolStripMenuItem;
+    private readonly ToolStripMenuItem _createContextMenuToolStripMenuItem;
+    private readonly ToolStripMenuItem _deleteContextMenuToolStripMenuItem;
+    private readonly string? _startupArchivePath;
     private CancellationTokenSource? _operationCancellation;
     private NestedTarInfo _nestedTarInfo = NestedTarInfo.None;
     private string _archivePath = string.Empty;
     private string _archiveCurrentDirectory = string.Empty;
     private bool _isBusy;
 
-    public Form1()
+    public Form1(string? startupArchivePath = null)
     {
         InitializeComponent();
+        _startupArchivePath = startupArchivePath;
         _compressionSourceDialog.Multiselect = true;
         _compressionSourceDialog.CheckFileExists = true;
         _compressionSourceDialog.CheckPathExists = true;
@@ -39,6 +44,13 @@ public partial class Form1 : Form
         _stopWorkMenuItem = new ToolStripMenuItem { Visible = false };
         _stopWorkMenuItem.Click += StopWorkMenuItem_Click;
         mainMenu.Items.Add(_stopWorkMenuItem);
+        _contextMenuToolStripMenuItem = new ToolStripMenuItem();
+        _createContextMenuToolStripMenuItem = new ToolStripMenuItem();
+        _deleteContextMenuToolStripMenuItem = new ToolStripMenuItem();
+        _createContextMenuToolStripMenuItem.Click += CreateContextMenuToolStripMenuItem_Click;
+        _deleteContextMenuToolStripMenuItem.Click += DeleteContextMenuToolStripMenuItem_Click;
+        _contextMenuToolStripMenuItem.DropDownItems.AddRange([_createContextMenuToolStripMenuItem, _deleteContextMenuToolStripMenuItem]);
+        mainMenu.Items.Add(_contextMenuToolStripMenuItem);
         FormClosing += (_, args) =>
         {
             if (!_isBusy) return;
@@ -63,6 +75,8 @@ public partial class Form1 : Form
 #endif
             ConfigureEntryColors();
             SetArchiveControls(false);
+            if (!string.IsNullOrWhiteSpace(_startupArchivePath))
+                BeginInvoke(async () => await OpenArchiveAsync(_startupArchivePath));
             /*if (_rarToolService.ShouldCheckAtStartup && !_rarToolService.IsAvailable)
             {
                 MessageBox.Show(this,
@@ -94,6 +108,9 @@ public partial class Form1 : Form
         _compressionSourceDialog.Filter = LanguageManager.Get("AllFilesFilter");
         _extractNestedTarMenuItem.Text = LanguageManager.Get("ExtractNestedTar");
         _stopWorkMenuItem.Text = LanguageManager.Get("StopWork");
+        _contextMenuToolStripMenuItem.Text = LanguageManager.Get("ContextMenu");
+        _createContextMenuToolStripMenuItem.Text = LanguageManager.Get("CreateContextMenu");
+        _deleteContextMenuToolStripMenuItem.Text = LanguageManager.Get("DeleteContextMenu");
         mainOpenFileDialog.Title = LanguageManager.Get("SelectArchive");
         mainOpenFileDialog.Filter = LanguageManager.Get("ArchiveDialogFilter");
     }
@@ -128,18 +145,27 @@ public partial class Form1 : Form
     {
         if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
         if (mainOpenFileDialog.ShowDialog(this) != DialogResult.OK) return;
+        await OpenArchiveAsync(mainOpenFileDialog.FileName);
+    }
+
+    /// <summary>
+    /// Opens an archive selected either from the application's file dialog or from Explorer's context menu.
+    /// </summary>
+    private async Task OpenArchiveAsync(string archivePath)
+    {
+        if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
         try
         {
             await RunOperationAsync(LanguageManager.Get("OpeningFile"), async (progress, token) =>
             {
-                FileDetector.FileType type = FileDetector.DetectFileType(mainOpenFileDialog.FileName);
+                FileDetector.FileType type = FileDetector.DetectFileType(archivePath);
                 if (!ArchiveCapabilities.CanOpen(type))
                     throw new StageException("F00010002", LanguageManager.Get("NotACompressedFile")); //F00010002
-                NestedTarInfo nestedTarInfo = await _archiveService.AnalyzeNestedTarAsync(mainOpenFileDialog.FileName, token);
+                NestedTarInfo nestedTarInfo = await _archiveService.AnalyzeNestedTarAsync(archivePath, token);
                 IReadOnlyList<ArchiveEntryInfo> entries = nestedTarInfo.FlattenAutomatically
-                    ? await _archiveService.ListNestedTarAsync(mainOpenFileDialog.FileName, nestedTarInfo.TarEntryKeys[0], token)
-                    : await _archiveService.ListAsync(mainOpenFileDialog.FileName, token);
-                _archivePath = mainOpenFileDialog.FileName;
+                    ? await _archiveService.ListNestedTarAsync(archivePath, nestedTarInfo.TarEntryKeys[0], token)
+                    : await _archiveService.ListAsync(archivePath, token);
+                _archivePath = archivePath;
                 _nestedTarInfo = nestedTarInfo;
                 _archiveCurrentDirectory = string.Empty;
                 _archiveEntries.Clear();
@@ -157,6 +183,29 @@ public partial class Form1 : Form
             UnloadArchive();
             ShowException("F00010003", exception); //F00010003
         }
+    }
+
+    private void CreateContextMenuToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (MessageBox.Show(this, LanguageManager.Get("ContextMenuCreateWarning"), LanguageManager.Get("ContextMenu"),
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            string executablePath = Environment.ProcessPath ?? throw new StageException("F00010009", LanguageManager.Get("ContextExecutableMissing")); //F00010009
+            ContextMenuRegistrationService.Create(executablePath);
+            MessageBox.Show(this, LanguageManager.Get("ContextMenuCreated"), LanguageManager.Get("ContextMenu"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception exception) { ShowException("F00010009", exception); } //F00010009
+    }
+
+    private void DeleteContextMenuToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            ContextMenuRegistrationService.Delete();
+            MessageBox.Show(this, LanguageManager.Get("ContextMenuDeleted"), LanguageManager.Get("ContextMenu"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception exception) { ShowException("F00010010", exception); } //F00010010
     }
 
     private async Task RunOperationAsync(string initialStatus, Func<IProgress<ArchiveProgress>, CancellationToken, Task> operation)
@@ -359,7 +408,7 @@ public partial class Form1 : Form
 
     private void RefreshCurrentDirectoryStatus() => statusLabel.Text = string.Format(LanguageManager.Get("CurrentDirectoryFormat"), string.IsNullOrEmpty(_archiveCurrentDirectory) ? LanguageManager.Get("Root") : _archiveCurrentDirectory);
     private void SetArchiveControls(bool loaded) { uninstallFileToolStripMenuItem.Visible = loaded; extractToolStripMenuItem.Visible = loaded; _extractNestedTarMenuItem.Visible = loaded && _nestedTarInfo.HasNestedTar; }
-    private void SetMenuEnabled(bool enabled) { OpenToolStripMenuItem.Enabled = enabled; extractToolStripMenuItem.Enabled = enabled; compressToolStripMenuItem.Enabled = enabled; uninstallFileToolStripMenuItem.Enabled = enabled; _extractNestedTarMenuItem.Enabled = enabled; }
+    private void SetMenuEnabled(bool enabled) { OpenToolStripMenuItem.Enabled = enabled; extractToolStripMenuItem.Enabled = enabled; compressToolStripMenuItem.Enabled = enabled; uninstallFileToolStripMenuItem.Enabled = enabled; _extractNestedTarMenuItem.Enabled = enabled; _contextMenuToolStripMenuItem.Enabled = enabled; }
 
     private void UnloadArchive()
     {

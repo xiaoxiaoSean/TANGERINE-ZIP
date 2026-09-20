@@ -16,6 +16,11 @@ namespace TANGERINE_ZIP
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
+            if (args.Length >= 2 && args[0].StartsWith("--context-", StringComparison.Ordinal))
+            {
+                Services.ContextMenuCommandHandler.Run(args[0], args[1..]);
+                return;
+            }
             Application.Run(new Form1());
         }
     }

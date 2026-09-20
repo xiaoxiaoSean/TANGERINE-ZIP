@@ -312,4 +312,23 @@ Stage Code is :</value>
   <data name="WorkerFailed" xml:space="preserve"><value>The archive worker did not complete successfully.</value></data>
   <data name="LoadingFiles" xml:space="preserve"><value>Loading files…</value></data>
   <data name="SelectAtLeastOneFile" xml:space="preserve"><value>Please select at least one file.</value></data>
+  <data name="ContextMenu" xml:space="preserve"><value>Context menu</value></data>
+  <data name="CreateContextMenu" xml:space="preserve"><value>Create context menu</value></data>
+  <data name="DeleteContextMenu" xml:space="preserve"><value>Delete context menu</value></data>
+  <data name="ContextMenuCreateWarning" xml:space="preserve"><value>If you move TZIP.exe, you must create the context menu again. Continue?</value></data>
+  <data name="ContextMenuCreated" xml:space="preserve"><value>The TZIP context menu was created for the current user.</value></data>
+  <data name="ContextMenuDeleted" xml:space="preserve"><value>The TZIP context menu was removed for the current user.</value></data>
+  <data name="ContextExtractMenu" xml:space="preserve"><value>Use TZIP to extract selected file(s) to this folder</value></data>
+  <data name="ContextCompressMenu" xml:space="preserve"><value>Compress selected file(s) to an archive with TZIP</value></data>
+  <data name="ContextOpenMenu" xml:space="preserve"><value>Open with TZIP</value></data>
+  <data name="ContextNoFiles" xml:space="preserve"><value>No existing files were supplied.</value></data>
+  <data name="ContextUnknownAction" xml:space="preserve"><value>The requested context-menu action is not supported.</value></data>
+  <data name="ContextAllArchivesRequired" xml:space="preserve"><value>All selected files must be supported archive files.</value></data>
+  <data name="ContextSelectOutput" xml:space="preserve"><value>Select output archive</value></data>
+  <data name="ContextOpenMultiple" xml:space="preserve"><value>This option is not suitable for multiple files.</value></data>
+  <data name="ContextExtractProgress" xml:space="preserve"><value>Extracting with TZIP</value></data>
+  <data name="ContextCompressProgress" xml:space="preserve"><value>Compressing with TZIP</value></data>
+  <data name="ContextOperationRunning" xml:space="preserve"><value>Working…</value></data>
+  <data name="ContextOperationCompleted" xml:space="preserve"><value>Completed.</value></data>
+  <data name="ContextExecutableMissing" xml:space="preserve"><value>The TZIP executable path is unavailable.</value></data>
 </root>

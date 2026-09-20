@@ -318,4 +318,23 @@
   <data name="WorkerFailed" xml:space="preserve"><value>归档工作进程未能正常完成。</value></data>
   <data name="LoadingFiles" xml:space="preserve"><value>正在加载文件…</value></data>
   <data name="SelectAtLeastOneFile" xml:space="preserve"><value>请至少选择一个文件。</value></data>
+  <data name="ContextMenu" xml:space="preserve"><value>右键菜单</value></data>
+  <data name="CreateContextMenu" xml:space="preserve"><value>建立右键菜单</value></data>
+  <data name="DeleteContextMenu" xml:space="preserve"><value>删除右键菜单</value></data>
+  <data name="ContextMenuCreateWarning" xml:space="preserve"><value>如果移动 TZIP.exe，务必重新建立右键菜单。是否继续？</value></data>
+  <data name="ContextMenuCreated" xml:space="preserve"><value>已为当前用户建立 TZIP 右键菜单。</value></data>
+  <data name="ContextMenuDeleted" xml:space="preserve"><value>已移除当前用户的 TZIP 右键菜单。</value></data>
+  <data name="ContextExtractMenu" xml:space="preserve"><value>用 TZIP 将选定文件解压到当前文件夹</value></data>
+  <data name="ContextCompressMenu" xml:space="preserve"><value>用 TZIP 将选定文件压缩为压缩文件</value></data>
+  <data name="ContextOpenMenu" xml:space="preserve"><value>用 TZIP 打开</value></data>
+  <data name="ContextNoFiles" xml:space="preserve"><value>未提供存在的文件。</value></data>
+  <data name="ContextUnknownAction" xml:space="preserve"><value>不支持请求的右键菜单操作。</value></data>
+  <data name="ContextAllArchivesRequired" xml:space="preserve"><value>所选文件必须全部是受支持的压缩文件。</value></data>
+  <data name="ContextSelectOutput" xml:space="preserve"><value>选择输出压缩文件</value></data>
+  <data name="ContextOpenMultiple" xml:space="preserve"><value>此选项不适合多个文件。</value></data>
+  <data name="ContextExtractProgress" xml:space="preserve"><value>正在使用 TZIP 解压</value></data>
+  <data name="ContextCompressProgress" xml:space="preserve"><value>正在使用 TZIP 压缩</value></data>
+  <data name="ContextOperationRunning" xml:space="preserve"><value>正在处理…</value></data>
+  <data name="ContextOperationCompleted" xml:space="preserve"><value>已完成。</value></data>
+  <data name="ContextExecutableMissing" xml:space="preserve"><value>无法获取 TZIP 可执行文件路径。</value></data>
 </root>
