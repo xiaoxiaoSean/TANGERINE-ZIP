@@ -277,7 +277,7 @@
   <data name="ArchiveDialogFilter" xml:space="preserve"><value>支持的文件|*.zip;*.rar;*.7z;*.tar;*.gz;*.bz2;*.xz;*.lz4;*.zst;*.zstd;*.iso;*.wim|所有文件|*.*</value></data>
   <data name="AllFilesFilter" xml:space="preserve"><value>所有文件|*.*</value></data>
   <data name="SelectOutputArchive" xml:space="preserve"><value>选择输出压缩包</value></data>
-  <data name="CreateArchiveFilter" xml:space="preserve"><value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR（只读）|*.rar</value></data>
+  <data name="CreateArchiveFilter" xml:space="preserve"><value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR|*.rar</value></data>
   <data name="CompressingText" xml:space="preserve"><value>正在压缩</value></data>
   <data name="CompressionCompleted" xml:space="preserve"><value>压缩完成。</value></data>
   <data name="NoSelectedEntries" xml:space="preserve"><value>请至少选择一个归档项目。</value></data>
@@ -303,4 +303,19 @@
   <data name="Format_Iso" xml:space="preserve"><value>ISO</value></data>
   <data name="Format_Wim" xml:space="preserve"><value>WIM</value></data>
   <data name="OutputConflictsInput" xml:space="preserve"><value>输出文件不能同时作为输入文件。</value></data>
+  <data name="ExtractNestedTar" xml:space="preserve"><value>TAR 嵌套一键解压</value></data>
+  <data name="ExtractingNestedTar" xml:space="preserve"><value>正在一键解压嵌套 TAR</value></data>
+  <data name="SelectNestedTarFiles" xml:space="preserve"><value>请先在文件列表中选择一个或多个 TAR 文件。</value></data>
+  <data name="NestedTarNotFound" xml:space="preserve"><value>压缩包中已找不到所选的嵌套 TAR 文件。</value></data>
+  <data name="RarToolMissing" xml:space="preserve"><value>程序目录中没有找到 rar.exe，因此 RAR 压缩功能不可用。请按照官方许可安装 WinRAR 命令行工具，并将 rar.exe 放到程序目录；其他格式仍可正常使用。</value></data>
+  <data name="RarUnavailableTitle" xml:space="preserve"><value>RAR 压缩功能不可用</value></data>
+  <data name="RarToolStartFailed" xml:space="preserve"><value>无法启动外部 RAR 工具。</value></data>
+  <data name="RarToolExitCode" xml:space="preserve"><value>外部 RAR 工具执行失败，退出代码为 {0}。</value></data>
+  <data name="RarCancelFailed" xml:space="preserve"><value>无法停止 RAR 操作，外部进程可能仍在运行。</value></data>
+  <data name="StopWork" xml:space="preserve"><value>停止工作</value></data>
+  <data name="StopWorkRisk" xml:space="preserve"><value>强制停止可能留下不完整的解压文件或临时压缩包。已经被覆写的文件无法自动恢复。是否立即停止当前任务？</value></data>
+  <data name="StoppingWork" xml:space="preserve"><value>正在停止工作…</value></data>
+  <data name="WorkerFailed" xml:space="preserve"><value>归档工作进程未能正常完成。</value></data>
+  <data name="LoadingFiles" xml:space="preserve"><value>正在加载文件…</value></data>
+  <data name="SelectAtLeastOneFile" xml:space="preserve"><value>请至少选择一个文件。</value></data>
 </root>

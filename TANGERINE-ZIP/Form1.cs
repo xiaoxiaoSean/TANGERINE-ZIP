@@ -7,17 +7,50 @@ namespace TANGERINE_ZIP;
 // Stage head: F0001
 public partial class Form1 : Form
 {
-    private readonly ArchiveService _archiveService = new();
+    private readonly ArchiveWorkerClient _archiveService = new();
+    private readonly RarToolService _rarToolService = new();
+    private readonly OpenFileDialog _compressionSourceDialog = new();
     private readonly List<ArchiveEntryInfo> _archiveEntries = [];
+#if ENABLE_LIGHT
     private TangerineLightOverlay? _lightOverlay;
     private System.Windows.Forms.Timer? _fileBoxScrollTimer;
-    private CancellationTokenSource? _operationCancellation;
     private float _normalEdgeStrength;
+#endif
+    private readonly ToolStripMenuItem _extractNestedTarMenuItem;
+    private readonly ToolStripMenuItem _stopWorkMenuItem;
+    private CancellationTokenSource? _operationCancellation;
+    private NestedTarInfo _nestedTarInfo = NestedTarInfo.None;
     private string _archivePath = string.Empty;
     private string _archiveCurrentDirectory = string.Empty;
     private bool _isBusy;
 
-    public Form1() => InitializeComponent();
+    public Form1()
+    {
+        InitializeComponent();
+        _compressionSourceDialog.Multiselect = true;
+        _compressionSourceDialog.CheckFileExists = true;
+        _compressionSourceDialog.CheckPathExists = true;
+        _compressionSourceDialog.RestoreDirectory = false;
+        // The classic native dialog avoids Explorer shell extensions and unavailable recent locations.
+        _compressionSourceDialog.AutoUpgradeEnabled = false;
+        _compressionSourceDialog.ClientGuid = new Guid("D198A293-BAA6-4F93-91F5-7F587C667D84");
+        string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (Directory.Exists(userProfilePath)) _compressionSourceDialog.InitialDirectory = userProfilePath;
+        _stopWorkMenuItem = new ToolStripMenuItem { Visible = false };
+        _stopWorkMenuItem.Click += StopWorkMenuItem_Click;
+        mainMenu.Items.Add(_stopWorkMenuItem);
+        FormClosing += (_, args) =>
+        {
+            if (!_isBusy) return;
+            args.Cancel = true;
+            StopWorkMenuItem_Click(this, EventArgs.Empty);
+        };
+        FormClosed += (_, _) => _compressionSourceDialog.Dispose();
+        _extractNestedTarMenuItem = new ToolStripMenuItem();
+        _extractNestedTarMenuItem.Click += ExtractNestedTarMenuItem_Click;
+        extractToolStripMenuItem.DropDownItems.Add(new ToolStripSeparator());
+        extractToolStripMenuItem.DropDownItems.Add(_extractNestedTarMenuItem);
+    }
 
     private void Form1_Load(object sender, EventArgs e)
     {
@@ -25,9 +58,17 @@ public partial class Form1 : Form
         {
             ApplyLocalizedText();
             DarkTheme.Apply(this);
+#if ENABLE_LIGHT
             ConfigureLightEffect();
+#endif
             ConfigureEntryColors();
             SetArchiveControls(false);
+            if (_rarToolService.ShouldCheckAtStartup && !_rarToolService.IsAvailable)
+            {
+                MessageBox.Show(this,
+                    MessageTipGenerator.GenerateTip("RARTL0001", LanguageManager.Get("RarToolMissing")),
+                    LanguageManager.Get("RarUnavailableTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning); //RARTL0001
+            }
         }
         catch (Exception exception)
         {
@@ -49,10 +90,15 @@ public partial class Form1 : Form
         extractDirectlySELECTEDToolStripMenuItem.Text = LanguageManager.Get("extractDirectlySELECTEDText");
         extractToAFolderSELECTEDToolStripMenuItem.Text = LanguageManager.Get("extractToAFolderSELECTEDText");
         compressSelectFileToolStripMenuItem.Text = LanguageManager.Get("SelectFilesToCompress");
+        _compressionSourceDialog.Title = LanguageManager.Get("SelectFilesToCompress");
+        _compressionSourceDialog.Filter = LanguageManager.Get("AllFilesFilter");
+        _extractNestedTarMenuItem.Text = LanguageManager.Get("ExtractNestedTar");
+        _stopWorkMenuItem.Text = LanguageManager.Get("StopWork");
         mainOpenFileDialog.Title = LanguageManager.Get("SelectArchive");
         mainOpenFileDialog.Filter = LanguageManager.Get("ArchiveDialogFilter");
     }
 
+#if ENABLE_LIGHT
     private void ConfigureLightEffect()
     {
         _lightOverlay = new TangerineLightOverlay(this)
@@ -66,6 +112,7 @@ public partial class Form1 : Form
         fileBox.ViewChanged += FileBox_ViewChanged;
         _lightOverlay.Show(this);
     }
+#endif
 
     private void ConfigureEntryColors()
     {
@@ -88,16 +135,21 @@ public partial class Form1 : Form
                 FileDetector.FileType type = FileDetector.DetectFileType(mainOpenFileDialog.FileName);
                 if (!ArchiveCapabilities.CanOpen(type))
                     throw new StageException("F00010002", LanguageManager.Get("NotACompressedFile")); //F00010002
-                IReadOnlyList<ArchiveEntryInfo> entries = await _archiveService.ListAsync(mainOpenFileDialog.FileName, token);
+                NestedTarInfo nestedTarInfo = await _archiveService.AnalyzeNestedTarAsync(mainOpenFileDialog.FileName, token);
+                IReadOnlyList<ArchiveEntryInfo> entries = nestedTarInfo.FlattenAutomatically
+                    ? await _archiveService.ListNestedTarAsync(mainOpenFileDialog.FileName, nestedTarInfo.TarEntryKeys[0], token)
+                    : await _archiveService.ListAsync(mainOpenFileDialog.FileName, token);
                 _archivePath = mainOpenFileDialog.FileName;
+                _nestedTarInfo = nestedTarInfo;
                 _archiveCurrentDirectory = string.Empty;
                 _archiveEntries.Clear();
                 _archiveEntries.AddRange(entries);
                 mainTab.Text = LanguageManager.Get($"Format_{type}") + " " + LanguageManager.Get(type is FileDetector.FileType.Iso or FileDetector.FileType.Wim ? "ImageFile" : "CompressFile");
                 RefreshFileBox();
                 SetArchiveControls(true);
-                progress.Report(new ArchiveProgress(100, string.Empty));
             });
+            statusProgressBar.Value = 100;
+            RefreshCurrentDirectoryStatus();
         }
         catch (OperationCanceledException) { statusLabel.Text = LanguageManager.Get("OperationCancelled"); }
         catch (Exception exception)
@@ -111,22 +163,45 @@ public partial class Form1 : Form
     {
         _isBusy = true;
         _operationCancellation = new CancellationTokenSource();
+        CancellationTokenSource operationIdentity = _operationCancellation;
+        _stopWorkMenuItem.Visible = true;
+        _stopWorkMenuItem.Enabled = true;
         SetMenuEnabled(false);
         statusLabel.Text = initialStatus;
         statusProgressBar.Value = 0;
         Progress<ArchiveProgress> progress = new(item =>
         {
+            // Reports can remain queued after completion or cancellation. Only the current job owns the UI.
+            if (!ReferenceEquals(_operationCancellation, operationIdentity) || operationIdentity.IsCancellationRequested) return;
             statusProgressBar.Value = Math.Clamp(item.Percentage, 0, 100);
             statusLabel.Text = string.IsNullOrWhiteSpace(item.EntryKey) ? initialStatus : string.Format(LanguageManager.Get("ProgressStatus"), initialStatus, item.EntryKey, item.Percentage);
         });
-        try { await operation(progress, _operationCancellation.Token); }
+        try { await operation(progress, _operationCancellation.Token); operationIdentity.Token.ThrowIfCancellationRequested(); }
         finally
         {
             _operationCancellation.Dispose();
             _operationCancellation = null;
             _isBusy = false;
+            _stopWorkMenuItem.Visible = false;
             SetMenuEnabled(true);
         }
+    }
+
+    private void StopWorkMenuItem_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            CancellationTokenSource? current = _operationCancellation;
+            if (current is null || current.IsCancellationRequested) return;
+            DialogResult answer = MessageBox.Show(this, LanguageManager.Get("StopWorkRisk"), LanguageManager.Get("StopWork"),
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+            // The modal confirmation pumps messages; the job may finish while the user reads it.
+            if (answer != DialogResult.Yes || !ReferenceEquals(current, _operationCancellation)) return;
+            current.Cancel();
+            _stopWorkMenuItem.Enabled = false;
+            statusLabel.Text = LanguageManager.Get("StoppingWork");
+        }
+        catch (Exception exception) { ShowException("F00010008", exception); } //F00010008
     }
 
     private async Task ExtractAsync(bool selectedOnly, bool createArchiveFolder)
@@ -146,7 +221,10 @@ public partial class Form1 : Form
         if (createArchiveFolder) destination = Path.Combine(destination, Path.GetFileNameWithoutExtension(_archivePath));
         try
         {
-            await RunOperationAsync(LanguageManager.Get("ExtractingText"), (progress, token) => _archiveService.ExtractAsync(_archivePath, destination, selectedEntries, policy, progress, token));
+            await RunOperationAsync(LanguageManager.Get("ExtractingText"), (progress, token) =>
+                _nestedTarInfo.FlattenAutomatically
+                    ? _archiveService.ExtractNestedTarsAsync(_archivePath, _nestedTarInfo.TarEntryKeys, destination, selectedEntries, false, policy, progress, token)
+                    : _archiveService.ExtractAsync(_archivePath, destination, selectedEntries, policy, progress, token));
             statusProgressBar.Value = 100;
             statusLabel.Text = LanguageManager.Get("ExtractingCompleted");
         }
@@ -157,17 +235,20 @@ public partial class Form1 : Form
     private async void compressSelectFileToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
-        using OpenFileDialog sourceDialog = new() { Multiselect = true, Title = LanguageManager.Get("SelectFilesToCompress"), Filter = LanguageManager.Get("AllFilesFilter") };
-        if (sourceDialog.ShowDialog(this) != DialogResult.OK) return;
+        _compressionSourceDialog.FileName = string.Empty;
+        if (_compressionSourceDialog.ShowDialog(this) != DialogResult.OK) return;
+        string[] sourcePaths = _compressionSourceDialog.FileNames;
+        if (sourcePaths.Length == 0) return;
         mainSaveFileDialog.Title = LanguageManager.Get("SelectOutputArchive");
         mainSaveFileDialog.Filter = LanguageManager.Get("CreateArchiveFilter");
         mainSaveFileDialog.AddExtension = true;
         mainSaveFileDialog.OverwritePrompt = true;
         if (mainSaveFileDialog.ShowDialog(this) != DialogResult.OK) return;
-        FileDetector.FileType type = FileDetector.DetectFileTypeFromExtension(mainSaveFileDialog.FileName);
+        FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(mainSaveFileDialog.FilterIndex);
         try
         {
-            await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) => _archiveService.CreateAsync(sourceDialog.FileNames, mainSaveFileDialog.FileName, type, progress, token));
+            await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) =>
+                _archiveService.CreateAsync(sourcePaths, mainSaveFileDialog.FileName, type, progress, token));
             statusProgressBar.Value = 100;
             statusLabel.Text = LanguageManager.Get("CompressionCompleted");
         }
@@ -179,6 +260,47 @@ public partial class Form1 : Form
     {
         DialogResult result = MessageBox.Show(LanguageManager.Get("OverwritePolicyPrompt"), LanguageManager.Get("OverWriteOrNot"), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
         return result switch { DialogResult.Yes => OverwritePolicy.OverwriteAll, DialogResult.No => OverwritePolicy.SkipAll, _ => OverwritePolicy.Cancel };
+    }
+
+    private async void ExtractNestedTarMenuItem_Click(object? sender, EventArgs e)
+    {
+        IReadOnlyList<string> tarEntries;
+        if (_nestedTarInfo.FlattenAutomatically)
+        {
+            tarEntries = _nestedTarInfo.TarEntryKeys;
+        }
+        else
+        {
+            HashSet<string> selected = GetSelectedArchiveEntries().ToHashSet(StringComparer.OrdinalIgnoreCase);
+            tarEntries = _nestedTarInfo.TarEntryKeys.Where(selected.Contains).ToArray();
+            if (tarEntries.Count == 0)
+            {
+                ShowInformation("SelectNestedTarFiles");
+                return;
+            }
+        }
+
+        mainFolderBrowserDialog.Description = LanguageManager.Get("SelectExtractFolderText");
+        if (mainFolderBrowserDialog.ShowDialog(this) != DialogResult.OK) return;
+        OverwritePolicy policy = AskOverwritePolicy();
+        if (policy == OverwritePolicy.Cancel) return;
+
+        string destination = Path.Combine(mainFolderBrowserDialog.SelectedPath, Path.GetFileNameWithoutExtension(_archivePath));
+        try
+        {
+            await RunOperationAsync(LanguageManager.Get("ExtractingNestedTar"), (progress, token) =>
+                _archiveService.ExtractNestedTarsAsync(_archivePath, tarEntries, destination, null, true, policy, progress, token));
+            statusProgressBar.Value = 100;
+            statusLabel.Text = LanguageManager.Get("ExtractingCompleted");
+        }
+        catch (OperationCanceledException)
+        {
+            statusLabel.Text = LanguageManager.Get("OperationCancelled");
+        }
+        catch (Exception exception)
+        {
+            ShowException("F00010007", exception); //F00010007
+        }
     }
 
     private void RefreshFileBox()
@@ -236,12 +358,12 @@ public partial class Form1 : Form
     }
 
     private void RefreshCurrentDirectoryStatus() => statusLabel.Text = string.Format(LanguageManager.Get("CurrentDirectoryFormat"), string.IsNullOrEmpty(_archiveCurrentDirectory) ? LanguageManager.Get("Root") : _archiveCurrentDirectory);
-    private void SetArchiveControls(bool loaded) { uninstallFileToolStripMenuItem.Visible = loaded; extractToolStripMenuItem.Visible = loaded; }
-    private void SetMenuEnabled(bool enabled) { OpenToolStripMenuItem.Enabled = enabled; extractToolStripMenuItem.Enabled = enabled; compressToolStripMenuItem.Enabled = enabled; uninstallFileToolStripMenuItem.Enabled = enabled; }
+    private void SetArchiveControls(bool loaded) { uninstallFileToolStripMenuItem.Visible = loaded; extractToolStripMenuItem.Visible = loaded; _extractNestedTarMenuItem.Visible = loaded && _nestedTarInfo.HasNestedTar; }
+    private void SetMenuEnabled(bool enabled) { OpenToolStripMenuItem.Enabled = enabled; extractToolStripMenuItem.Enabled = enabled; compressToolStripMenuItem.Enabled = enabled; uninstallFileToolStripMenuItem.Enabled = enabled; _extractNestedTarMenuItem.Enabled = enabled; }
 
     private void UnloadArchive()
     {
-        _archivePath = string.Empty; _archiveCurrentDirectory = string.Empty; _archiveEntries.Clear(); fileBox.Items.Clear();
+        _archivePath = string.Empty; _archiveCurrentDirectory = string.Empty; _nestedTarInfo = NestedTarInfo.None; _archiveEntries.Clear(); fileBox.Items.Clear();
         statusProgressBar.Value = 0; statusLabel.Text = LanguageManager.Get("readytext"); mainTab.Text = LanguageManager.Get("mainTabText"); SetArchiveControls(false);
     }
 
@@ -262,6 +384,14 @@ public partial class Form1 : Form
         MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error); //F00010006
     }
 
+    private void TZIPToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        TZIPForm tzip=new TZIPForm();
+        tzip.ShowDialog();
+        tzip.Dispose();
+    }
+
+#if ENABLE_LIGHT
     private void FileBox_ViewChanged(object? sender, EventArgs e)
     {
         if (_lightOverlay is null || _fileBoxScrollTimer is null) return;
@@ -273,4 +403,5 @@ public partial class Form1 : Form
         _fileBoxScrollTimer?.Stop();
         if (_lightOverlay is not null) { _lightOverlay.EdgeStrength = _normalEdgeStrength; _lightOverlay.InvalidateCapture(); }
     }
+#endif
 }

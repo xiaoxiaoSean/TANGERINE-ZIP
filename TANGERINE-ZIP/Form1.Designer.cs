@@ -74,6 +74,7 @@ namespace TANGERINE_ZIP
             TZIPToolStripMenuItem.Name = "TZIPToolStripMenuItem";
             TZIPToolStripMenuItem.Size = new Size(63, 28);
             TZIPToolStripMenuItem.Text = "TZIP";
+            TZIPToolStripMenuItem.Click += TZIPToolStripMenuItem_Click;
             TZIPToolStripMenuItem.DoubleClick += TZIPToolStripMenuItem_DoubleClick;
             // 
             // OpenToolStripMenuItem
@@ -179,6 +180,7 @@ namespace TANGERINE_ZIP
             // 
             fileBox.BackColor = Color.Black;
             fileBox.Dock = DockStyle.Fill;
+            fileBox.DrawMode = DrawMode.OwnerDrawFixed;
             fileBox.ForeColor = Color.White;
             fileBox.FormattingEnabled = true;
             fileBox.Location = new Point(0, 0);

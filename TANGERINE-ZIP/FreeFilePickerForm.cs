@@ -1,221 +1,227 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.IO;
-using System.Text;
-using System.Windows.Forms;
 using TANGERINE_ZIP.Tools;
 using TANGERINE_ZIP.Tools.LightTool;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ScrollBar;
+
 // Stage head: F0002
-namespace TANGERINE_ZIP
+namespace TANGERINE_ZIP;
+
+public partial class FreeFilePickerForm : Form
 {
-    public partial class FreeFilePickerForm : Form
+    private string? _currentPath;
+    private string? _initialPath;
+    private CancellationTokenSource? _loadCancellation;
+    private readonly Dictionary<string, string> _displayPaths = new(StringComparer.CurrentCultureIgnoreCase);
+
+    public IReadOnlyList<string> SelectedFiles { get; private set; } = [];
+
+#if ENABLE_LIGHT
+    private TangerineLightOverlay? _lightOverlay;
+    private System.Windows.Forms.Timer? _fileBoxScrollTimer;
+    private float _normalEdgeStrength;
+#endif
+
+    public FreeFilePickerForm()
     {
-        private string? currentPath;
-        private TangerineLightOverlay? _lightOverlay;
+        InitializeComponent();
+        fileListBox.DoubleClick += FileListBox_DoubleClick;
+        confirmButton.Click += ConfirmButton_Click;
+        formTipText.ReadOnly = true;
+    }
 
-        private System.Windows.Forms.Timer? _fileBoxScrollTimer;
+    public void ShowTipText(string inputTip) => formTipText.Text = inputTip;
 
-        private float _normalEdgeStrength;
-        public FreeFilePickerForm()
-        {
-            InitializeComponent();
-            fileListBox.DoubleClick += FileListBox_DoubleClick;
-        }
-        public void ShowTipText(string inputTip)
-        {
-            formTipText.Text = inputTip;
-        }
-        public void InputPath(string inputPath)
-        {
-            LoadPath(inputPath);
-        }
-        void LoadPath(string inputPath)
-        {
-            fileListBox.Items.Clear();            
-            string[] files;
-            string[] folders;
-            try
-            {
-                files = Directory.GetFiles(inputPath);
-            }
-            catch (Exception ex) //F00020001
-            {
-                MessageBox.Show(MessageTipGenerator.GenerateTip("F00020001", ex.Message)); //F00020001
-                return;
-            }
-            try
-            {
-                folders = Directory.GetDirectories(inputPath);
-            }
-            catch (Exception ex) //F00020002
-            {
-                MessageBox.Show(MessageTipGenerator.GenerateTip("F00020002", ex.Message)); //F00020002
-                return;
-            }           
-            string[] allItems = PathSorter.MergeAndSort(files, folders);
+    public void InputPath(string inputPath)
+    {
+        _initialPath = inputPath;
+        if (IsHandleCreated) _ = LoadPathAsync(inputPath);
+    }
 
+    private async Task LoadPathAsync(string inputPath)
+    {
+        CancellationTokenSource currentLoad = ReplaceLoadCancellation();
+        fileListBox.Items.Clear();
+        fileListBox.Items.Add(LanguageManager.Get("LoadingFiles"));
+        _displayPaths.Clear();
+        try
+        {
+            string[] allItems = await Task.Run(() =>
+            {
+                currentLoad.Token.ThrowIfCancellationRequested();
+                string[] files = Directory.GetFiles(inputPath);
+                currentLoad.Token.ThrowIfCancellationRequested();
+                string[] folders = Directory.GetDirectories(inputPath);
+                currentLoad.Token.ThrowIfCancellationRequested();
+                return PathSorter.MergeAndSort(files, folders);
+            }, currentLoad.Token);
+            if (currentLoad.IsCancellationRequested || IsDisposed) return;
             fileListBox.BeginUpdate();
-
             try
             {
-                fileListBox.Items.Clear();
-                fileListBox.Items.Add(LanguageManager.Get("goToParentDirectoryText") + "...");
+                string parentItem = LanguageManager.Get("goToParentDirectoryText") + "...";
+                fileListBox.Items.Add(parentItem);
                 foreach (string item in allItems)
                 {
-                    fileListBox.Items.Add(Path.GetFileName(item));
+                    string displayName = Path.GetFileName(item);
+                    fileListBox.Items.Add(displayName);
+                    _displayPaths[displayName] = item;
                 }
             }
             finally
             {
                 fileListBox.EndUpdate();
             }
-
-            currentPath = inputPath;
+            _currentPath = inputPath;
         }
-
-        private void LoadDrives()
+        catch (OperationCanceledException)
         {
-            fileListBox.Items.Clear();            
-DriveInfo[] drives;
-            try
-            {
-                drives = DriveInfo.GetDrives();
-            }
-            catch (Exception ex) //F00020003
-            {
-                MessageBox.Show(MessageTipGenerator.GenerateTip("F00020003", ex.Message)); //F00020003
-                return;
-            }
-
-            fileListBox.BeginUpdate();
-            try
-            {
-                fileListBox.Items.Clear();
-                foreach (DriveInfo drive in drives)
-                {
-                    fileListBox.Items.Add(drive.Name);
-                }
-            }
-            finally
-            {
-                fileListBox.EndUpdate();
-            }
-
-            currentPath = null;
+            // A newer navigation request owns the list now.
         }
-
-        private void FileListBox_DoubleClick(object? sender, EventArgs e)
+        catch (Exception exception)
         {
-            if (fileListBox.SelectedItem is not string selectedItem)
-            {
-                return;
-            }
-
-            if (currentPath == null)
-            {
-                LoadPath(selectedItem);
-                return;
-            }
-
-            string parentItem = LanguageManager.Get("goToParentDirectoryText") + "...";
-            if (selectedItem == parentItem)
-            {
-                string? parentPath = Directory.GetParent(currentPath)?.FullName;
-                if (parentPath == null)
-                {
-                    LoadDrives();
-                }
-                else
-                {
-                    LoadPath(parentPath);
-                }
-                return;
-            }
-
-            string selectedPath = Path.Combine(currentPath, selectedItem);
-            if (Directory.Exists(selectedPath))
-            {
-                LoadPath(selectedPath);
-            }
+            if (currentLoad.IsCancellationRequested || IsDisposed) return;
+            MessageBox.Show(this, MessageTipGenerator.GenerateTip("F00020001", exception.Message),
+                LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error); //F00020001
         }
-        private void FreeFilePickerForm_Load(object sender, EventArgs e)
+    }
+
+    private async Task LoadDrivesAsync()
+    {
+        CancellationTokenSource currentLoad = ReplaceLoadCancellation();
+        fileListBox.Items.Clear();
+        fileListBox.Items.Add(LanguageManager.Get("LoadingFiles"));
+        _displayPaths.Clear();
+        try
+        {
+            string[] drives = await Task.Run(() => DriveInfo.GetDrives()
+                .Where(drive => drive.IsReady)
+                .Select(drive => drive.Name)
+                .ToArray(), currentLoad.Token);
+            if (currentLoad.IsCancellationRequested || IsDisposed) return;
+            fileListBox.Items.AddRange(drives);
+            foreach (string drive in drives) _displayPaths[drive] = drive;
+            _currentPath = null;
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer navigation request owns the list now.
+        }
+        catch (Exception exception)
+        {
+            if (currentLoad.IsCancellationRequested || IsDisposed) return;
+            MessageBox.Show(this, MessageTipGenerator.GenerateTip("F00020003", exception.Message),
+                LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error); //F00020003
+        }
+    }
+
+    private CancellationTokenSource ReplaceLoadCancellation()
+    {
+        CancellationTokenSource currentLoad = new();
+        CancellationTokenSource? previousLoad = Interlocked.Exchange(ref _loadCancellation, currentLoad);
+        previousLoad?.Cancel();
+        previousLoad?.Dispose();
+        return currentLoad;
+    }
+
+    private void ConfirmButton_Click(object? sender, EventArgs e)
+    {
+        SelectedFiles = fileListBox.SelectedItems.Cast<object>()
+            .Select(item => item.ToString() ?? string.Empty)
+            .Where(_displayPaths.ContainsKey)
+            .Select(item => _displayPaths[item])
+            .Where(File.Exists)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (SelectedFiles.Count == 0)
+        {
+            MessageBox.Show(this, LanguageManager.Get("SelectAtLeastOneFile"), LanguageManager.Get("ApplicationTitle"),
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        DialogResult = DialogResult.OK;
+        Close();
+    }
+
+    private async void FileListBox_DoubleClick(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (fileListBox.SelectedItem is not string selectedItem) return;
+            if (selectedItem == LanguageManager.Get("goToParentDirectoryText") + "...")
+            {
+                string? parentPath = _currentPath is null ? null : Directory.GetParent(_currentPath)?.FullName;
+                if (parentPath is null) await LoadDrivesAsync(); else await LoadPathAsync(parentPath);
+                return;
+            }
+            if (!_displayPaths.TryGetValue(selectedItem, out string? selectedPath)) return;
+            if (Directory.Exists(selectedPath)) await LoadPathAsync(selectedPath);
+            else if (File.Exists(selectedPath)) ConfirmButton_Click(sender, e);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, MessageTipGenerator.GenerateTip("F00020004", exception.Message),
+                LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error); //F00020004
+        }
+    }
+
+    private async void FreeFilePickerForm_Load(object sender, EventArgs e)
+    {
+        try
         {
             DarkTheme.Apply(this);
             Text = LanguageManager.Get("FreeFilePickerFormTitle");
-            #region set light effect
-            _lightOverlay = new TangerineLightOverlay(this);
-            _lightOverlay.TargetFps = 60;
-            _lightOverlay.Radius = 180f;
-            _lightOverlay.LightStrength = 0.02f;
-            _lightOverlay.EdgeStrength = 7.9f;
-            _lightOverlay.EdgeWidth = 3f;
-            _lightOverlay.disableWhenMouseSpeedGetTooFast = 100000;
+#if ENABLE_LIGHT
+            _lightOverlay = new TangerineLightOverlay(this)
+            {
+                TargetFps = 60,
+                Radius = 180f,
+                LightStrength = 0.02f,
+                EdgeStrength = 7.9f,
+                EdgeWidth = 3f,
+                disableWhenMouseSpeedGetTooFast = 100000
+            };
             _normalEdgeStrength = _lightOverlay.EdgeStrength;
-            _fileBoxScrollTimer =
-                new System.Windows.Forms.Timer
-                {
-                    Interval = 120
-                };
+            _fileBoxScrollTimer = new System.Windows.Forms.Timer { Interval = 120 };
             _fileBoxScrollTimer.Tick += FileListBoxScrollTimer_Tick;
             fileListBox.ViewChanged += FileListBox_ViewChanged;
             _lightOverlay.Show(this);
-            #endregion
-            confirmButton.Text=LanguageManager.Get("Confirm");
-            LoadDrives();
+#endif
+            confirmButton.Text = LanguageManager.Get("Confirm");
+            await Task.Yield();
+            string initialPath = !string.IsNullOrWhiteSpace(_initialPath) && Directory.Exists(_initialPath)
+                ? _initialPath
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (Directory.Exists(initialPath)) await LoadPathAsync(initialPath); else await LoadDrivesAsync();
         }
-        private void FileListBoxScrollTimer_Tick(
-         object? sender,
-         EventArgs e)
+        catch (Exception exception)
         {
-            _fileBoxScrollTimer?.Stop();
-
-            if (_lightOverlay == null)
-            {
-                return;
-            }
-
-            _lightOverlay.EdgeStrength =
-                _normalEdgeStrength;
-
-            _lightOverlay.InvalidateCapture();
-        }
-        private void FileBox_ViewChanged(
-           object? sender,
-           EventArgs e)
-        {
-            if (_lightOverlay == null ||
-                _fileBoxScrollTimer == null)
-            {
-                return;
-            }
-
-            _lightOverlay.EdgeStrength =
-                0f;
-
-            _fileBoxScrollTimer.Stop();
-            _fileBoxScrollTimer.Start();
-            _lightOverlay?.InvalidateCapture();
-        }
-        private void FileListBox_ViewChanged(
-           object? sender,
-           EventArgs e)
-        {
-            if (_lightOverlay == null ||
-                _fileBoxScrollTimer == null)
-            {
-                return;
-            }
-
-            _lightOverlay.EdgeStrength =
-                0f;
-
-            _fileBoxScrollTimer.Stop();
-            _fileBoxScrollTimer.Start();
-            _lightOverlay?.InvalidateCapture();
+            MessageBox.Show(this, MessageTipGenerator.GenerateTip("F00020005", exception.Message),
+                LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error); //F00020005
         }
     }
+
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        CancellationTokenSource? currentLoad = Interlocked.Exchange(ref _loadCancellation, null);
+        currentLoad?.Cancel();
+        currentLoad?.Dispose();
+        base.OnFormClosed(e);
+    }
+
+#if ENABLE_LIGHT
+    private void FileListBoxScrollTimer_Tick(object? sender, EventArgs e)
+    {
+        _fileBoxScrollTimer?.Stop();
+        if (_lightOverlay is null) return;
+        _lightOverlay.EdgeStrength = _normalEdgeStrength;
+        _lightOverlay.InvalidateCapture();
+    }
+
+    private void FileListBox_ViewChanged(object? sender, EventArgs e)
+    {
+        if (_lightOverlay is null || _fileBoxScrollTimer is null) return;
+        _lightOverlay.EdgeStrength = 0f;
+        _fileBoxScrollTimer.Stop();
+        _fileBoxScrollTimer.Start();
+        _lightOverlay.InvalidateCapture();
+    }
+#endif
 }

@@ -6,6 +6,13 @@ internal sealed record ArchiveEntryInfo(string Key, bool IsDirectory, long Size)
 
 internal sealed record ArchiveProgress(int Percentage, string EntryKey);
 
+internal sealed record NestedTarInfo(IReadOnlyList<string> TarEntryKeys, bool FlattenAutomatically)
+{
+    public bool HasNestedTar => TarEntryKeys.Count > 0;
+
+    public static NestedTarInfo None { get; } = new([], false);
+}
+
 internal enum OverwritePolicy
 {
     Ask,
@@ -35,8 +42,7 @@ internal static class ArchiveCapabilities
         FileDetector.FileType.Zstd or FileDetector.FileType.Iso or
         FileDetector.FileType.Wim;
 
-    public static bool CanCreate(FileDetector.FileType type) =>
-        CanOpen(type) && type != FileDetector.FileType.Rar;
+    public static bool CanCreate(FileDetector.FileType type) => CanOpen(type);
 
     public static bool IsSingleFileStream(FileDetector.FileType type) => type is
         FileDetector.FileType.GZip or FileDetector.FileType.BZip2 or

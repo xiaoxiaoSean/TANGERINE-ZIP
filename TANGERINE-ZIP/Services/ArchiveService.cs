@@ -11,6 +11,7 @@ using SharpCompress.Compressors.ZStandard;
 using SharpCompress.Readers;
 using SharpCompress.Writers;
 using System.IO.Compression;
+using System.Text;
 using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP.Services;
@@ -20,6 +21,19 @@ internal sealed class ArchiveService
     private static readonly object NativeInitializationLock = new();
     private static bool _xzInitialized;
     private static bool _wimInitialized;
+    private static readonly ArchiveEncoding UnicodeArchiveEncoding = new()
+    {
+        // SharpCompress compares this encoding with Encoding.UTF8 to emit ZIP's EFS flag.
+        // UTF8Encoding(false) writes UTF-8 bytes but compares unequal, so other tools use legacy code pages.
+        // GetBytes never writes the preamble, so Encoding.UTF8 does not add a BOM to entry names.
+        Default = Encoding.UTF8,
+        UTF8 = Encoding.UTF8
+    };
+
+    private static ReaderOptions UnicodeReaderOptions => new()
+    {
+        ArchiveEncoding = UnicodeArchiveEncoding
+    };
 
     public Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string archivePath, CancellationToken cancellationToken)
     {
@@ -41,11 +55,137 @@ internal sealed class ArchiveService
             {
                 throw;
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception exception)
             {
                 throw new StageException("ARCSV0001", exception.Message, exception); //ARCSV0001
             }
         }, cancellationToken);
+    }
+
+    public Task<NestedTarInfo> AnalyzeNestedTarAsync(string archivePath, CancellationToken cancellationToken)
+    {
+        return Task.Run(() =>
+        {
+            try
+            {
+                FileDetector.FileType outerType = FileDetector.DetectFileType(archivePath);
+                if (ArchiveCapabilities.IsSingleFileStream(outerType))
+                {
+                    using FileStream input = File.OpenRead(archivePath);
+                    using Stream decoder = CreateDecoder(input, outerType);
+                    return FileDetector.DetectFileType(decoder) == FileDetector.FileType.Tar
+                        ? new NestedTarInfo([GetRawOutputName(archivePath)], true)
+                        : NestedTarInfo.None;
+                }
+
+                if (outerType is not (FileDetector.FileType.Zip or FileDetector.FileType.Rar or FileDetector.FileType.SevenZip))
+                {
+                    return NestedTarInfo.None;
+                }
+
+                using IArchive archive = ArchiveFactory.OpenArchive(archivePath, UnicodeReaderOptions);
+                List<IArchiveEntry> fileEntries = archive.Entries.Where(entry => !entry.IsDirectory).ToList();
+                List<string> tarEntries = [];
+                foreach (IArchiveEntry entry in fileEntries)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    using Stream stream = entry.OpenEntryStream();
+                    if (FileDetector.DetectFileType(stream) == FileDetector.FileType.Tar)
+                    {
+                        tarEntries.Add(NormalizeEntry(entry.Key ?? string.Empty));
+                    }
+                }
+                return new NestedTarInfo(tarEntries, fileEntries.Count == 1 && tarEntries.Count == 1);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new StageException("NESTR0001", exception.Message, exception); //NESTR0001
+            }
+        }, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListNestedTarAsync(string archivePath, string tarEntryKey, CancellationToken cancellationToken)
+    {
+        string temporaryTarPath = CreateTemporaryPath("nested.tar");
+        try
+        {
+            await MaterializeNestedTarAsync(archivePath, tarEntryKey, temporaryTarPath, cancellationToken);
+            return await ListAsync(temporaryTarPath, cancellationToken);
+        }
+        catch (StageException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new StageException("NESTR0002", exception.Message, exception); //NESTR0002
+        }
+        finally
+        {
+            DeleteTemporaryFile(temporaryTarPath);
+        }
+    }
+
+    public async Task ExtractNestedTarsAsync(
+        string archivePath,
+        IReadOnlyList<string> tarEntryKeys,
+        string destinationPath,
+        IReadOnlyCollection<string>? selectedInnerEntries,
+        bool createTarSubfolders,
+        OverwritePolicy overwritePolicy,
+        IProgress<ArchiveProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            for (int index = 0; index < tarEntryKeys.Count; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                string temporaryTarPath = CreateTemporaryPath("nested.tar");
+                try
+                {
+                    await MaterializeNestedTarAsync(archivePath, tarEntryKeys[index], temporaryTarPath, cancellationToken);
+                    string targetPath = createTarSubfolders
+                        ? Path.Combine(destinationPath, Path.GetFileNameWithoutExtension(Path.GetFileName(tarEntryKeys[index])))
+                        : destinationPath;
+                    InlineProgress<ArchiveProgress> nestedProgress = new(item =>
+                    {
+                        int totalPercent = ((index * 100) + item.Percentage) / Math.Max(tarEntryKeys.Count, 1);
+                        progress?.Report(new ArchiveProgress(totalPercent, item.EntryKey));
+                    });
+                    await ExtractSharpCompressAsync(temporaryTarPath, targetPath, selectedInnerEntries, overwritePolicy, nestedProgress, cancellationToken);
+                }
+                finally
+                {
+                    DeleteTemporaryFile(temporaryTarPath);
+                }
+            }
+            progress?.Report(new ArchiveProgress(100, string.Empty));
+        }
+        catch (StageException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new StageException("NESTR0003", exception.Message, exception); //NESTR0003
+        }
     }
 
     public async Task ExtractAsync(
@@ -141,8 +281,12 @@ internal sealed class ArchiveService
                     await CreateRawAsync(sourcePaths[0], temporaryOutputPath, type, progress, cancellationToken);
                     break;
                 case FileDetector.FileType.Zip:
-                case FileDetector.FileType.SevenZip:
+                    await CreateZipAsync(sourcePaths, temporaryOutputPath, progress, cancellationToken);
+                    break;
                 case FileDetector.FileType.Tar:
+                    await CreateTarAsync(sourcePaths, temporaryOutputPath, progress, cancellationToken);
+                    break;
+                case FileDetector.FileType.SevenZip:
                     await CreateSharpCompressAsync(sourcePaths, temporaryOutputPath, type, progress, cancellationToken);
                     break;
                 default:
@@ -171,7 +315,7 @@ internal sealed class ArchiveService
 
     private static IReadOnlyList<ArchiveEntryInfo> ListSharpCompress(string archivePath, CancellationToken cancellationToken)
     {
-        using IArchive archive = ArchiveFactory.OpenArchive(archivePath);
+        using IArchive archive = ArchiveFactory.OpenArchive(archivePath, UnicodeReaderOptions);
         return archive.Entries.Select(entry =>
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -217,7 +361,7 @@ internal sealed class ArchiveService
     {
         await Task.Run(() =>
         {
-            using IArchive archive = ArchiveFactory.OpenArchive(archivePath);
+            using IArchive archive = ArchiveFactory.OpenArchive(archivePath, UnicodeReaderOptions);
             IArchiveEntry[] entries = archive.Entries.Where(entry => ShouldInclude(entry.Key ?? string.Empty, selectedEntries)).ToArray();
             long total = Math.Max(entries.Where(entry => !entry.IsDirectory).Sum(entry => Math.Max(entry.Size, 1)), 1);
             long completed = 0;
@@ -353,18 +497,16 @@ internal sealed class ArchiveService
 
     private static async Task CreateSharpCompressAsync(IReadOnlyList<string> sourcePaths, string outputPath, FileDetector.FileType type, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken)
     {
-        ArchiveType archiveType = type switch
-        {
-            FileDetector.FileType.Zip => ArchiveType.Zip,
-            FileDetector.FileType.SevenZip => ArchiveType.SevenZip,
-            _ => ArchiveType.Tar
-        };
-        SharpCompress.Common.CompressionType compressionType = type == FileDetector.FileType.SevenZip ? SharpCompress.Common.CompressionType.LZMA2 :
-            type == FileDetector.FileType.Zip ? SharpCompress.Common.CompressionType.Deflate : SharpCompress.Common.CompressionType.None;
+        ArchiveType archiveType = ArchiveType.SevenZip;
+        SharpCompress.Common.CompressionType compressionType = SharpCompress.Common.CompressionType.LZMA2;
         long total = Math.Max(sourcePaths.SelectMany(EnumerateFiles).Sum(path => new FileInfo(path).Length), 1);
         long completed = 0;
         await using FileStream output = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 128, true);
-        await using IAsyncWriter writer = await WriterFactory.OpenAsyncWriter(output, archiveType, new WriterOptions(compressionType), cancellationToken);
+        WriterOptions writerOptions = new(compressionType)
+        {
+            ArchiveEncoding = UnicodeArchiveEncoding
+        };
+        await using IAsyncWriter writer = await WriterFactory.OpenAsyncWriter(output, archiveType, writerOptions, cancellationToken);
         foreach (string sourcePath in sourcePaths)
         {
             string rootName = Path.GetFileName(sourcePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
@@ -373,13 +515,84 @@ internal sealed class ArchiveService
                 cancellationToken.ThrowIfCancellationRequested();
                 string entryKey = File.Exists(sourcePath) ? rootName : NormalizeEntry(Path.Combine(rootName, Path.GetRelativePath(sourcePath, file)));
                 await using FileStream input = new(file, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, true);
-                await using ProgressStream monitoredInput = new(input, input.Length, entryKey, new Progress<ArchiveProgress>(item =>
+                long fileLength = input.Length;
+                long completedBeforeEntry = completed;
+                InlineProgress<ArchiveProgress> entryProgress = new(item =>
                 {
-                    long absolute = completed + item.Percentage * input.Length / 100;
+                    long absolute = completedBeforeEntry + item.Percentage * fileLength / 100;
                     progress?.Report(new ArchiveProgress((int)Math.Clamp(absolute * 100 / total, 0, 100), entryKey));
-                }));
+                });
+                await using ProgressStream monitoredInput = new(input, fileLength, entryKey, entryProgress);
                 await writer.WriteAsync(entryKey, monitoredInput, File.GetLastWriteTime(file), cancellationToken);
-                completed += input.Length;
+                completed += fileLength;
+            }
+        }
+        progress?.Report(new ArchiveProgress(100, string.Empty));
+    }
+
+    private static async Task CreateZipAsync(IReadOnlyList<string> sourcePaths, string outputPath, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken)
+    {
+        long total = Math.Max(sourcePaths.SelectMany(EnumerateFiles).Sum(path => new FileInfo(path).Length), 1);
+        long completed = 0;
+        await using FileStream output = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 128, true);
+        // Passing UTF-8 explicitly makes ZipArchive set the language encoding flag for every entry.
+        using System.IO.Compression.ZipArchive archive = new(output, ZipArchiveMode.Create, leaveOpen: true, entryNameEncoding: Encoding.UTF8);
+        foreach (string sourcePath in sourcePaths)
+        {
+            string rootName = Path.GetFileName(sourcePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            foreach (string file in EnumerateFiles(sourcePath))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                string entryKey = File.Exists(sourcePath) ? rootName : NormalizeEntry(Path.Combine(rootName, Path.GetRelativePath(sourcePath, file)));
+                ZipArchiveEntry entry = archive.CreateEntry(entryKey, System.IO.Compression.CompressionLevel.SmallestSize);
+                DateTime lastWriteTime = File.GetLastWriteTime(file);
+                if (lastWriteTime.Year is >= 1980 and <= 2107) entry.LastWriteTime = lastWriteTime;
+                await using Stream entryStream = entry.Open();
+                await using FileStream input = new(file, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, true);
+                long fileLength = input.Length;
+                long completedBeforeEntry = completed;
+                InlineProgress<ArchiveProgress> entryProgress = new(item =>
+                {
+                    long absolute = completedBeforeEntry + item.Percentage * fileLength / 100;
+                    progress?.Report(new ArchiveProgress((int)Math.Clamp(absolute * 100 / total, 0, 100), entryKey));
+                });
+                await using ProgressStream monitoredInput = new(input, fileLength, entryKey, entryProgress);
+                await monitoredInput.CopyToAsync(entryStream, cancellationToken);
+                completed += fileLength;
+            }
+        }
+        progress?.Report(new ArchiveProgress(100, string.Empty));
+    }
+
+    private static async Task CreateTarAsync(IReadOnlyList<string> sourcePaths, string outputPath, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken)
+    {
+        long total = Math.Max(sourcePaths.SelectMany(EnumerateFiles).Sum(path => new FileInfo(path).Length), 1);
+        long completed = 0;
+        await using FileStream output = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 128, true);
+        await using System.Formats.Tar.TarWriter writer = new(output, System.Formats.Tar.TarEntryFormat.Pax, leaveOpen: true);
+        foreach (string sourcePath in sourcePaths)
+        {
+            string rootName = Path.GetFileName(sourcePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            foreach (string file in EnumerateFiles(sourcePath))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                string entryKey = File.Exists(sourcePath) ? rootName : NormalizeEntry(Path.Combine(rootName, Path.GetRelativePath(sourcePath, file)));
+                await using FileStream input = new(file, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, true);
+                long fileLength = input.Length;
+                long completedBeforeEntry = completed;
+                InlineProgress<ArchiveProgress> entryProgress = new(item =>
+                {
+                    long absolute = completedBeforeEntry + item.Percentage * fileLength / 100;
+                    progress?.Report(new ArchiveProgress((int)Math.Clamp(absolute * 100 / total, 0, 100), entryKey));
+                });
+                await using ProgressStream monitoredInput = new(input, fileLength, entryKey, entryProgress);
+                System.Formats.Tar.PaxTarEntry entry = new(System.Formats.Tar.TarEntryType.RegularFile, entryKey)
+                {
+                    DataStream = monitoredInput,
+                    ModificationTime = File.GetLastWriteTimeUtc(file)
+                };
+                await writer.WriteEntryAsync(entry, cancellationToken);
+                completed += fileLength;
             }
         }
         progress?.Report(new ArchiveProgress(100, string.Empty));
@@ -506,6 +719,43 @@ internal sealed class ArchiveService
         if (AppContext.GetData("NATIVE_DLL_SEARCH_DIRECTORIES") is string searchDirectories)
             directories.AddRange(searchDirectories.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries));
         return directories.Select(directory => Path.Combine(directory, fileName)).FirstOrDefault(File.Exists);
+    }
+
+    private static async Task MaterializeNestedTarAsync(string archivePath, string tarEntryKey, string outputPath, CancellationToken cancellationToken)
+    {
+        FileDetector.FileType outerType = FileDetector.DetectFileType(archivePath);
+        await using FileStream output = new(outputPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1024 * 128, true);
+        if (ArchiveCapabilities.IsSingleFileStream(outerType))
+        {
+            await using FileStream input = new(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, true);
+            await using Stream decoder = CreateDecoder(input, outerType);
+            await decoder.CopyToAsync(output, cancellationToken);
+            return;
+        }
+
+        using IArchive archive = ArchiveFactory.OpenArchive(archivePath, UnicodeReaderOptions);
+        IArchiveEntry? targetEntry = archive.Entries.FirstOrDefault(entry =>
+            !entry.IsDirectory && NormalizeEntry(entry.Key ?? string.Empty).Equals(NormalizeEntry(tarEntryKey), StringComparison.OrdinalIgnoreCase));
+        if (targetEntry is null)
+        {
+            throw new StageException("NESTR0004", LanguageManager.Get("NestedTarNotFound")); //NESTR0004
+        }
+        await using Stream entryStream = targetEntry.OpenEntryStream();
+        await entryStream.CopyToAsync(output, cancellationToken);
+    }
+
+    private static string CreateTemporaryPath(string fileName)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "TangerineZipNested", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        return Path.Combine(directory, fileName);
+    }
+
+    private static void DeleteTemporaryFile(string path)
+    {
+        string? directory = Path.GetDirectoryName(path);
+        if (File.Exists(path)) File.Delete(path);
+        if (!string.IsNullOrEmpty(directory) && Directory.Exists(directory)) Directory.Delete(directory, true);
     }
 
     private static IEnumerable<string> EnumerateFiles(string path) => File.Exists(path) ? [path] : Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories);

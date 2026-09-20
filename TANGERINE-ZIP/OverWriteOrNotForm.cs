@@ -20,14 +20,17 @@ namespace TANGERINE_ZIP
         bool aow = false;
         bool askip = false;
         int output = -1;
+#if ENABLE_LIGHT
         private TangerineLightOverlay? _lightOverlay;
 
         private System.Windows.Forms.Timer? _fileBoxScrollTimer;
 
         private float _normalEdgeStrength;
+#endif
         private void OverWriteOrNotForm_Load(object sender, EventArgs e)
         {
             DarkTheme.Apply(this);
+#if ENABLE_LIGHT
             #region set light effect
             _lightOverlay = new TangerineLightOverlay(this);
             _lightOverlay.TargetFps = 60;
@@ -46,6 +49,7 @@ namespace TANGERINE_ZIP
             listBox1.ViewChanged += FileBox_ViewChanged;
             _lightOverlay.Show(this);
             #endregion
+#endif
             this.Text = LanguageManager.Get("OverWriteOrNot");
             label1.Text = LanguageManager.Get("OverWriteText");
             button1.Text = LanguageManager.Get("Execute");
@@ -64,6 +68,7 @@ namespace TANGERINE_ZIP
                 listBox1.EndUpdate();
             }
         }
+#if ENABLE_LIGHT
         private void FileBoxScrollTimer_Tick(
             object? sender,
             EventArgs e)
@@ -97,6 +102,7 @@ namespace TANGERINE_ZIP
             _fileBoxScrollTimer.Start();
             _lightOverlay?.InvalidateCapture();
         }
+#endif
         public void SyncBool(ref bool allOverWrite)
         {
             allOverWrite = aow;

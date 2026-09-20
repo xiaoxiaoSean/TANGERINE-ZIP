@@ -13,19 +13,23 @@ namespace TANGERINE_ZIP
 {
     public partial class TZIPForm : Form
     {
+#if ENABLE_LIGHT
         private TangerineLightControl? tangerineLightControl;
         private System.Windows.Forms.Timer? colorTimer;
         private KnownColor[]? knownColors;
         private int colorIndex;
 
+        private TangerineLightOverlay? _lightOverlay;
+#endif
         public TZIPForm()
         {
             InitializeComponent();
         }
-        private TangerineLightOverlay? _lightOverlay;
         private void TZIPForm_Load(object sender, EventArgs e)
         {
             DarkTheme.Apply(this);
+            Text = LanguageManager.Get("ApplicationTitle");
+#if ENABLE_LIGHT
             this.WindowState= FormWindowState.Maximized;
             _lightOverlay = new TangerineLightOverlay(this);
             _lightOverlay.TargetFps = 12000;
@@ -75,6 +79,21 @@ namespace TANGERINE_ZIP
                 colorIndex = (colorIndex + 1) % knownColors.Length;
             };
             colorTimer.Start();
+#else
+            PictureBox logo = new()
+            {
+                BackColor = Color.Black,
+                Dock = DockStyle.Fill,
+                Image = TZIPResource.Kiro,
+                SizeMode = PictureBoxSizeMode.Zoom
+            };
+            Controls.Add(logo);
+#endif
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }

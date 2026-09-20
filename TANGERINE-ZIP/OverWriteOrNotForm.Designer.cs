@@ -76,7 +76,9 @@ namespace TANGERINE_ZIP
             listBox1.Name = "listBox1";
             listBox1.Size = new Size(744, 433);
             listBox1.TabIndex = 1;
+#if ENABLE_LIGHT
             listBox1.ViewChanged += FileBox_ViewChanged;
+#endif
             // 
             // pictureBox1
             // 

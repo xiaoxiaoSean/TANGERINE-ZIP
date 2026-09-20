@@ -10,10 +10,10 @@
 
 | 格式 | 列出 | 解压 | 创建 | 实现 |
 |---|---:|---:|---:|---|
-| ZIP | 是 | 是 | 是 | SharpCompress / Deflate |
-| RAR | 是 | 是 | 否 | SharpCompress；RAR 写入受专有许可限制 |
+| ZIP | 是 | 是 | 是 | .NET ZipArchive / Deflate |
+| RAR | 是 | 是 | 条件支持 | SharpCompress 解压；官方 `rar.exe` 创建 |
 | 7Z | 是 | 是 | 是 | SharpCompress / LZMA2 |
-| TAR | 是 | 是 | 是 | SharpCompress |
+| TAR | 是 | 是 | 是 | .NET System.Formats.Tar / PAX |
 | GZ | 是 | 是 | 是 | .NET GZipStream |
 | BZ2 | 是 | 是 | 是 | SharpCompress BZip2Stream |
 | XZ | 是 | 是 | 是 | Joveler.Compression.XZ / liblzma |
@@ -22,7 +22,7 @@
 | ISO | 是 | 是 | 是 | DiscUtils ISO9660/Joliet |
 | WIM | 是 | 是 | 是 | ManagedWimLib / wimlib |
 
-RAR 是唯一无法创建的格式。RAR 压缩算法和写入格式为专有技术，没有可合法嵌入并免安装运行的第三方 NuGet 写入器。程序会以 `ARCSV0003` 明确提示，不会生成伪 RAR 文件。RAR 4/5 解压仍受支持。
+RAR 创建依赖用户按 WinRAR 官方许可取得的 `rar.exe`（官方说明与下载：https://www.rarlab.com/rardos.htm、https://www.rarlab.com/download.htm）。程序启动时以及每次执行 RAR 创建前都会检查应用程序目录；缺失时显示 `RARTL0001`，但不会阻止其他功能。如果应用程序目录存在无后缀标记文件 `DONT_CHECK_RAR_EXE_AT_START`，程序会跳过启动检查和启动警告；实际执行 RAR 创建时仍会强制重新检查。外部进程使用 `ArgumentList` 传参、异步读取输出并解析百分比，取消时终止进程。`rar.exe` 不会被本项目打包或重新分发。
 
 GZ、BZ2、XZ、LZ4、ZSTD 是单文件压缩流，因此创建时只能选择一个普通文件。ZIP、7Z、TAR、ISO、WIM 服务层支持多文件；ISO 使用 Joliet 文件名，WIM 使用 LZMS。
 
@@ -35,6 +35,8 @@ GZ、BZ2、XZ、LZ4、ZSTD 是单文件压缩流，因此创建时只能选择�
 - `CreateAsync`：统一创建归档；先写同目录临时文件，成功后原子替换最终文件，失败时清理临时文件。
 - `GetSafeTargetPath`：对每个输出路径执行规范化和根目录边界检查，阻止 Zip Slip/path traversal。
 - WIM 先解至独立临时目录，再按“全部覆盖/全部跳过”策略合并，保证覆盖语义一致。
+- `AnalyzeNestedTarAsync` 完全按文件内容检查内层 TAR。单个内层 TAR 会在打开时自动展示其内容；多个 TAR 保留为可选择条目，一键解压到“外层压缩包名/内层 TAR 名”目录。
+- ZIP 写入显式设置 UTF-8 标志，7Z 使用 Unicode 条目名，TAR 使用 PAX Unicode 路径，避免文件名按系统 ANSI 代码页解释。
 
 ### 进度
 
@@ -63,6 +65,8 @@ GZ、BZ2、XZ、LZ4、ZSTD 是单文件压缩流，因此创建时只能选择�
 
 窗体运行时调用 `DarkTheme.Apply`，递归设置黑色背景和浅色前景，也处理菜单及下拉项。新增的所有用户可见文字均从 `LanguageManager` 获取。
 
+光效由 MSBuild 属性 `ENABLE_LIGHT` 控制。默认值为 `false`，因此默认发布配置不会定义同名预处理符号，也不会实例化光效窗口或计时器。需要光效时使用 `-p:ENABLE_LIGHT=true`。
+
 ## 5. StageCode 规范
 
 StageCode 固定为 9 个字符：5 字符 `stageHead` + 4 字符 `stageDetail`。
@@ -72,6 +76,8 @@ StageCode 固定为 9 个字符：5 字符 `stageHead` + 4 字符 `stageDetail`�
 | `F0001` | 主窗体和 UI 工作流 |
 | `F0002` | 文件选择窗体 |
 | `ARCSV` | 归档服务 |
+| `NESTR` | TAR 嵌套分析与解压 |
+| `RARTL` | 外部 RAR 工具 |
 
 展示统一调用：
 
@@ -83,6 +89,18 @@ MessageBox.Show(
 ```
 
 服务层使用 `StageException` 保留原始异常作为 `InnerException`，UI 优先显示其 StageCode。
+
+### 本次修复：Unicode、进度与强制停止
+
+- ZIP 改用 .NET `ZipArchive` 并显式传入 `Encoding.UTF8`，确保本地头和中央目录同时设置 EFS（UTF-8）标志。TAR 改用 .NET `System.Formats.Tar` 的 PAX 格式，使用扩展头保存 Unicode 路径，避免传统 TAR 无字符集声明时被 Windows 工具按本地代码页解释。此修复仅作用于新建压缩包；已有乱码压缩包应从原始文件重新创建。
+- 回归检查同时验证 ZIP 本地头的 `0x0800` 标志和独立读取器结果，避免自家读取器强制 UTF-8 掩盖兼容性问题。ZIP、7Z、TAR、ISO、WIM 和五种流格式测试包含中文、日文、韩文、阿拉伯文、俄文、重音字符及 Emoji，并逐字节核对解压内容。流格式不保存原始文件名，测试以压缩包名称推导输出名称。
+- 每个 UI 任务具有独立身份。完成或停止后，队列中的旧进度消息不再更新状态。RAR 通过字符流解析含退格符的百分比，不依赖换行；实际退出成功并替换输出前，进度最高为 99%。
+- `ArchiveWorker` 使用当前单文件 EXE 的 `--archive-worker` 模式执行归档操作，通过 UTF-8 JSON 管道交换请求、进度、结果和阶段码。无需额外工作程序文件。工作进程继承当前 UI 语言，进度通知限频以减少界面队列积压。
+- 执行期间顶部菜单显示“停止工作”；默认选择“否”。选择“是”后终止整个工作进程树（含 `rar.exe`），等待句柄释放后再恢复菜单。关闭任务中的主窗口也先走风险确认流程，完成停止后可再次关闭。
+- 强制停止无法执行被终止进程的 `finally`，可能留下同目录的随机临时压缩包、系统临时目录中的暂存文件或不完整解压文件。已经覆写的数据不能自动恢复，确认提示明确说明这些后果。不会自动删除或回滚目标解压目录。
+- 新阶段码：`F00010008`（停止确认/请求失败）、`WORKR0001`（工作进程内部失败）、`WORKR0002`（工作进程未正常完成）、`WORKR0003`（停止失败）、`WORKR0004`（启动或管道失败）、`WORKR0005`（异常后的进程清理失败）、`RARTL0006`（RAR 输出与输入冲突）。
+
+定向测试另外覆盖工作进程 Unicode 通信、压缩中强制停止，以及存在官方 `rar.exe` 时的 RAR 往返与进度单调性。RAR 测试需要将工具置于测试可执行文件目录。
 
 当前服务阶段明细：
 
@@ -97,6 +115,15 @@ MessageBox.Show(
 | `ARCSV0007` | 单文件流输入不是普通文件 |
 | `ARCSV0008` | 检测到不安全输出路径 |
 | `ARCSV0009` | 输出文件与输入文件冲突 |
+| `NESTR0001` | 分析内层 TAR 失败 |
+| `NESTR0002` | 列出内层 TAR 失败 |
+| `NESTR0003` | 一键解压内层 TAR 失败 |
+| `NESTR0004` | 内层 TAR 条目不存在 |
+| `RARTL0001` | 找不到 `rar.exe` |
+| `RARTL0002` | 无法启动 `rar.exe` |
+| `RARTL0003` | `rar.exe` 返回非零退出代码 |
+| `RARTL0004` | RAR 创建发生其他异常 |
+| `RARTL0005` | 取消时无法终止 RAR 进程 |
 
 ## 6. 构建、测试与发布
 
@@ -107,16 +134,19 @@ dotnet restore TANGERINE-ZIP.slnx --configfile NuGet.Config
 dotnet build TANGERINE-ZIP.slnx -c Release --no-restore
 dotnet run --project TANGERINE-ZIP.SmokeTests/TANGERINE-ZIP.SmokeTests.csproj -c Debug --no-restore
 dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -o artifacts/single-file
+dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -p:ENABLE_LIGHT=true -o artifacts/single-file-light
 ```
 
-冒烟测试会对 ZIP、7Z、TAR、GZ、BZ2、XZ、LZ4、ZSTD、ISO、WIM 分别执行创建、格式检测、列出、解压和内容比对，并验证 RAR 创建保护。测试数据位于随机临时目录，结束后只删除该次测试创建的目录。
+当前测试是短时定向测试，使用 `testfile/1/Linux教程.pdf` 验证 ZIP 中文条目名、无扩展名 BZ2 中的单 TAR 内容检测/自动展开，以及 ZIP 中两个 TAR 的选择和分目录一键解压。测试数据位于随机临时目录，结束后只删除该次测试创建的目录。
 
-发布结果的可运行文件为 `artifacts/single-file/TANGERINE-ZIP.exe`。PDB 仅用于调试，可不随软件分发；程序运行不依赖旁置 DLL 或已安装的 .NET Runtime。
+本次发布结果的可运行文件为 `artifacts/single-file-corrected-v2/TANGERINE-ZIP.exe`。PDB 仅用于调试，可不随软件分发；核心功能不依赖旁置 DLL 或已安装的 .NET Runtime。只有创建 RAR 时需要应用程序目录中的可选 `rar.exe`。
 
 ## 7. 维护注意事项
 
-- 增加格式时，应同时更新 `FileDetector`、`ArchiveCapabilities`、`ArchiveService`、保存/打开筛选器、六份资源和冒烟测试。
-- 不要把扩展名当成唯一安全依据；当前优先检查签名，仅对没有强制签名的格式作扩展名回退。
+- 压缩源文件选择使用复用的 Windows 原生 `OpenFileDialog`。该对话框使用经典 Win32 模式，避免加载 Explorer Shell 扩展和不可用的最近位置，并以本地用户目录作为首次位置。点击菜单只显示文件对话框；归档工作进程在选择输出格式并确认保存后才启动，`rar.exe` 仅在输出格式为 RAR 时启动。
+
+- 增加格式时，应同时更新 `FileDetector`、`ArchiveCapabilities`、`ArchiveService`、保存/打开筛选器、六份资源和定向测试。
+- 文件类型判断只能进入 `FileDetector`，且只允许使用内容签名或 TAR 头校验。保存对话框的格式选择通过 `FileDetector.GetTypeFromCreateFilterIndex` 映射，不根据用户输入的后缀推断类型。
 - 不要关闭路径边界校验，也不要直接调用库提供的“一键解压到目录”绕过覆盖策略。
 - Native NuGet 版本变化后必须重新执行单文件发布和 XZ/WIM 往返测试。
 - `PublishTrimmed` 保持为 `false`，以避免 WinForms、资源管理器和反射/PInvoke 库被错误裁剪。

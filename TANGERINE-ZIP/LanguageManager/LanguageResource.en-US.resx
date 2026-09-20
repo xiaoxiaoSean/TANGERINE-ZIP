@@ -277,7 +277,7 @@ Stage Code is :
   <data name="ArchiveDialogFilter" xml:space="preserve"><value>Supported files|*.zip;*.rar;*.7z;*.tar;*.gz;*.bz2;*.xz;*.lz4;*.zst;*.zstd;*.iso;*.wim|All files|*.*</value></data>
   <data name="AllFilesFilter" xml:space="preserve"><value>All files|*.*</value></data>
   <data name="SelectOutputArchive" xml:space="preserve"><value>Select output archive</value></data>
-  <data name="CreateArchiveFilter" xml:space="preserve"><value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR (read-only)|*.rar</value></data>
+  <data name="CreateArchiveFilter" xml:space="preserve"><value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR|*.rar</value></data>
   <data name="CompressingText" xml:space="preserve"><value>Compressing</value></data>
   <data name="CompressionCompleted" xml:space="preserve"><value>Compression completed.</value></data>
   <data name="NoSelectedEntries" xml:space="preserve"><value>Select at least one archive entry.</value></data>
@@ -303,4 +303,19 @@ Stage Code is :
   <data name="Format_Iso" xml:space="preserve"><value>ISO</value></data>
   <data name="Format_Wim" xml:space="preserve"><value>WIM</value></data>
   <data name="OutputConflictsInput" xml:space="preserve"><value>The output file cannot also be an input file.</value></data>
+  <data name="ExtractNestedTar" xml:space="preserve"><value>Extract nested TAR in one step</value></data>
+  <data name="ExtractingNestedTar" xml:space="preserve"><value>Extracting nested TAR</value></data>
+  <data name="SelectNestedTarFiles" xml:space="preserve"><value>Select one or more TAR files in the file list first.</value></data>
+  <data name="NestedTarNotFound" xml:space="preserve"><value>The selected nested TAR file no longer exists in the archive.</value></data>
+  <data name="RarToolMissing" xml:space="preserve"><value>RAR creation is unavailable because rar.exe was not found beside the application. Install the official WinRAR command-line tool according to its license and place rar.exe in the application directory. Other formats remain available.</value></data>
+  <data name="RarUnavailableTitle" xml:space="preserve"><value>RAR creation unavailable</value></data>
+  <data name="RarToolStartFailed" xml:space="preserve"><value>The external RAR tool could not be started.</value></data>
+  <data name="RarToolExitCode" xml:space="preserve"><value>The external RAR tool failed with exit code {0}.</value></data>
+  <data name="RarCancelFailed" xml:space="preserve"><value>The RAR operation could not be stopped. The external process may still be running.</value></data>
+  <data name="StopWork" xml:space="preserve"><value>Stop work</value></data>
+  <data name="StopWorkRisk" xml:space="preserve"><value>Force stopping may leave incomplete extracted files or temporary archives. Files already overwritten cannot be restored automatically. Stop the current task now?</value></data>
+  <data name="StoppingWork" xml:space="preserve"><value>Stopping work…</value></data>
+  <data name="WorkerFailed" xml:space="preserve"><value>The archive worker did not complete successfully.</value></data>
+  <data name="LoadingFiles" xml:space="preserve"><value>Loading files…</value></data>
+  <data name="SelectAtLeastOneFile" xml:space="preserve"><value>Please select at least one file.</value></data>
 </root>

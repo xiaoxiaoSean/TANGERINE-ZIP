@@ -88,16 +88,25 @@ namespace TANGERINE_ZIP.Tools
         }
         public static FileType DetectFileType(string path)
         {
-            const int BufferSize = 36864;
-
-            byte[] buffer = new byte[BufferSize];
-            if (path==string.Empty)
+            if (string.IsNullOrWhiteSpace(path))
             {
-                return FileType.Unknown;//No file,cannot detect
+                return FileType.Unknown;
             }
-            using FileStream fs = new(path, FileMode.Open, FileAccess.Read);
 
-            int read = fs.Read(buffer, 0, BufferSize);
+            using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return DetectFileType(stream);
+        }
+
+        public static FileType DetectFileType(Stream stream)
+        {
+            const int BufferSize = 36864;
+            byte[] buffer = new byte[BufferSize];
+            long originalPosition = stream.CanSeek ? stream.Position : 0;
+            int read = stream.Read(buffer, 0, BufferSize);
+            if (stream.CanSeek)
+            {
+                stream.Position = originalPosition;
+            }
 
             ReadOnlySpan<byte> h = buffer.AsSpan(0, read);
 
@@ -157,8 +166,8 @@ namespace TANGERINE_ZIP.Tools
                 0x04, 0x22, 0x4D, 0x18))
                 return FileType.Lz4;
 
-            // TAR (POSIX ustar signature at offset 257)
-            if (h.Length >= 262 && MatchAscii(h.Slice(257), "ustar"))
+            // TAR is accepted by its POSIX signature or by a valid header checksum.
+            if ((h.Length >= 262 && MatchAscii(h.Slice(257), "ustar")) || HasValidTarHeader(h))
                 return FileType.Tar;
 
 
@@ -360,28 +369,61 @@ namespace TANGERINE_ZIP.Tools
 
 
 
-            // Some valid containers (notably old TAR variants) have no mandatory magic bytes.
-            return DetectFileTypeFromExtension(path);
+            return FileType.Unknown;
         }
 
-        public static FileType DetectFileTypeFromExtension(string path)
+        public static FileType GetTypeFromCreateFilterIndex(int filterIndex)
         {
-            string extension = Path.GetExtension(path).ToLowerInvariant();
-            return extension switch
+            return filterIndex switch
             {
-                ".zip" => FileType.Zip,
-                ".rar" => FileType.Rar,
-                ".7z" => FileType.SevenZip,
-                ".tar" => FileType.Tar,
-                ".gz" => FileType.GZip,
-                ".bz2" => FileType.BZip2,
-                ".xz" => FileType.Xz,
-                ".lz4" => FileType.Lz4,
-                ".zst" or ".zstd" => FileType.Zstd,
-                ".iso" => FileType.Iso,
-                ".wim" => FileType.Wim,
+                1 => FileType.Zip,
+                2 => FileType.SevenZip,
+                3 => FileType.Tar,
+                4 => FileType.GZip,
+                5 => FileType.BZip2,
+                6 => FileType.Xz,
+                7 => FileType.Lz4,
+                8 => FileType.Zstd,
+                9 => FileType.Iso,
+                10 => FileType.Wim,
+                11 => FileType.Rar,
                 _ => FileType.Unknown
             };
+        }
+
+        private static bool HasValidTarHeader(ReadOnlySpan<byte> data)
+        {
+            const int HeaderSize = 512;
+            const int ChecksumOffset = 148;
+            const int ChecksumLength = 8;
+            if (data.Length < HeaderSize || data[..HeaderSize].IndexOfAnyExcept((byte)0) < 0)
+            {
+                return false;
+            }
+
+            int storedChecksum = 0;
+            for (int index = ChecksumOffset; index < ChecksumOffset + ChecksumLength; index++)
+            {
+                byte value = data[index];
+                if (value is 0 or (byte)' ')
+                {
+                    continue;
+                }
+                if (value < '0' || value > '7')
+                {
+                    return false;
+                }
+                storedChecksum = (storedChecksum * 8) + value - '0';
+            }
+
+            int calculatedChecksum = 0;
+            for (int index = 0; index < HeaderSize; index++)
+            {
+                calculatedChecksum += index >= ChecksumOffset && index < ChecksumOffset + ChecksumLength
+                    ? (byte)' '
+                    : data[index];
+            }
+            return storedChecksum == calculatedChecksum;
         }
 
 
