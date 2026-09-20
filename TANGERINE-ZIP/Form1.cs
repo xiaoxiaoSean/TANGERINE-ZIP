@@ -63,12 +63,12 @@ public partial class Form1 : Form
 #endif
             ConfigureEntryColors();
             SetArchiveControls(false);
-            if (_rarToolService.ShouldCheckAtStartup && !_rarToolService.IsAvailable)
+            /*if (_rarToolService.ShouldCheckAtStartup && !_rarToolService.IsAvailable)
             {
                 MessageBox.Show(this,
                     MessageTipGenerator.GenerateTip("RARTL0001", LanguageManager.Get("RarToolMissing")),
                     LanguageManager.Get("RarUnavailableTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning); //RARTL0001
-            }
+            }*///function:check if rar.exe is available,about: DONT_CHECK_RAR_EXE_AT_START file
         }
         catch (Exception exception)
         {
