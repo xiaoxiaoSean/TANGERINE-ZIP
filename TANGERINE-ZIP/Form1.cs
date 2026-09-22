@@ -25,6 +25,7 @@ public partial class Form1 : Form
     private CancellationTokenSource? _operationCancellation;
     private NestedTarInfo _nestedTarInfo = NestedTarInfo.None;
     private string _archivePath = string.Empty;
+    private string? _archivePassword;
     private string _archiveCurrentDirectory = string.Empty;
     private bool _isBusy;
 
@@ -154,34 +155,50 @@ public partial class Form1 : Form
     private async Task OpenArchiveAsync(string archivePath)
     {
         if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
-        try
+        string? password = null;
+        string? passwordError = null;
+        bool passwordProtected = PasswordArchiveService.IsProtected(archivePath);
+        while (true)
         {
-            await RunOperationAsync(LanguageManager.Get("OpeningFile"), async (progress, token) =>
+            if (passwordProtected && !ArchivePasswordForm.TryGetExtractionPassword(
+                    this, Path.GetFileName(archivePath), passwordError, out password)) return;
+            try
             {
-                FileDetector.FileType type = FileDetector.DetectFileType(archivePath);
-                if (!ArchiveCapabilities.CanOpen(type))
-                    throw new StageException("F00010002", LanguageManager.Get("NotACompressedFile")); //F00010002
-                NestedTarInfo nestedTarInfo = await _archiveService.AnalyzeNestedTarAsync(archivePath, token);
-                IReadOnlyList<ArchiveEntryInfo> entries = nestedTarInfo.FlattenAutomatically
-                    ? await _archiveService.ListNestedTarAsync(archivePath, nestedTarInfo.TarEntryKeys[0], token)
-                    : await _archiveService.ListAsync(archivePath, token);
-                _archivePath = archivePath;
-                _nestedTarInfo = nestedTarInfo;
-                _archiveCurrentDirectory = string.Empty;
-                _archiveEntries.Clear();
-                _archiveEntries.AddRange(entries);
-                mainTab.Text = LanguageManager.Get($"Format_{type}") + " " + LanguageManager.Get(type is FileDetector.FileType.Iso or FileDetector.FileType.Wim ? "ImageFile" : "CompressFile");
-                RefreshFileBox();
-                SetArchiveControls(true);
-            });
-            statusProgressBar.Value = 100;
-            RefreshCurrentDirectoryStatus();
-        }
-        catch (OperationCanceledException) { statusLabel.Text = LanguageManager.Get("OperationCancelled"); }
-        catch (Exception exception)
-        {
-            UnloadArchive();
-            ShowException("F00010003", exception); //F00010003
+                await RunOperationAsync(LanguageManager.Get("OpeningFile"), async (progress, token) =>
+                {
+                    FileDetector.FileType type = FileDetector.DetectFileType(archivePath);
+                    if (!ArchiveCapabilities.CanOpen(type))
+                        throw new StageException("F00010002", LanguageManager.Get("NotACompressedFile")); //F00010002
+                    NestedTarInfo nestedTarInfo = await _archiveService.AnalyzeNestedTarAsync(archivePath, token, password, progress);
+                    IReadOnlyList<ArchiveEntryInfo> entries = nestedTarInfo.FlattenAutomatically
+                        ? await _archiveService.ListNestedTarAsync(archivePath, nestedTarInfo.TarEntryKeys[0], token, password)
+                        : await _archiveService.ListAsync(archivePath, token, password);
+                    _archivePath = archivePath;
+                    _archivePassword = password;
+                    _nestedTarInfo = nestedTarInfo;
+                    _archiveCurrentDirectory = string.Empty;
+                    _archiveEntries.Clear();
+                    _archiveEntries.AddRange(entries);
+                    mainTab.Text = LanguageManager.Get($"Format_{type}") + " " + LanguageManager.Get(type is FileDetector.FileType.Iso or FileDetector.FileType.Wim ? "ImageFile" : "CompressFile");
+                    RefreshFileBox();
+                    SetArchiveControls(true);
+                });
+                statusProgressBar.Value = 100;
+                RefreshCurrentDirectoryStatus();
+                return;
+            }
+            catch (OperationCanceledException) { statusLabel.Text = LanguageManager.Get("OperationCancelled"); return; }
+            catch (StageException exception) when (exception.StageCode is "PWDAR0001" or "PWDAR0002")
+            {
+                passwordProtected = true;
+                passwordError = MessageTipGenerator.GenerateTip(exception.StageCode, exception.Message); //PWDAR0002
+            }
+            catch (Exception exception)
+            {
+                UnloadArchive();
+                ShowException("F00010003", exception); //F00010003
+                return;
+            }
         }
     }
 
@@ -189,11 +206,9 @@ public partial class Form1 : Form
     {
         try
         {
-            if (MessageBox.Show(this, LanguageManager.Get("ContextMenuCreateWarning"), LanguageManager.Get("ContextMenu"),
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             string executablePath = Environment.ProcessPath ?? throw new StageException("F00010009", LanguageManager.Get("ContextExecutableMissing")); //F00010009
-            ContextMenuRegistrationService.Create(executablePath);
-            MessageBox.Show(this, LanguageManager.Get("ContextMenuCreated"), LanguageManager.Get("ContextMenu"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using ContextMenuSetupWizardForm wizard = new(ContextMenuSetupMode.Create, executablePath);
+            wizard.ShowDialog(this);
         }
         catch (Exception exception) { ShowException("F00010009", exception); } //F00010009
     }
@@ -202,8 +217,9 @@ public partial class Form1 : Form
     {
         try
         {
-            ContextMenuRegistrationService.Delete();
-            MessageBox.Show(this, LanguageManager.Get("ContextMenuDeleted"), LanguageManager.Get("ContextMenu"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            string executablePath = Environment.ProcessPath ?? throw new StageException("F00010010", LanguageManager.Get("ContextExecutableMissing")); //F00010010
+            using ContextMenuSetupWizardForm wizard = new(ContextMenuSetupMode.Delete, executablePath);
+            wizard.ShowDialog(this);
         }
         catch (Exception exception) { ShowException("F00010010", exception); } //F00010010
     }
@@ -272,8 +288,8 @@ public partial class Form1 : Form
         {
             await RunOperationAsync(LanguageManager.Get("ExtractingText"), (progress, token) =>
                 _nestedTarInfo.FlattenAutomatically
-                    ? _archiveService.ExtractNestedTarsAsync(_archivePath, _nestedTarInfo.TarEntryKeys, destination, selectedEntries, false, policy, progress, token)
-                    : _archiveService.ExtractAsync(_archivePath, destination, selectedEntries, policy, progress, token));
+                    ? _archiveService.ExtractNestedTarsAsync(_archivePath, _nestedTarInfo.TarEntryKeys, destination, selectedEntries, false, policy, progress, token, _archivePassword)
+                    : _archiveService.ExtractAsync(_archivePath, destination, selectedEntries, policy, progress, token, _archivePassword));
             statusProgressBar.Value = 100;
             statusLabel.Text = LanguageManager.Get("ExtractingCompleted");
         }
@@ -294,10 +310,11 @@ public partial class Form1 : Form
         mainSaveFileDialog.OverwritePrompt = true;
         if (mainSaveFileDialog.ShowDialog(this) != DialogResult.OK) return;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(mainSaveFileDialog.FilterIndex);
+        if (!ArchivePasswordForm.TryGetCreationPassword(this, Path.GetFileName(mainSaveFileDialog.FileName), out string? password)) return;
         try
         {
             await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) =>
-                _archiveService.CreateAsync(sourcePaths, mainSaveFileDialog.FileName, type, progress, token));
+                _archiveService.CreateAsync(sourcePaths, mainSaveFileDialog.FileName, type, progress, token, password));
             statusProgressBar.Value = 100;
             statusLabel.Text = LanguageManager.Get("CompressionCompleted");
         }
@@ -338,7 +355,7 @@ public partial class Form1 : Form
         try
         {
             await RunOperationAsync(LanguageManager.Get("ExtractingNestedTar"), (progress, token) =>
-                _archiveService.ExtractNestedTarsAsync(_archivePath, tarEntries, destination, null, true, policy, progress, token));
+                _archiveService.ExtractNestedTarsAsync(_archivePath, tarEntries, destination, null, true, policy, progress, token, _archivePassword));
             statusProgressBar.Value = 100;
             statusLabel.Text = LanguageManager.Get("ExtractingCompleted");
         }
@@ -412,7 +429,7 @@ public partial class Form1 : Form
 
     private void UnloadArchive()
     {
-        _archivePath = string.Empty; _archiveCurrentDirectory = string.Empty; _nestedTarInfo = NestedTarInfo.None; _archiveEntries.Clear(); fileBox.Items.Clear();
+        _archivePath = string.Empty; _archivePassword = null; _archiveCurrentDirectory = string.Empty; _nestedTarInfo = NestedTarInfo.None; _archiveEntries.Clear(); fileBox.Items.Clear();
         statusProgressBar.Value = 0; statusLabel.Text = LanguageManager.Get("readytext"); mainTab.Text = LanguageManager.Get("mainTabText"); SetArchiveControls(false);
     }
 

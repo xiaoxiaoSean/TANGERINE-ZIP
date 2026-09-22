@@ -11,7 +11,7 @@ namespace TANGERINE_ZIP.Services;
 internal sealed record WorkerRequest(string Operation, string Path, string? Destination = null,
     string[]? Sources = null, FileDetector.FileType Type = FileDetector.FileType.Unknown,
     string[]? TarKeys = null, string[]? Selection = null, bool Subfolders = false,
-    OverwritePolicy Policy = OverwritePolicy.OverwriteAll, string Culture = "en-US");
+    OverwritePolicy Policy = OverwritePolicy.OverwriteAll, string Culture = "en-US", string? Password = null);
 
 internal sealed record WorkerMessage(ArchiveProgress? Progress = null, ArchiveEntryInfo[]? Entries = null,
     NestedTarInfo? Nested = null, bool Completed = false, string? StageCode = null, string? Error = null);
@@ -48,30 +48,39 @@ internal static class ArchiveWorker
                 }
             });
             WorkerMessage result = new(Completed: true);
-            switch (request.Operation)
+            if (request.Operation == "create")
             {
-                case "analyze":
-                    result = result with { Nested = await service.AnalyzeNestedTarAsync(request.Path, CancellationToken.None) };
-                    break;
-                case "list":
-                    result = result with { Entries = (await service.ListAsync(request.Path, CancellationToken.None)).ToArray() };
-                    break;
-                case "list-tar":
-                    result = result with { Entries = (await service.ListNestedTarAsync(request.Path, request.TarKeys![0], CancellationToken.None)).ToArray() };
-                    break;
-                case "extract":
-                    await service.ExtractAsync(request.Path, request.Destination!, request.Selection, request.Policy, progress, CancellationToken.None);
-                    break;
-                case "extract-tar":
-                    await service.ExtractNestedTarsAsync(request.Path, request.TarKeys!, request.Destination!, request.Selection, request.Subfolders, request.Policy, progress, CancellationToken.None);
-                    break;
-                case "create":
-                    if (request.Type == FileDetector.FileType.Rar)
-                        await new RarToolService().CreateAsync(request.Sources!, request.Path, progress, CancellationToken.None);
-                    else
-                        await service.CreateAsync(request.Sources!, request.Path, request.Type, progress, CancellationToken.None);
-                    break;
-                default: throw new InvalidDataException();
+                await CreateAsync(request, service, progress);
+            }
+            else
+            {
+                bool protectedEnvelope = PasswordArchiveService.IsProtected(request.Path);
+                InlineProgress<ArchiveProgress> decryptProgress = new(item =>
+                    progress.Report(new ArchiveProgress(item.Percentage / 5, item.EntryKey)));
+                await using MaterializedArchive materialized = await PasswordArchiveService.OpenAsync(
+                    request.Path, request.Password, decryptProgress, CancellationToken.None);
+                InlineProgress<ArchiveProgress> archiveProgress = new(item =>
+                    progress.Report(new ArchiveProgress((protectedEnvelope ? 20 : 0) +
+                        item.Percentage * (protectedEnvelope ? 80 : 100) / 100, item.EntryKey)));
+                switch (request.Operation)
+                {
+                    case "analyze":
+                        result = result with { Nested = await service.AnalyzeNestedTarAsync(materialized.Path, CancellationToken.None, request.Password, archiveProgress) };
+                        break;
+                    case "list":
+                        result = result with { Entries = (await service.ListAsync(materialized.Path, CancellationToken.None, request.Password)).ToArray() };
+                        break;
+                    case "list-tar":
+                        result = result with { Entries = (await service.ListNestedTarAsync(materialized.Path, request.TarKeys![0], CancellationToken.None, request.Password)).ToArray() };
+                        break;
+                    case "extract":
+                        await service.ExtractAsync(materialized.Path, request.Destination!, request.Selection, request.Policy, archiveProgress, CancellationToken.None, request.Password);
+                        break;
+                    case "extract-tar":
+                        await service.ExtractNestedTarsAsync(materialized.Path, request.TarKeys!, request.Destination!, request.Selection, request.Subfolders, request.Policy, archiveProgress, CancellationToken.None, request.Password);
+                        break;
+                    default: throw new InvalidDataException();
+                }
             }
             Send(result);
             return 0;
@@ -80,6 +89,40 @@ internal static class ArchiveWorker
         {
             Send(new(StageCode: exception is StageException stage ? stage.StageCode : "WORKR0001", Error: exception.Message)); //WORKR0001
             return 1;
+        }
+    }
+
+    private static async Task CreateAsync(WorkerRequest request, ArchiveService service, IProgress<ArchiveProgress> progress)
+    {
+        if (string.IsNullOrEmpty(request.Password))
+        {
+            if (request.Type == FileDetector.FileType.Rar)
+                await new RarToolService().CreateAsync(request.Sources!, request.Path, progress, CancellationToken.None);
+            else
+                await service.CreateAsync(request.Sources!, request.Path, request.Type, progress, CancellationToken.None);
+            return;
+        }
+
+        string temporaryDirectory = Path.Combine(Path.GetTempPath(), "TangerineZipPasswordCreate", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryDirectory);
+        string unprotectedArchive = Path.Combine(temporaryDirectory, Path.GetFileName(request.Path));
+        try
+        {
+            InlineProgress<ArchiveProgress> createProgress = new(item =>
+                progress.Report(new ArchiveProgress(item.Percentage * 80 / 100, item.EntryKey)));
+            if (request.Type == FileDetector.FileType.Rar)
+                await new RarToolService().CreateAsync(request.Sources!, unprotectedArchive, createProgress, CancellationToken.None);
+            else
+                await service.CreateAsync(request.Sources!, unprotectedArchive, request.Type, createProgress, CancellationToken.None);
+            InlineProgress<ArchiveProgress> encryptionProgress = new(item =>
+                progress.Report(new ArchiveProgress(80 + item.Percentage * 20 / 100, item.EntryKey)));
+            await PasswordArchiveService.EncryptAsync(unprotectedArchive, request.Path, request.Type, request.Password,
+                encryptionProgress, CancellationToken.None);
+        }
+        finally
+        {
+            try { if (Directory.Exists(temporaryDirectory)) Directory.Delete(temporaryDirectory, true); }
+            catch (Exception exception) { throw new StageException("PWDAR0004", LanguageManager.Get("ArchivePasswordCleanupFailed"), exception); } //PWDAR0004
         }
     }
 }
@@ -161,16 +204,17 @@ internal sealed class ArchiveWorkerClient
         }
     }
 
-    public async Task<NestedTarInfo> AnalyzeNestedTarAsync(string path, CancellationToken token) =>
-        (await RunAsync(new("analyze", path), null, token)).Nested!;
-    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string path, CancellationToken token) =>
-        (await RunAsync(new("list", path), null, token)).Entries!;
-    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListNestedTarAsync(string path, string key, CancellationToken token) =>
-        (await RunAsync(new("list-tar", path, TarKeys: [key]), null, token)).Entries!;
-    public Task ExtractAsync(string path, string destination, IReadOnlyCollection<string>? selection, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token) =>
-        RunAsync(new("extract", path, destination, Selection: selection?.ToArray(), Policy: policy), progress, token);
-    public Task ExtractNestedTarsAsync(string path, IReadOnlyList<string> keys, string destination, IReadOnlyCollection<string>? selection, bool subfolders, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token) =>
-        RunAsync(new("extract-tar", path, destination, TarKeys: keys.ToArray(), Selection: selection?.ToArray(), Subfolders: subfolders, Policy: policy), progress, token);
-    public Task CreateAsync(IReadOnlyList<string> sources, string path, FileDetector.FileType type, IProgress<ArchiveProgress>? progress, CancellationToken token) =>
-        RunAsync(new("create", path, Sources: sources.ToArray(), Type: type), progress, token);
+    public async Task<NestedTarInfo> AnalyzeNestedTarAsync(string path, CancellationToken token, string? password = null,
+        IProgress<ArchiveProgress>? progress = null) =>
+        (await RunAsync(new("analyze", path, Password: password), progress, token)).Nested!;
+    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string path, CancellationToken token, string? password = null) =>
+        (await RunAsync(new("list", path, Password: password), null, token)).Entries!;
+    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListNestedTarAsync(string path, string key, CancellationToken token, string? password = null) =>
+        (await RunAsync(new("list-tar", path, TarKeys: [key], Password: password), null, token)).Entries!;
+    public Task ExtractAsync(string path, string destination, IReadOnlyCollection<string>? selection, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null) =>
+        RunAsync(new("extract", path, destination, Selection: selection?.ToArray(), Policy: policy, Password: password), progress, token);
+    public Task ExtractNestedTarsAsync(string path, IReadOnlyList<string> keys, string destination, IReadOnlyCollection<string>? selection, bool subfolders, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null) =>
+        RunAsync(new("extract-tar", path, destination, TarKeys: keys.ToArray(), Selection: selection?.ToArray(), Subfolders: subfolders, Policy: policy, Password: password), progress, token);
+    public Task CreateAsync(IReadOnlyList<string> sources, string path, FileDetector.FileType type, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null) =>
+        RunAsync(new("create", path, Sources: sources.ToArray(), Type: type, Password: password), progress, token);
 }

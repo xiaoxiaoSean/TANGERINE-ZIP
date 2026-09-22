@@ -30,12 +30,13 @@ internal sealed class ArchiveService
         UTF8 = Encoding.UTF8
     };
 
-    private static ReaderOptions UnicodeReaderOptions => new()
+    private static ReaderOptions CreateReaderOptions(string? password = null) => new()
     {
-        ArchiveEncoding = UnicodeArchiveEncoding
+        ArchiveEncoding = UnicodeArchiveEncoding,
+        Password = password
     };
 
-    public Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string archivePath, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string archivePath, CancellationToken cancellationToken, string? password = null)
     {
         return Task.Run<IReadOnlyList<ArchiveEntryInfo>>(() =>
         {
@@ -48,7 +49,7 @@ internal sealed class ArchiveService
                     FileDetector.FileType.Wim => ListWim(archivePath),
                     FileDetector.FileType.GZip or FileDetector.FileType.BZip2 or FileDetector.FileType.Lz4 or FileDetector.FileType.Xz or FileDetector.FileType.Zstd =>
                         [new ArchiveEntryInfo(GetRawOutputName(archivePath), false, new FileInfo(archivePath).Length)],
-                    _ => ListSharpCompress(archivePath, cancellationToken)
+                    _ => ListSharpCompress(archivePath, cancellationToken, password)
                 };
             }
             catch (StageException)
@@ -59,6 +60,10 @@ internal sealed class ArchiveService
             {
                 throw;
             }
+            catch (Exception exception) when (IsPasswordFailure(exception))
+            {
+                throw CreatePasswordException(password, exception);
+            }
             catch (Exception exception)
             {
                 throw new StageException("ARCSV0001", exception.Message, exception); //ARCSV0001
@@ -66,7 +71,8 @@ internal sealed class ArchiveService
         }, cancellationToken);
     }
 
-    public Task<NestedTarInfo> AnalyzeNestedTarAsync(string archivePath, CancellationToken cancellationToken)
+    public Task<NestedTarInfo> AnalyzeNestedTarAsync(string archivePath, CancellationToken cancellationToken,
+        string? password = null, IProgress<ArchiveProgress>? progress = null)
     {
         return Task.Run(() =>
         {
@@ -87,23 +93,37 @@ internal sealed class ArchiveService
                     return NestedTarInfo.None;
                 }
 
-                using IArchive archive = ArchiveFactory.OpenArchive(archivePath, UnicodeReaderOptions);
+                using IArchive archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password));
                 List<IArchiveEntry> fileEntries = archive.Entries.Where(entry => !entry.IsDirectory).ToList();
+                if (fileEntries.Any(entry => entry.IsEncrypted) && string.IsNullOrEmpty(password))
+                    throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
                 List<string> tarEntries = [];
+                long authenticationTotal = Math.Max(fileEntries.Where(entry => entry.IsEncrypted).Sum(entry => Math.Max(entry.Size, 1)), 1);
+                long authenticated = 0;
                 foreach (IArchiveEntry entry in fileEntries)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     using Stream stream = entry.OpenEntryStream();
-                    if (FileDetector.DetectFileType(stream) == FileDetector.FileType.Tar)
+                    FileDetector.FileType entryType = FileDetector.DetectFileType(stream);
+                    // Some encryption formats authenticate only at the end of the entry. Drain encrypted
+                    // entries during opening so an incorrect password is rejected before the UI stores it.
+                    if (entry.IsEncrypted)
+                        DrainForAuthentication(stream, entry.Key ?? string.Empty, authenticationTotal, ref authenticated, progress, cancellationToken);
+                    if (entryType == FileDetector.FileType.Tar)
                     {
                         tarEntries.Add(NormalizeEntry(entry.Key ?? string.Empty));
                     }
                 }
                 return new NestedTarInfo(tarEntries, fileEntries.Count == 1 && tarEntries.Count == 1);
             }
+            catch (StageException) { throw; }
             catch (OperationCanceledException)
             {
                 throw;
+            }
+            catch (Exception exception) when (IsPasswordFailure(exception))
+            {
+                throw CreatePasswordException(password, exception);
             }
             catch (Exception exception)
             {
@@ -112,12 +132,12 @@ internal sealed class ArchiveService
         }, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListNestedTarAsync(string archivePath, string tarEntryKey, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListNestedTarAsync(string archivePath, string tarEntryKey, CancellationToken cancellationToken, string? password = null)
     {
         string temporaryTarPath = CreateTemporaryPath("nested.tar");
         try
         {
-            await MaterializeNestedTarAsync(archivePath, tarEntryKey, temporaryTarPath, cancellationToken);
+            await MaterializeNestedTarAsync(archivePath, tarEntryKey, temporaryTarPath, cancellationToken, password);
             return await ListAsync(temporaryTarPath, cancellationToken);
         }
         catch (StageException)
@@ -146,7 +166,8 @@ internal sealed class ArchiveService
         bool createTarSubfolders,
         OverwritePolicy overwritePolicy,
         IProgress<ArchiveProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? password = null)
     {
         try
         {
@@ -156,7 +177,7 @@ internal sealed class ArchiveService
                 string temporaryTarPath = CreateTemporaryPath("nested.tar");
                 try
                 {
-                    await MaterializeNestedTarAsync(archivePath, tarEntryKeys[index], temporaryTarPath, cancellationToken);
+                    await MaterializeNestedTarAsync(archivePath, tarEntryKeys[index], temporaryTarPath, cancellationToken, password);
                     string targetPath = createTarSubfolders
                         ? Path.Combine(destinationPath, Path.GetFileNameWithoutExtension(Path.GetFileName(tarEntryKeys[index])))
                         : destinationPath;
@@ -194,7 +215,8 @@ internal sealed class ArchiveService
         IReadOnlyCollection<string>? selectedEntries,
         OverwritePolicy overwritePolicy,
         IProgress<ArchiveProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? password = null)
     {
         try
         {
@@ -216,7 +238,7 @@ internal sealed class ArchiveService
                     await ExtractRawAsync(archivePath, destinationPath, type, overwritePolicy, progress, cancellationToken);
                     break;
                 default:
-                    await ExtractSharpCompressAsync(archivePath, destinationPath, selectedEntries, overwritePolicy, progress, cancellationToken);
+                    await ExtractSharpCompressAsync(archivePath, destinationPath, selectedEntries, overwritePolicy, progress, cancellationToken, password);
                     break;
             }
         }
@@ -313,9 +335,11 @@ internal sealed class ArchiveService
         }
     }
 
-    private static IReadOnlyList<ArchiveEntryInfo> ListSharpCompress(string archivePath, CancellationToken cancellationToken)
+    private static IReadOnlyList<ArchiveEntryInfo> ListSharpCompress(string archivePath, CancellationToken cancellationToken, string? password)
     {
-        using IArchive archive = ArchiveFactory.OpenArchive(archivePath, UnicodeReaderOptions);
+        using IArchive archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password));
+        if (archive.Entries.Any(entry => entry.IsEncrypted) && string.IsNullOrEmpty(password))
+            throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
         return archive.Entries.Select(entry =>
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -357,12 +381,14 @@ internal sealed class ArchiveService
         return result;
     }
 
-    private static async Task ExtractSharpCompressAsync(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken)
+    private static async Task ExtractSharpCompressAsync(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken, string? password = null)
     {
         await Task.Run(() =>
         {
-            using IArchive archive = ArchiveFactory.OpenArchive(archivePath, UnicodeReaderOptions);
+            using IArchive archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password));
             IArchiveEntry[] entries = archive.Entries.Where(entry => ShouldInclude(entry.Key ?? string.Empty, selectedEntries)).ToArray();
+            if (entries.Any(entry => entry.IsEncrypted) && string.IsNullOrEmpty(password))
+                throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
             long total = Math.Max(entries.Where(entry => !entry.IsDirectory).Sum(entry => Math.Max(entry.Size, 1)), 1);
             long completed = 0;
             foreach (IArchiveEntry entry in entries)
@@ -382,9 +408,22 @@ internal sealed class ArchiveService
                     completed += Math.Max(entry.Size, 1);
                     continue;
                 }
-                using Stream input = entry.OpenEntryStream();
-                using FileStream output = new(targetPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                CopyWithProgress(input, output, entry.Size, () => completed, value => completed += value, total, key, progress, cancellationToken);
+                string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                try
+                {
+                    using Stream input = entry.OpenEntryStream();
+                    using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                        CopyWithProgress(input, output, entry.Size, () => completed, value => completed += value, total, key, progress, cancellationToken);
+                    File.Move(temporaryTarget, targetPath, true);
+                }
+                catch (Exception exception) when (entry.IsEncrypted && IsPasswordFailure(exception))
+                {
+                    throw CreatePasswordException(password, exception);
+                }
+                finally
+                {
+                    if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget);
+                }
                 if (entry.LastModifiedTime.HasValue)
                 {
                     File.SetLastWriteTime(targetPath, entry.LastModifiedTime.Value);
@@ -721,7 +760,7 @@ internal sealed class ArchiveService
         return directories.Select(directory => Path.Combine(directory, fileName)).FirstOrDefault(File.Exists);
     }
 
-    private static async Task MaterializeNestedTarAsync(string archivePath, string tarEntryKey, string outputPath, CancellationToken cancellationToken)
+    private static async Task MaterializeNestedTarAsync(string archivePath, string tarEntryKey, string outputPath, CancellationToken cancellationToken, string? password)
     {
         FileDetector.FileType outerType = FileDetector.DetectFileType(archivePath);
         await using FileStream output = new(outputPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1024 * 128, true);
@@ -733,15 +772,55 @@ internal sealed class ArchiveService
             return;
         }
 
-        using IArchive archive = ArchiveFactory.OpenArchive(archivePath, UnicodeReaderOptions);
+        using IArchive archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password));
         IArchiveEntry? targetEntry = archive.Entries.FirstOrDefault(entry =>
             !entry.IsDirectory && NormalizeEntry(entry.Key ?? string.Empty).Equals(NormalizeEntry(tarEntryKey), StringComparison.OrdinalIgnoreCase));
         if (targetEntry is null)
         {
             throw new StageException("NESTR0004", LanguageManager.Get("NestedTarNotFound")); //NESTR0004
         }
-        await using Stream entryStream = targetEntry.OpenEntryStream();
-        await entryStream.CopyToAsync(output, cancellationToken);
+        if (targetEntry.IsEncrypted && string.IsNullOrEmpty(password))
+            throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
+        try
+        {
+            await using Stream entryStream = targetEntry.OpenEntryStream();
+            await entryStream.CopyToAsync(output, cancellationToken);
+        }
+        catch (Exception exception) when (targetEntry.IsEncrypted && IsPasswordFailure(exception))
+        {
+            throw CreatePasswordException(password, exception);
+        }
+    }
+
+    private static StageException CreatePasswordException(string? password, Exception exception) =>
+        string.IsNullOrEmpty(password)
+            ? new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired"), exception) //PWDAR0001
+            : new StageException("PWDAR0002", LanguageManager.Get("ArchivePasswordInvalid"), exception); //PWDAR0002
+
+    private static bool IsPasswordFailure(Exception exception)
+    {
+        if (exception is StageException stageException)
+            return stageException.StageCode is "PWDAR0001" or "PWDAR0002";
+        if (exception is System.Security.Cryptography.CryptographicException) return true;
+        string message = exception.Message;
+        return message.Contains("password", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("encrypted", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("decrypt", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("authentication", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void DrainForAuthentication(Stream stream, string entryKey, long total, ref long completed,
+        IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken)
+    {
+        byte[] buffer = new byte[1024 * 128];
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int read = stream.Read(buffer, 0, buffer.Length);
+            if (read == 0) return;
+            completed += read;
+            progress?.Report(new ArchiveProgress((int)(completed * 100 / total), entryKey));
+        }
     }
 
     private static string CreateTemporaryPath(string fileName)

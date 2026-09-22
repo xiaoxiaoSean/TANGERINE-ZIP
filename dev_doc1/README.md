@@ -1,5 +1,7 @@
 # Tangerine ZIP 开发文档
 
+密码压缩、解压、加密封装与安全清理的详细设计见 [`PASSWORD_ARCHIVES.md`](PASSWORD_ARCHIVES.md)。
+
 ## 1. 实现概览
 
 项目以 .NET 10 WinForms 为 UI，归档逻辑集中在 `Services/ArchiveService.cs`。主窗体只负责选择文件、展示条目、导航、覆盖策略、进度及错误提示。所有耗时操作均通过 `Task`/异步流或后台任务执行，UI 线程不会执行压缩、解压或镜像扫描。
@@ -25,6 +27,8 @@
 RAR 创建依赖用户按 WinRAR 官方许可取得的 `rar.exe`（官方说明与下载：https://www.rarlab.com/rardos.htm、https://www.rarlab.com/download.htm）。程序启动时以及每次执行 RAR 创建前都会检查应用程序目录；缺失时显示 `RARTL0001`，但不会阻止其他功能。如果应用程序目录存在无后缀标记文件 `DONT_CHECK_RAR_EXE_AT_START`，程序会跳过启动检查和启动警告；实际执行 RAR 创建时仍会强制重新检查。外部进程使用 `ArgumentList` 传参、异步读取输出并解析百分比，取消时终止进程。`rar.exe` 不会被本项目打包或重新分发。
 
 GZ、BZ2、XZ、LZ4、ZSTD 是单文件压缩流，因此创建时只能选择一个普通文件。ZIP、7Z、TAR、ISO、WIM 服务层支持多文件；ISO 使用 Joliet 文件名，WIM 使用 LZMS。
+
+所有列出的格式均可选择 TZIP 密码保护。由于 TAR、GZ、BZ2、XZ、LZ4、ZSTD、ISO、WIM 的标准格式不定义密码，创建密码文件时统一使用 AES-256-GCM 的 `TZIPENC2` 外层封装；未设置密码时仍输出原生标准格式。第三方原生加密 ZIP、RAR、7Z 通过 SharpCompress 密码读取流程处理。
 
 ## 3. 核心设计
 
@@ -78,6 +82,9 @@ StageCode 固定为 9 个字符：5 字符 `stageHead` + 4 字符 `stageDetail`�
 | `ARCSV` | 归档服务 |
 | `NESTR` | TAR 嵌套分析与解压 |
 | `RARTL` | 外部 RAR 工具 |
+| `CTXMN` | Win11 右键菜单安装、移除与回滚服务 |
+| `CTXWZ` | 右键菜单设置向导 |
+| `CTXCH` | 提权后的证书所有权辅助程序 |
 
 展示统一调用：
 
@@ -127,6 +134,29 @@ MessageBox.Show(
 
 ## 6. 构建、测试与发布
 
+### Windows 11 一级右键菜单
+
+Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。项目采用开源项目 [ikas-mc/ContextMenuForWindows11](https://github.com/ikas-mc/ContextMenuForWindows11) 的 `IExplorerCommand` 原生宿主实现，许可证为 LGPL-3.0。对应源码及许可证保留在 `third_party/ContextMenuForWindows11`，便于替换或重新链接；TZIP 的修改仅包括独立 CLSID、默认顶层标题和构建路径。MSIX 使用独立包身份 `TangerineZip.ContextMenu`，不会覆盖用户另行安装的 Custom Context Menu。
+
+主 EXE 内嵌已签名 MSIX、公钥证书及 LGPL-3.0 许可证。建立向导依次执行：平台/资源验证、清理旧版注册表菜单、释放包、请求管理员信任证书、安装包、写入三条本地化命令、验证注册。移除向导会独立尝试清理所有旧菜单路径、命令文件、MSIX、证书所有权和用户设置；一个步骤失败不会阻止其他清理步骤，最终统一显示全部错误。证书辅助程序只接受主程序内嵌证书，并在 `HKLM\SOFTWARE\TangerineZip\ContextMenuCertificates` 记录使用者 SID；预先存在或仍由其他用户使用的证书不会被删除。
+
+向导通过 `ContextMenuProgress` 报告确定百分比和逐阶段日志。用户点击“停止工作”并确认风险后会取消令牌、终止正在运行的 PowerShell/提权进程树，并在建立流程中尽力回滚本次新增的包与证书所有权。取消或回滚失败使用 StageCode 显示，不会静默忽略。Win11 上安装失败时不会创建传统菜单作为假成功回退。
+
+三条命令均由 Explorer 传递一个或多个完整 Unicode 路径：解压与打开仍由 `ContextMenuCommandHandler` 通过 `FileDetector` 判断内容；压缩命令显示现有格式与位置对话框。顶层菜单和命令名称使用执行向导时的 UI 语言，支持 `en-US`、`zh-CN`、`zh-TW`、`zh-HK`、`zh-MO`。
+
+构建原生宿主和签名包：
+
+```powershell
+./TANGERINE-ZIP.ContextMenuPackage/Build-ContextMenuNative.ps1
+./TANGERINE-ZIP.ContextMenuPackage/Build-ContextMenuPackage.ps1 `
+  -ShellExtensionPath ./artifacts/context-menu-native/TangerineZipContextMenuHost.dll `
+  -ContextMenuHostPath ./artifacts/context-menu-native/ContextMenuHost.exe `
+  -OutputPackagePath ./TANGERINE-ZIP/Embedded/TangerineZipContextMenu.msix `
+  -CertificateThumbprint <具有代码签名私钥的证书指纹>
+```
+
+清单中的 `Publisher` 必须与签名证书 Subject 完全一致。只将公开 `.cer` 放入 `TANGERINE-ZIP/Embedded`，禁止提交 `.pfx` 或私钥。变更原生源码后，必须先重新生成并签名 MSIX，再发布主程序，否则单文件 EXE 会继续嵌入旧版本。
+
 在仓库根目录执行：
 
 ```powershell
@@ -139,7 +169,7 @@ dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -p:ENA
 
 当前测试是短时定向测试，使用 `testfile/1/Linux教程.pdf` 验证 ZIP 中文条目名、无扩展名 BZ2 中的单 TAR 内容检测/自动展开，以及 ZIP 中两个 TAR 的选择和分目录一键解压。测试数据位于随机临时目录，结束后只删除该次测试创建的目录。
 
-本次发布结果的可运行文件为 `artifacts/single-file-corrected-v2/TANGERINE-ZIP.exe`。PDB 仅用于调试，可不随软件分发；核心功能不依赖旁置 DLL 或已安装的 .NET Runtime。只有创建 RAR 时需要应用程序目录中的可选 `rar.exe`。
+本次发布结果的可运行文件为 `artifacts/single-file-context-menu-final/TANGERINE-ZIP.exe`。PDB 仅用于调试，可不随软件分发；Win11 右键菜单宿主、MSIX 和公开证书均嵌入此 EXE，安装时释放到系统管理的位置。只有创建 RAR 时需要应用程序目录中的可选 `rar.exe`。
 
 ## 7. 维护注意事项
 

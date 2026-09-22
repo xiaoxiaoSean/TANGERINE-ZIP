@@ -33,7 +33,15 @@ internal static class ContextMenuCommandHandler
             throw new StageException("CTXCM0004", LanguageManager.Get("ContextAllArchivesRequired")); //CTXCM0004
         OverwritePolicy policy = AskOverwritePolicy();
         if (policy == OverwritePolicy.Cancel) return;
-        using ContextOperationForm form = new(LanguageManager.Get("ContextExtractProgress"), (progress, token) => ExtractManyAsync(paths, policy, progress, token));
+        ConcurrentDictionary<string, string?> passwords = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string path in paths)
+        {
+            if (!PasswordArchiveService.IsProtected(path)) continue;
+            if (!ArchivePasswordForm.TryGetExtractionPassword(null, Path.GetFileName(path), null, out string? password)) return;
+            passwords[path] = password;
+        }
+        using ContextOperationForm form = new(LanguageManager.Get("ContextExtractProgress"),
+            (progress, token) => ExtractManyAsync(paths, passwords, policy, progress, token));
         Application.Run(form);
     }
 
@@ -49,8 +57,9 @@ internal static class ContextMenuCommandHandler
         };
         if (dialog.ShowDialog() != DialogResult.OK) return;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(dialog.FilterIndex);
+        if (!ArchivePasswordForm.TryGetCreationPassword(null, Path.GetFileName(dialog.FileName), out string? password)) return;
         using ContextOperationForm form = new(LanguageManager.Get("ContextCompressProgress"), (progress, token) =>
-            new ArchiveWorkerClient().CreateAsync(paths, dialog.FileName, type, progress, token));
+            new ArchiveWorkerClient().CreateAsync(paths, dialog.FileName, type, progress, token, password));
         Application.Run(form);
     }
 
@@ -64,9 +73,11 @@ internal static class ContextMenuCommandHandler
         Application.Run(new Form1(paths[0]));
     }
 
-    private static async Task ExtractManyAsync(string[] paths, OverwritePolicy policy, IProgress<ArchiveProgress> progress, CancellationToken token)
+    private static async Task ExtractManyAsync(string[] paths, ConcurrentDictionary<string, string?> passwords,
+        OverwritePolicy policy, IProgress<ArchiveProgress> progress, CancellationToken token)
     {
         using SemaphoreSlim throttle = new(Math.Max(1, Math.Min(Environment.ProcessorCount, 4)));
+        using SemaphoreSlim passwordPromptLock = new(1, 1);
         ConcurrentDictionary<string, int> percentages = new(StringComparer.OrdinalIgnoreCase);
         Task[] tasks = paths.Select(async path =>
         {
@@ -74,7 +85,28 @@ internal static class ContextMenuCommandHandler
             try
             {
                 ArchiveWorkerClient client = new();
-                NestedTarInfo nested = await client.AnalyzeNestedTarAsync(path, token);
+                passwords.TryGetValue(path, out string? password);
+                NestedTarInfo nested;
+                while (true)
+                {
+                    try
+                    {
+                        nested = await client.AnalyzeNestedTarAsync(path, token, password);
+                        break;
+                    }
+                    catch (StageException exception) when (exception.StageCode is "PWDAR0001" or "PWDAR0002")
+                    {
+                        await passwordPromptLock.WaitAsync(token);
+                        try
+                        {
+                            if (!ArchivePasswordForm.TryGetExtractionPassword(null, Path.GetFileName(path),
+                                    MessageTipGenerator.GenerateTip(exception.StageCode, exception.Message), out password))
+                                throw new OperationCanceledException(token);
+                            passwords[path] = password;
+                        }
+                        finally { passwordPromptLock.Release(); }
+                    }
+                }
                 string destination = Path.GetDirectoryName(path) ?? throw new StageException("CTXCM0005", LanguageManager.Get("ContextNoFiles")); //CTXCM0005
                 Progress<ArchiveProgress> fileProgress = new(item =>
                 {
@@ -83,9 +115,9 @@ internal static class ContextMenuCommandHandler
                     progress.Report(new ArchiveProgress(overall, $"{Path.GetFileName(path)}: {item.EntryKey}"));
                 });
                 if (nested.FlattenAutomatically)
-                    await client.ExtractNestedTarsAsync(path, nested.TarEntryKeys, destination, null, false, policy, fileProgress, token);
+                    await client.ExtractNestedTarsAsync(path, nested.TarEntryKeys, destination, null, false, policy, fileProgress, token, password);
                 else
-                    await client.ExtractAsync(path, destination, null, policy, fileProgress, token);
+                    await client.ExtractAsync(path, destination, null, policy, fileProgress, token, password);
                 percentages[path] = 100;
             }
             finally

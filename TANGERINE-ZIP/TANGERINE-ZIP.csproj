@@ -36,7 +36,7 @@
 		<DebugSymbols>false</DebugSymbols>
 
 		<!-- 只发布需要的卫星语言资源 -->
-		<SatelliteResourceLanguages>en-US;zh-CN</SatelliteResourceLanguages>
+		<SatelliteResourceLanguages>en-US;zh-CN;zh-TW;zh-HK;zh-MO</SatelliteResourceLanguages>
 
 		<!-- 自定义条件编译参数 -->
 		<ENABLE_LIGHT Condition="'$(ENABLE_LIGHT)' == ''">false</ENABLE_LIGHT>
@@ -49,6 +49,12 @@
 	<!-- SmokeTests 可以访问内部成员 -->
 	<ItemGroup>
 		<InternalsVisibleTo Include="TANGERINE-ZIP.SmokeTests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.msix" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix" />
+		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.cer" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.cer" />
+		<EmbeddedResource Include="..\third_party\ContextMenuForWindows11\LICENSE" LogicalName="TANGERINE_ZIP.ContextMenu.LGPL-3.0.txt" />
 	</ItemGroup>
 
 

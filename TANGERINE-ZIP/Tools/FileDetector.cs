@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using TANGERINE_ZIP.Services;
 
 namespace TANGERINE_ZIP.Tools
 {
@@ -109,6 +110,10 @@ namespace TANGERINE_ZIP.Tools
             }
 
             ReadOnlySpan<byte> h = buffer.AsSpan(0, read);
+
+            // Password envelopes retain the original content type in an authenticated header field.
+            if (PasswordArchiveService.TryReadProtectedType(stream, out FileType protectedType))
+                return protectedType;
 
 
             // =========================
