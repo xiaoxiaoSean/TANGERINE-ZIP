@@ -17,7 +17,7 @@ internal sealed class ArchivePasswordForm : Form
     private readonly Button _confirm = new() { DialogResult = DialogResult.None, Width = 105, Height = 32 };
     private readonly Button _cancel = new() { DialogResult = DialogResult.Cancel, Width = 105, Height = 32 };
 
-    public ArchivePasswordForm(string archiveName, bool creating, string? errorMessage = null)
+    public ArchivePasswordForm(string archiveName, bool creating, string? errorMessage = null, bool passwordSupported = true)
     {
         _creating = creating;
         Text = LanguageManager.Get(creating ? "CreatePasswordTitle" : "EnterPasswordTitle");
@@ -28,9 +28,12 @@ internal sealed class ArchivePasswordForm : Form
         ShowInTaskbar = false;
         ClientSize = new Size(480, creating ? 294 : 242);
 
-        _description.Text = string.Format(LanguageManager.Get(creating ? "CreatePasswordDescription" : "EnterPasswordDescription"), archiveName);
+        _description.Text = string.Format(LanguageManager.Get(creating && !passwordSupported
+            ? "PasswordFormatUnsupportedDescription"
+            : creating ? "CreatePasswordDescription" : "EnterPasswordDescription"), archiveName);
         _enablePassword.Text = LanguageManager.Get("EnableArchivePassword");
-        _enablePassword.Checked = true;
+        _enablePassword.Checked = passwordSupported;
+        _enablePassword.Enabled = passwordSupported;
         _passwordLabel.Text = LanguageManager.Get("PasswordLabel");
         _confirmationLabel.Text = LanguageManager.Get("ConfirmPasswordLabel");
         _showPassword.Text = LanguageManager.Get("ShowPassword");
@@ -106,6 +109,12 @@ internal sealed class ArchivePasswordForm : Form
                 LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning); //PWDFM0001
             return;
         }
+        if (_creating && _password.Text.Any(character => character is < ' ' or > '~'))
+        {
+            MessageBox.Show(this, MessageTipGenerator.GenerateTip("PWDFM0003", LanguageManager.Get("PasswordAsciiOnly")),
+                LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning); //PWDFM0003
+            return;
+        }
         if (_creating && !string.Equals(_password.Text, _confirmation.Text, StringComparison.Ordinal))
         {
             MessageBox.Show(this, MessageTipGenerator.GenerateTip("PWDFM0002", LanguageManager.Get("PasswordMismatch")),
@@ -117,9 +126,10 @@ internal sealed class ArchivePasswordForm : Form
         Close();
     }
 
-    public static bool TryGetCreationPassword(IWin32Window? owner, string archiveName, out string? password)
+    public static bool TryGetCreationPassword(IWin32Window? owner, string archiveName,
+        FileDetector.FileType type, out string? password)
     {
-        using ArchivePasswordForm form = new(archiveName, true);
+        using ArchivePasswordForm form = new(archiveName, true, passwordSupported: ArchiveCapabilities.CanCreateWithPassword(type));
         bool accepted = owner is null ? form.ShowDialog() == DialogResult.OK : form.ShowDialog(owner) == DialogResult.OK;
         password = accepted ? form.PasswordValue : null;
         return accepted;

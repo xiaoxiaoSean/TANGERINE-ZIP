@@ -103,15 +103,21 @@ internal sealed class ArchiveService
                 foreach (IArchiveEntry entry in fileEntries)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    using Stream stream = entry.OpenEntryStream();
-                    FileDetector.FileType entryType = FileDetector.DetectFileType(stream);
-                    // Some encryption formats authenticate only at the end of the entry. Drain encrypted
-                    // entries during opening so an incorrect password is rejected before the UI stores it.
-                    if (entry.IsEncrypted)
-                        DrainForAuthentication(stream, entry.Key ?? string.Empty, authenticationTotal, ref authenticated, progress, cancellationToken);
-                    if (entryType == FileDetector.FileType.Tar)
+                    try
                     {
-                        tarEntries.Add(NormalizeEntry(entry.Key ?? string.Empty));
+                        using Stream stream = entry.OpenEntryStream();
+                        FileDetector.FileType entryType = FileDetector.DetectFileType(stream);
+                        // Some encryption formats authenticate only at the end of the entry. Drain encrypted
+                        // entries during opening so an incorrect password is rejected before the UI stores it.
+                        if (entry.IsEncrypted)
+                            DrainForAuthentication(stream, entry.Key ?? string.Empty, authenticationTotal, ref authenticated, progress, cancellationToken);
+                        if (entryType == FileDetector.FileType.Tar)
+                            tarEntries.Add(NormalizeEntry(entry.Key ?? string.Empty));
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception exception) when (entry.IsEncrypted)
+                    {
+                        throw CreatePasswordException(password, exception);
                     }
                 }
                 return new NestedTarInfo(tarEntries, fileEntries.Count == 1 && tarEntries.Count == 1);
@@ -167,7 +173,8 @@ internal sealed class ArchiveService
         OverwritePolicy overwritePolicy,
         IProgress<ArchiveProgress>? progress,
         CancellationToken cancellationToken,
-        string? password = null)
+        string? password = null,
+        ConflictResolutionState? conflicts = null)
     {
         try
         {
@@ -186,7 +193,7 @@ internal sealed class ArchiveService
                         int totalPercent = ((index * 100) + item.Percentage) / Math.Max(tarEntryKeys.Count, 1);
                         progress?.Report(new ArchiveProgress(totalPercent, item.EntryKey));
                     });
-                    await ExtractSharpCompressAsync(temporaryTarPath, targetPath, selectedInnerEntries, overwritePolicy, nestedProgress, cancellationToken);
+                    await ExtractSharpCompressAsync(temporaryTarPath, targetPath, selectedInnerEntries, overwritePolicy, nestedProgress, cancellationToken, conflicts: conflicts);
                 }
                 finally
                 {
@@ -216,7 +223,8 @@ internal sealed class ArchiveService
         OverwritePolicy overwritePolicy,
         IProgress<ArchiveProgress>? progress,
         CancellationToken cancellationToken,
-        string? password = null)
+        string? password = null,
+        ConflictResolutionState? conflicts = null)
     {
         try
         {
@@ -225,20 +233,20 @@ internal sealed class ArchiveService
             switch (type)
             {
                 case FileDetector.FileType.Iso:
-                    await Task.Run(() => ExtractIso(archivePath, destinationPath, selectedEntries, overwritePolicy, progress, cancellationToken), cancellationToken);
+                    await Task.Run(() => ExtractIso(archivePath, destinationPath, selectedEntries, overwritePolicy, progress, cancellationToken, conflicts), cancellationToken);
                     break;
                 case FileDetector.FileType.Wim:
-                    await Task.Run(() => ExtractWim(archivePath, destinationPath, selectedEntries, overwritePolicy, progress), cancellationToken);
+                    await Task.Run(() => ExtractWim(archivePath, destinationPath, selectedEntries, overwritePolicy, progress, conflicts), cancellationToken);
                     break;
                 case FileDetector.FileType.GZip:
                 case FileDetector.FileType.BZip2:
                 case FileDetector.FileType.Lz4:
                 case FileDetector.FileType.Xz:
                 case FileDetector.FileType.Zstd:
-                    await ExtractRawAsync(archivePath, destinationPath, type, overwritePolicy, progress, cancellationToken);
+                    await ExtractRawAsync(archivePath, destinationPath, type, overwritePolicy, progress, cancellationToken, conflicts);
                     break;
                 default:
-                    await ExtractSharpCompressAsync(archivePath, destinationPath, selectedEntries, overwritePolicy, progress, cancellationToken, password);
+                    await ExtractSharpCompressAsync(archivePath, destinationPath, selectedEntries, overwritePolicy, progress, cancellationToken, password, conflicts);
                     break;
             }
         }
@@ -381,7 +389,7 @@ internal sealed class ArchiveService
         return result;
     }
 
-    private static async Task ExtractSharpCompressAsync(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken, string? password = null)
+    private static async Task ExtractSharpCompressAsync(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken, string? password = null, ConflictResolutionState? conflicts = null)
     {
         await Task.Run(() =>
         {
@@ -403,7 +411,7 @@ internal sealed class ArchiveService
                     continue;
                 }
                 Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-                if (File.Exists(targetPath) && overwritePolicy == OverwritePolicy.SkipAll)
+                if (!ShouldOverwriteTarget(targetPath, key, overwritePolicy, conflicts))
                 {
                     completed += Math.Max(entry.Size, 1);
                     continue;
@@ -433,24 +441,30 @@ internal sealed class ArchiveService
         }, cancellationToken);
     }
 
-    private static async Task ExtractRawAsync(string archivePath, string destinationPath, FileDetector.FileType type, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken)
+    private static async Task ExtractRawAsync(string archivePath, string destinationPath, FileDetector.FileType type, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken, ConflictResolutionState? conflicts)
     {
         string entryName = GetRawOutputName(archivePath);
         string targetPath = GetSafeTargetPath(destinationPath, entryName);
-        if (File.Exists(targetPath) && overwritePolicy == OverwritePolicy.SkipAll)
+        if (!ShouldOverwriteTarget(targetPath, entryName, overwritePolicy, conflicts))
         {
             progress?.Report(new ArchiveProgress(100, entryName));
             return;
         }
-        await using FileStream input = new(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, true);
-        await using FileStream output = new(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 128, true);
-        await using ProgressStream monitoredInput = new(input, input.Length, entryName, progress);
-        await using Stream decoder = CreateDecoder(monitoredInput, type);
-        await decoder.CopyToAsync(output, cancellationToken);
+        string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            await using FileStream input = new(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, true);
+            await using ProgressStream monitoredInput = new(input, input.Length, entryName, progress);
+            await using Stream decoder = CreateDecoder(monitoredInput, type);
+            await using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1024 * 128, true))
+                await decoder.CopyToAsync(output, cancellationToken);
+            File.Move(temporaryTarget, targetPath, true);
+        }
+        finally { if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget); }
         progress?.Report(new ArchiveProgress(100, entryName));
     }
 
-    private static void ExtractIso(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken)
+    private static void ExtractIso(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken, ConflictResolutionState? conflicts)
     {
         using FileStream stream = File.OpenRead(archivePath);
         using CDReader reader = new(stream, true);
@@ -463,19 +477,25 @@ internal sealed class ArchiveService
             string key = NormalizeEntry(file);
             string targetPath = GetSafeTargetPath(destinationPath, key);
             Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-            if (File.Exists(targetPath) && overwritePolicy == OverwritePolicy.SkipAll)
+            if (!ShouldOverwriteTarget(targetPath, key, overwritePolicy, conflicts))
             {
                 completed += reader.GetFileLength(file);
                 continue;
             }
-            using Stream input = reader.OpenFile(file, FileMode.Open);
-            using FileStream output = File.Create(targetPath);
-            CopyWithProgress(input, output, reader.GetFileLength(file), () => completed, value => completed += value, total, key, progress, cancellationToken);
+            string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                using Stream input = reader.OpenFile(file, FileMode.Open);
+                using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    CopyWithProgress(input, output, reader.GetFileLength(file), () => completed, value => completed += value, total, key, progress, cancellationToken);
+                File.Move(temporaryTarget, targetPath, true);
+            }
+            finally { if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget); }
         }
         progress?.Report(new ArchiveProgress(100, string.Empty));
     }
 
-    private static void ExtractWim(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress)
+    private static void ExtractWim(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, ConflictResolutionState? conflicts)
     {
         EnsureWimInitialized();
         string stagingPath = Path.Combine(Path.GetTempPath(), "TangerineZipWim", Guid.NewGuid().ToString("N"));
@@ -512,7 +532,7 @@ internal sealed class ArchiveService
                     if (paths.Length > 0) wim.ExtractPaths(image, stagingPath, paths, ExtractFlags.ReplaceInvalidFileNames);
                 }
             }
-            MergeDirectory(stagingPath, destinationPath, overwritePolicy);
+            MergeDirectory(stagingPath, destinationPath, overwritePolicy, conflicts);
             progress?.Report(new ArchiveProgress(100, string.Empty));
         }
         finally
@@ -521,7 +541,7 @@ internal sealed class ArchiveService
         }
     }
 
-    private static void MergeDirectory(string sourcePath, string destinationPath, OverwritePolicy overwritePolicy)
+    private static void MergeDirectory(string sourcePath, string destinationPath, OverwritePolicy overwritePolicy, ConflictResolutionState? conflicts)
     {
         foreach (string directory in Directory.EnumerateDirectories(sourcePath, "*", SearchOption.AllDirectories))
             Directory.CreateDirectory(Path.Combine(destinationPath, Path.GetRelativePath(sourcePath, directory)));
@@ -529,8 +549,15 @@ internal sealed class ArchiveService
         {
             string target = GetSafeTargetPath(destinationPath, Path.GetRelativePath(sourcePath, file));
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            if (File.Exists(target) && overwritePolicy == OverwritePolicy.SkipAll) continue;
-            File.Copy(file, target, true);
+            string entryKey = Path.GetRelativePath(sourcePath, file);
+            if (!ShouldOverwriteTarget(target, entryKey, overwritePolicy, conflicts)) continue;
+            string temporaryTarget = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.Copy(file, temporaryTarget, false);
+                File.Move(temporaryTarget, target, true);
+            }
+            finally { if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget); }
         }
     }
 
@@ -806,7 +833,10 @@ internal sealed class ArchiveService
         return message.Contains("password", StringComparison.OrdinalIgnoreCase) ||
                message.Contains("encrypted", StringComparison.OrdinalIgnoreCase) ||
                message.Contains("decrypt", StringComparison.OrdinalIgnoreCase) ||
-               message.Contains("authentication", StringComparison.OrdinalIgnoreCase);
+               message.Contains("authentication", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("CRC", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("compressed stream type", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("data error", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void DrainForAuthentication(Stream stream, string entryKey, long total, ref long completed,
@@ -821,6 +851,20 @@ internal sealed class ArchiveService
             completed += read;
             progress?.Report(new ArchiveProgress((int)(completed * 100 / total), entryKey));
         }
+    }
+
+    private static bool ShouldOverwriteTarget(string targetPath, string entryKey, OverwritePolicy policy,
+        ConflictResolutionState? conflicts)
+    {
+        if (!File.Exists(targetPath)) return true;
+        if (conflicts is not null) return conflicts.ShouldOverwrite(targetPath, entryKey, policy);
+        return policy switch
+        {
+            OverwritePolicy.OverwriteAll => true,
+            OverwritePolicy.SkipAll => false,
+            OverwritePolicy.Cancel => throw new OperationCanceledException(),
+            _ => throw new StageException("CNFLT0002", LanguageManager.Get("ConflictResolverMissing")) //CNFLT0002
+        };
     }
 
     private static string CreateTemporaryPath(string fileName)

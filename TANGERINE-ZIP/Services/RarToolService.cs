@@ -21,7 +21,8 @@ internal sealed class RarToolService
         IReadOnlyList<string> sourcePaths,
         string outputPath,
         IProgress<ArchiveProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? password = null)
     {
         if (!IsAvailable)
         {
@@ -48,6 +49,9 @@ internal sealed class RarToolService
             startInfo.ArgumentList.Add("-ep1");
             startInfo.ArgumentList.Add("-m5");
             startInfo.ArgumentList.Add("-y");
+            // -hp enables native RAR data and header encryption. ArgumentList preserves Unicode exactly
+            // and avoids shell parsing; the same Windows user can still inspect the temporary process argument.
+            if (!string.IsNullOrEmpty(password)) startInfo.ArgumentList.Add("-hp" + password);
             startInfo.ArgumentList.Add(temporaryOutputPath);
             foreach (string sourcePath in sourcePaths)
             {

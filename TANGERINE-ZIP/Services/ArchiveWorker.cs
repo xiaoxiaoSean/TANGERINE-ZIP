@@ -14,7 +14,10 @@ internal sealed record WorkerRequest(string Operation, string Path, string? Dest
     OverwritePolicy Policy = OverwritePolicy.OverwriteAll, string Culture = "en-US", string? Password = null);
 
 internal sealed record WorkerMessage(ArchiveProgress? Progress = null, ArchiveEntryInfo[]? Entries = null,
-    NestedTarInfo? Nested = null, bool Completed = false, string? StageCode = null, string? Error = null);
+    NestedTarInfo? Nested = null, bool Completed = false, string? StageCode = null, string? Error = null,
+    string? ConflictPath = null, string? ConflictEntry = null, bool Cancelled = false);
+
+internal sealed record WorkerCommand(ConflictChoice ConflictChoice);
 
 internal static class ArchiveWorker
 {
@@ -48,42 +51,47 @@ internal static class ArchiveWorker
                 }
             });
             WorkerMessage result = new(Completed: true);
+            ConflictResolutionState conflicts = new(conflict =>
+            {
+                Send(new(ConflictPath: conflict.TargetPath, ConflictEntry: conflict.EntryKey));
+                string response = input.ReadLine() ?? throw new OperationCanceledException();
+                WorkerCommand command = JsonSerializer.Deserialize<WorkerCommand>(response)
+                    ?? throw new StageException("WORKR0007", LanguageManager.Get("InvalidConflictChoice")); //WORKR0007
+                return command.ConflictChoice;
+            });
             if (request.Operation == "create")
             {
                 await CreateAsync(request, service, progress);
             }
             else
             {
-                bool protectedEnvelope = PasswordArchiveService.IsProtected(request.Path);
-                InlineProgress<ArchiveProgress> decryptProgress = new(item =>
-                    progress.Report(new ArchiveProgress(item.Percentage / 5, item.EntryKey)));
-                await using MaterializedArchive materialized = await PasswordArchiveService.OpenAsync(
-                    request.Path, request.Password, decryptProgress, CancellationToken.None);
-                InlineProgress<ArchiveProgress> archiveProgress = new(item =>
-                    progress.Report(new ArchiveProgress((protectedEnvelope ? 20 : 0) +
-                        item.Percentage * (protectedEnvelope ? 80 : 100) / 100, item.EntryKey)));
                 switch (request.Operation)
                 {
                     case "analyze":
-                        result = result with { Nested = await service.AnalyzeNestedTarAsync(materialized.Path, CancellationToken.None, request.Password, archiveProgress) };
+                        result = result with { Nested = await service.AnalyzeNestedTarAsync(request.Path, CancellationToken.None, request.Password, progress) };
                         break;
                     case "list":
-                        result = result with { Entries = (await service.ListAsync(materialized.Path, CancellationToken.None, request.Password)).ToArray() };
+                        result = result with { Entries = (await service.ListAsync(request.Path, CancellationToken.None, request.Password)).ToArray() };
                         break;
                     case "list-tar":
-                        result = result with { Entries = (await service.ListNestedTarAsync(materialized.Path, request.TarKeys![0], CancellationToken.None, request.Password)).ToArray() };
+                        result = result with { Entries = (await service.ListNestedTarAsync(request.Path, request.TarKeys![0], CancellationToken.None, request.Password)).ToArray() };
                         break;
                     case "extract":
-                        await service.ExtractAsync(materialized.Path, request.Destination!, request.Selection, request.Policy, archiveProgress, CancellationToken.None, request.Password);
+                        await service.ExtractAsync(request.Path, request.Destination!, request.Selection, request.Policy, progress, CancellationToken.None, request.Password, conflicts);
                         break;
                     case "extract-tar":
-                        await service.ExtractNestedTarsAsync(materialized.Path, request.TarKeys!, request.Destination!, request.Selection, request.Subfolders, request.Policy, archiveProgress, CancellationToken.None, request.Password);
+                        await service.ExtractNestedTarsAsync(request.Path, request.TarKeys!, request.Destination!, request.Selection, request.Subfolders, request.Policy, progress, CancellationToken.None, request.Password, conflicts);
                         break;
                     default: throw new InvalidDataException();
                 }
             }
             Send(result);
             return 0;
+        }
+        catch (OperationCanceledException)
+        {
+            Send(new(Cancelled: true));
+            return 2;
         }
         catch (Exception exception)
         {
@@ -102,34 +110,23 @@ internal static class ArchiveWorker
                 await service.CreateAsync(request.Sources!, request.Path, request.Type, progress, CancellationToken.None);
             return;
         }
-
-        string temporaryDirectory = Path.Combine(Path.GetTempPath(), "TangerineZipPasswordCreate", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(temporaryDirectory);
-        string unprotectedArchive = Path.Combine(temporaryDirectory, Path.GetFileName(request.Path));
-        try
-        {
-            InlineProgress<ArchiveProgress> createProgress = new(item =>
-                progress.Report(new ArchiveProgress(item.Percentage * 80 / 100, item.EntryKey)));
-            if (request.Type == FileDetector.FileType.Rar)
-                await new RarToolService().CreateAsync(request.Sources!, unprotectedArchive, createProgress, CancellationToken.None);
-            else
-                await service.CreateAsync(request.Sources!, unprotectedArchive, request.Type, createProgress, CancellationToken.None);
-            InlineProgress<ArchiveProgress> encryptionProgress = new(item =>
-                progress.Report(new ArchiveProgress(80 + item.Percentage * 20 / 100, item.EntryKey)));
-            await PasswordArchiveService.EncryptAsync(unprotectedArchive, request.Path, request.Type, request.Password,
-                encryptionProgress, CancellationToken.None);
-        }
-        finally
-        {
-            try { if (Directory.Exists(temporaryDirectory)) Directory.Delete(temporaryDirectory, true); }
-            catch (Exception exception) { throw new StageException("PWDAR0004", LanguageManager.Get("ArchivePasswordCleanupFailed"), exception); } //PWDAR0004
-        }
+        if (!ArchiveCapabilities.CanCreateWithPassword(request.Type))
+            throw new StageException("WORKR0006", LanguageManager.Get("PasswordFormatUnsupported")); //WORKR0006
+        if (request.Type == FileDetector.FileType.Rar)
+            await new RarToolService().CreateAsync(request.Sources!, request.Path, progress, CancellationToken.None, request.Password);
+        else if (request.Type == FileDetector.FileType.Zip)
+            await new EncryptedZipService().CreateAsync(request.Sources!, request.Path, request.Password,
+                progress, CancellationToken.None);
+        else
+            await new SevenZipToolService().CreateEncryptedAsync(request.Sources!, request.Path, request.Type,
+                request.Password, progress, CancellationToken.None);
     }
 }
 
 internal sealed class ArchiveWorkerClient
 {
-    private static async Task<WorkerMessage> RunAsync(WorkerRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)
+    private static async Task<WorkerMessage> RunAsync(WorkerRequest request, IProgress<ArchiveProgress>? progress,
+        CancellationToken token, Func<ArchiveConflict, CancellationToken, Task<ConflictChoice>>? conflictResolver = null)
     {
         token.ThrowIfCancellationRequested();
         // Use the current apphost path so renaming a published single-file executable remains supported.
@@ -152,16 +149,26 @@ internal sealed class ArchiveWorkerClient
             started = true;
             Task<string> errors = process.StandardError.ReadToEndAsync();
             await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(request with { Culture = CultureInfo.CurrentUICulture.Name }));
-            process.StandardInput.Close();
+            await process.StandardInput.FlushAsync(token);
             WorkerMessage? result = null;
             while (await process.StandardOutput.ReadLineAsync(token) is { } line)
             {
                 WorkerMessage message = JsonSerializer.Deserialize<WorkerMessage>(line) ?? throw new InvalidDataException();
                 if (message.Progress is not null) progress?.Report(message.Progress);
-                if (message.Completed || message.Error is not null) result = message;
+                if (message.ConflictPath is not null)
+                {
+                    ConflictChoice choice = conflictResolver is null ? ConflictChoice.Cancel :
+                        await conflictResolver(new ArchiveConflict(message.ConflictPath,
+                            message.ConflictEntry ?? string.Empty), token);
+                    await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new WorkerCommand(choice)));
+                    await process.StandardInput.FlushAsync(token);
+                }
+                if (message.Completed || message.Error is not null || message.Cancelled) result = message;
             }
+            process.StandardInput.Close();
             await process.WaitForExitAsync(token);
             string standardError = await errors;
+            if (result?.Cancelled == true) throw new OperationCanceledException(token);
             if (result?.Error is not null) throw new StageException(result.StageCode!, result.Error);
             if (process.ExitCode != 0 || result?.Completed != true)
                 throw new StageException("WORKR0002", LanguageManager.Get("WorkerFailed") + " " + standardError); //WORKR0002
@@ -211,10 +218,10 @@ internal sealed class ArchiveWorkerClient
         (await RunAsync(new("list", path, Password: password), null, token)).Entries!;
     public async Task<IReadOnlyList<ArchiveEntryInfo>> ListNestedTarAsync(string path, string key, CancellationToken token, string? password = null) =>
         (await RunAsync(new("list-tar", path, TarKeys: [key], Password: password), null, token)).Entries!;
-    public Task ExtractAsync(string path, string destination, IReadOnlyCollection<string>? selection, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null) =>
-        RunAsync(new("extract", path, destination, Selection: selection?.ToArray(), Policy: policy, Password: password), progress, token);
-    public Task ExtractNestedTarsAsync(string path, IReadOnlyList<string> keys, string destination, IReadOnlyCollection<string>? selection, bool subfolders, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null) =>
-        RunAsync(new("extract-tar", path, destination, TarKeys: keys.ToArray(), Selection: selection?.ToArray(), Subfolders: subfolders, Policy: policy, Password: password), progress, token);
+    public Task ExtractAsync(string path, string destination, IReadOnlyCollection<string>? selection, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null, Func<ArchiveConflict, CancellationToken, Task<ConflictChoice>>? conflictResolver = null) =>
+        RunAsync(new("extract", path, destination, Selection: selection?.ToArray(), Policy: policy, Password: password), progress, token, conflictResolver);
+    public Task ExtractNestedTarsAsync(string path, IReadOnlyList<string> keys, string destination, IReadOnlyCollection<string>? selection, bool subfolders, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null, Func<ArchiveConflict, CancellationToken, Task<ConflictChoice>>? conflictResolver = null) =>
+        RunAsync(new("extract-tar", path, destination, TarKeys: keys.ToArray(), Selection: selection?.ToArray(), Subfolders: subfolders, Policy: policy, Password: password), progress, token, conflictResolver);
     public Task CreateAsync(IReadOnlyList<string> sources, string path, FileDetector.FileType type, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null) =>
         RunAsync(new("create", path, Sources: sources.ToArray(), Type: type, Password: password), progress, token);
 }

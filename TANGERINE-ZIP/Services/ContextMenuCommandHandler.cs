@@ -31,17 +31,24 @@ internal static class ContextMenuCommandHandler
     {
         if (paths.Any(path => !ArchiveCapabilities.CanOpen(FileDetector.DetectFileType(path))))
             throw new StageException("CTXCM0004", LanguageManager.Get("ContextAllArchivesRequired")); //CTXCM0004
-        OverwritePolicy policy = AskOverwritePolicy();
-        if (policy == OverwritePolicy.Cancel) return;
         ConcurrentDictionary<string, string?> passwords = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string path in paths)
+        using SemaphoreSlim conflictPromptLock = new(1, 1);
+        bool? overwriteAll = null;
+        async Task<ConflictChoice> ResolveConflictAsync(ArchiveConflict conflict, CancellationToken token)
         {
-            if (!PasswordArchiveService.IsProtected(path)) continue;
-            if (!ArchivePasswordForm.TryGetExtractionPassword(null, Path.GetFileName(path), null, out string? password)) return;
-            passwords[path] = password;
+            await conflictPromptLock.WaitAsync(token);
+            try
+            {
+                if (overwriteAll.HasValue) return overwriteAll.Value ? ConflictChoice.AllYes : ConflictChoice.AllNo;
+                ConflictChoice choice = OverwriteConflictForm.Ask(null, conflict);
+                if (choice == ConflictChoice.AllYes) overwriteAll = true;
+                if (choice == ConflictChoice.AllNo) overwriteAll = false;
+                return choice;
+            }
+            finally { conflictPromptLock.Release(); }
         }
         using ContextOperationForm form = new(LanguageManager.Get("ContextExtractProgress"),
-            (progress, token) => ExtractManyAsync(paths, passwords, policy, progress, token));
+            (progress, token) => ExtractManyAsync(paths, passwords, ResolveConflictAsync, progress, token));
         Application.Run(form);
     }
 
@@ -57,7 +64,7 @@ internal static class ContextMenuCommandHandler
         };
         if (dialog.ShowDialog() != DialogResult.OK) return;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(dialog.FilterIndex);
-        if (!ArchivePasswordForm.TryGetCreationPassword(null, Path.GetFileName(dialog.FileName), out string? password)) return;
+        if (!ArchivePasswordForm.TryGetCreationPassword(null, Path.GetFileName(dialog.FileName), type, out string? password)) return;
         using ContextOperationForm form = new(LanguageManager.Get("ContextCompressProgress"), (progress, token) =>
             new ArchiveWorkerClient().CreateAsync(paths, dialog.FileName, type, progress, token, password));
         Application.Run(form);
@@ -74,50 +81,66 @@ internal static class ContextMenuCommandHandler
     }
 
     private static async Task ExtractManyAsync(string[] paths, ConcurrentDictionary<string, string?> passwords,
-        OverwritePolicy policy, IProgress<ArchiveProgress> progress, CancellationToken token)
+        Func<ArchiveConflict, CancellationToken, Task<ConflictChoice>> conflictResolver,
+        IProgress<ArchiveProgress> progress, CancellationToken token)
     {
+        using CancellationTokenSource batchCancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+        CancellationToken operationToken = batchCancellation.Token;
         using SemaphoreSlim throttle = new(Math.Max(1, Math.Min(Environment.ProcessorCount, 4)));
         using SemaphoreSlim passwordPromptLock = new(1, 1);
         ConcurrentDictionary<string, int> percentages = new(StringComparer.OrdinalIgnoreCase);
         Task[] tasks = paths.Select(async path =>
         {
-            await throttle.WaitAsync(token);
+            await throttle.WaitAsync(operationToken);
             try
             {
                 ArchiveWorkerClient client = new();
+                string parent = Path.GetDirectoryName(path) ?? throw new StageException("CTXCM0005", LanguageManager.Get("ContextNoFiles")); //CTXCM0005
+                string destination = Path.Combine(parent, Path.GetFileNameWithoutExtension(path));
+                progress.Report(new ArchiveProgress(0, string.Format(LanguageManager.Get("ContextDestinationStatus"), destination)));
                 passwords.TryGetValue(path, out string? password);
                 NestedTarInfo nested;
                 while (true)
                 {
                     try
                     {
-                        nested = await client.AnalyzeNestedTarAsync(path, token, password);
+                        nested = await client.AnalyzeNestedTarAsync(path, operationToken, password);
                         break;
                     }
                     catch (StageException exception) when (exception.StageCode is "PWDAR0001" or "PWDAR0002")
                     {
-                        await passwordPromptLock.WaitAsync(token);
+                        await passwordPromptLock.WaitAsync(operationToken);
                         try
                         {
                             if (!ArchivePasswordForm.TryGetExtractionPassword(null, Path.GetFileName(path),
                                     MessageTipGenerator.GenerateTip(exception.StageCode, exception.Message), out password))
-                                throw new OperationCanceledException(token);
+                            {
+                                batchCancellation.Cancel();
+                                throw new OperationCanceledException(operationToken);
+                            }
                             passwords[path] = password;
                         }
                         finally { passwordPromptLock.Release(); }
                     }
                 }
-                string destination = Path.GetDirectoryName(path) ?? throw new StageException("CTXCM0005", LanguageManager.Get("ContextNoFiles")); //CTXCM0005
+                Directory.CreateDirectory(destination);
                 Progress<ArchiveProgress> fileProgress = new(item =>
                 {
                     percentages[path] = item.Percentage;
                     int overall = percentages.Values.Sum() / paths.Length;
                     progress.Report(new ArchiveProgress(overall, $"{Path.GetFileName(path)}: {item.EntryKey}"));
                 });
+                async Task<ConflictChoice> ResolveBatchConflictAsync(ArchiveConflict conflict, CancellationToken conflictToken)
+                {
+                    ConflictChoice choice = await conflictResolver(conflict, conflictToken);
+                    if (choice == ConflictChoice.Cancel) batchCancellation.Cancel();
+                    return choice;
+                }
                 if (nested.FlattenAutomatically)
-                    await client.ExtractNestedTarsAsync(path, nested.TarEntryKeys, destination, null, false, policy, fileProgress, token, password);
+                    await client.ExtractNestedTarsAsync(path, nested.TarEntryKeys, destination, null, false, OverwritePolicy.Ask,
+                        fileProgress, operationToken, password, ResolveBatchConflictAsync);
                 else
-                    await client.ExtractAsync(path, destination, null, policy, fileProgress, token, password);
+                    await client.ExtractAsync(path, destination, null, OverwritePolicy.Ask, fileProgress, operationToken, password, ResolveBatchConflictAsync);
                 percentages[path] = 100;
             }
             finally
@@ -129,9 +152,4 @@ internal static class ContextMenuCommandHandler
         progress.Report(new ArchiveProgress(100, string.Empty));
     }
 
-    private static OverwritePolicy AskOverwritePolicy()
-    {
-        DialogResult result = MessageBox.Show(LanguageManager.Get("OverwritePolicyPrompt"), LanguageManager.Get("OverWriteOrNot"), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-        return result switch { DialogResult.Yes => OverwritePolicy.OverwriteAll, DialogResult.No => OverwritePolicy.SkipAll, _ => OverwritePolicy.Cancel };
-    }
 }

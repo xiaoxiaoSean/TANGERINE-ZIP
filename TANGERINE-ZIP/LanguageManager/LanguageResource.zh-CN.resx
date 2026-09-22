@@ -372,19 +372,36 @@
   <data name="ContextProgressDeleted" xml:space="preserve"><value>右键菜单移除完成。</value></data>
   <data name="ContextProgressRollingBack" xml:space="preserve"><value>正在回滚已完成的建立步骤…</value></data>
   <data name="ContextProgressCancelled" xml:space="preserve"><value>操作已被强制停止。重试前请查看此前显示的错误信息。</value></data>
-  <data name="ContextExtractSingleMenu" xml:space="preserve"><value>用 TZIP 将 {name} 解压到当前文件夹</value></data>
+  <data name="ContextExtractSingleMenu" xml:space="preserve"><value>用 TZIP 将 {name} 解压到同名文件夹</value></data>
   <data name="ContextOpenSingleMenu" xml:space="preserve"><value>用 TZIP 打开 {name}</value></data>
   <data name="CreatePasswordTitle" xml:space="preserve"><value>压缩包密码</value></data>
   <data name="EnterPasswordTitle" xml:space="preserve"><value>需要密码</value></data>
-  <data name="CreatePasswordDescription" xml:space="preserve"><value>使用 AES-256-GCM 保护 {0}。由 TZIP 创建的密码保护文件需要使用 TZIP 打开。</value></data>
+  <data name="CreatePasswordDescription" xml:space="preserve"><value>为 {0} 创建标准密码保护，兼容的压缩软件可以正常打开。</value></data>
+  <data name="PasswordFormatUnsupportedDescription" xml:space="preserve"><value>{0} 格式没有标准密码功能。为保证文件有效并可被其他软件读取，密码功能已禁用。</value></data>
+  <data name="PasswordFormatUnsupported" xml:space="preserve"><value>此格式不支持标准压缩密码。请使用 ZIP、7Z 或 RAR。</value></data>
+  <data name="SevenZipStartFailed" xml:space="preserve"><value>无法启动内置的 7-Zip 压缩组件。</value></data>
+  <data name="SevenZipExitCode" xml:space="preserve"><value>7-Zip 执行失败，退出代码为 {0}。</value></data>
+  <data name="SevenZipEmbeddedMissing" xml:space="preserve"><value>内置的 7-Zip 组件缺失或已损坏。</value></data>
+  <data name="ConflictTitle" xml:space="preserve"><value>文件已存在</value></data>
+  <data name="ConflictPrompt" xml:space="preserve"><value>目标位置已存在此文件，请选择如何处理本次冲突。</value></data>
+  <data name="ConflictFileDetails" xml:space="preserve"><value>压缩包内文件：{0}&#xA;已有文件：{1}</value></data>
+  <data name="ConflictThisYes" xml:space="preserve"><value>这个文件是</value></data>
+  <data name="ConflictThisNo" xml:space="preserve"><value>这个文件否</value></data>
+  <data name="ConflictAllYes" xml:space="preserve"><value>全部是</value></data>
+  <data name="ConflictAllNo" xml:space="preserve"><value>全部否</value></data>
+  <data name="ConflictCancelTask" xml:space="preserve"><value>结束此任务</value></data>
+  <data name="InvalidConflictChoice" xml:space="preserve"><value>覆盖文件的选择无效。</value></data>
+  <data name="ConflictResolverMissing" xml:space="preserve"><value>需要决定是否覆盖文件，但覆盖冲突对话框不可用。</value></data>
+  <data name="ContextDestinationStatus" xml:space="preserve"><value>输出文件夹：{0}</value></data>
   <data name="EnterPasswordDescription" xml:space="preserve"><value>请输入 {0} 的密码。</value></data>
   <data name="EnableArchivePassword" xml:space="preserve"><value>启用密码保护</value></data>
   <data name="PasswordLabel" xml:space="preserve"><value>密码</value></data>
   <data name="ConfirmPasswordLabel" xml:space="preserve"><value>确认密码</value></data>
   <data name="ShowPassword" xml:space="preserve"><value>显示密码</value></data>
   <data name="PasswordMismatch" xml:space="preserve"><value>两次输入的密码不一致。</value></data>
+  <data name="PasswordAsciiOnly" xml:space="preserve"><value>为兼容 ZIP、7Z、RAR 及其他压缩软件，新密码只能使用可打印的英文字母、数字、空格和符号。</value></data>
   <data name="ArchivePasswordRequired" xml:space="preserve"><value>此压缩文件需要密码。</value></data>
-  <data name="ArchivePasswordInvalid" xml:space="preserve"><value>密码不正确。</value></data>
+  <data name="ArchivePasswordInvalid" xml:space="preserve"><value>密码不正确，或加密数据已损坏。</value></data>
   <data name="ArchivePasswordDamaged" xml:space="preserve"><value>密码验证失败。加密压缩文件已损坏或被修改。</value></data>
   <data name="ArchivePasswordCreateFailed" xml:space="preserve"><value>无法创建密码保护。</value></data>
   <data name="ArchivePasswordCleanupFailed" xml:space="preserve"><value>无法移除临时解密数据。请关闭正在使用它的程序，并删除 TZIP 密码临时文件夹。</value></data>

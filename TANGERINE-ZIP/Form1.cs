@@ -157,11 +157,15 @@ public partial class Form1 : Form
         if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
         string? password = null;
         string? passwordError = null;
-        bool passwordProtected = PasswordArchiveService.IsProtected(archivePath);
+        bool passwordProtected = false;
         while (true)
         {
             if (passwordProtected && !ArchivePasswordForm.TryGetExtractionPassword(
-                    this, Path.GetFileName(archivePath), passwordError, out password)) return;
+                    this, Path.GetFileName(archivePath), passwordError, out password))
+            {
+                UnloadArchive();
+                return;
+            }
             try
             {
                 await RunOperationAsync(LanguageManager.Get("OpeningFile"), async (progress, token) =>
@@ -280,16 +284,16 @@ public partial class Form1 : Form
         }
         mainFolderBrowserDialog.Description = LanguageManager.Get("SelectExtractFolderText");
         if (mainFolderBrowserDialog.ShowDialog(this) != DialogResult.OK) return;
-        OverwritePolicy policy = AskOverwritePolicy();
-        if (policy == OverwritePolicy.Cancel) return;
         string destination = mainFolderBrowserDialog.SelectedPath;
         if (createArchiveFolder) destination = Path.Combine(destination, Path.GetFileNameWithoutExtension(_archivePath));
         try
         {
             await RunOperationAsync(LanguageManager.Get("ExtractingText"), (progress, token) =>
                 _nestedTarInfo.FlattenAutomatically
-                    ? _archiveService.ExtractNestedTarsAsync(_archivePath, _nestedTarInfo.TarEntryKeys, destination, selectedEntries, false, policy, progress, token, _archivePassword)
-                    : _archiveService.ExtractAsync(_archivePath, destination, selectedEntries, policy, progress, token, _archivePassword));
+                    ? _archiveService.ExtractNestedTarsAsync(_archivePath, _nestedTarInfo.TarEntryKeys, destination, selectedEntries, false, OverwritePolicy.Ask, progress, token, _archivePassword,
+                        (conflict, _) => Task.FromResult(OverwriteConflictForm.Ask(this, conflict)))
+                    : _archiveService.ExtractAsync(_archivePath, destination, selectedEntries, OverwritePolicy.Ask, progress, token, _archivePassword,
+                        (conflict, _) => Task.FromResult(OverwriteConflictForm.Ask(this, conflict))));
             statusProgressBar.Value = 100;
             statusLabel.Text = LanguageManager.Get("ExtractingCompleted");
         }
@@ -310,7 +314,7 @@ public partial class Form1 : Form
         mainSaveFileDialog.OverwritePrompt = true;
         if (mainSaveFileDialog.ShowDialog(this) != DialogResult.OK) return;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(mainSaveFileDialog.FilterIndex);
-        if (!ArchivePasswordForm.TryGetCreationPassword(this, Path.GetFileName(mainSaveFileDialog.FileName), out string? password)) return;
+        if (!ArchivePasswordForm.TryGetCreationPassword(this, Path.GetFileName(mainSaveFileDialog.FileName), type, out string? password)) return;
         try
         {
             await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) =>
@@ -320,12 +324,6 @@ public partial class Form1 : Form
         }
         catch (OperationCanceledException) { statusLabel.Text = LanguageManager.Get("OperationCancelled"); }
         catch (Exception exception) { ShowException("F00010005", exception); } //F00010005
-    }
-
-    private OverwritePolicy AskOverwritePolicy()
-    {
-        DialogResult result = MessageBox.Show(LanguageManager.Get("OverwritePolicyPrompt"), LanguageManager.Get("OverWriteOrNot"), MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-        return result switch { DialogResult.Yes => OverwritePolicy.OverwriteAll, DialogResult.No => OverwritePolicy.SkipAll, _ => OverwritePolicy.Cancel };
     }
 
     private async void ExtractNestedTarMenuItem_Click(object? sender, EventArgs e)
@@ -348,14 +346,12 @@ public partial class Form1 : Form
 
         mainFolderBrowserDialog.Description = LanguageManager.Get("SelectExtractFolderText");
         if (mainFolderBrowserDialog.ShowDialog(this) != DialogResult.OK) return;
-        OverwritePolicy policy = AskOverwritePolicy();
-        if (policy == OverwritePolicy.Cancel) return;
-
         string destination = Path.Combine(mainFolderBrowserDialog.SelectedPath, Path.GetFileNameWithoutExtension(_archivePath));
         try
         {
             await RunOperationAsync(LanguageManager.Get("ExtractingNestedTar"), (progress, token) =>
-                _archiveService.ExtractNestedTarsAsync(_archivePath, tarEntries, destination, null, true, policy, progress, token, _archivePassword));
+                _archiveService.ExtractNestedTarsAsync(_archivePath, tarEntries, destination, null, true, OverwritePolicy.Ask, progress, token,
+                    _archivePassword, (conflict, _) => Task.FromResult(OverwriteConflictForm.Ask(this, conflict))));
             statusProgressBar.Value = 100;
             statusLabel.Text = LanguageManager.Get("ExtractingCompleted");
         }

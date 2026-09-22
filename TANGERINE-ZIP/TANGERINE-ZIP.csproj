@@ -55,6 +55,9 @@
 		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.msix" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix" />
 		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.cer" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.cer" />
 		<EmbeddedResource Include="..\third_party\ContextMenuForWindows11\LICENSE" LogicalName="TANGERINE_ZIP.ContextMenu.LGPL-3.0.txt" />
+		<EmbeddedResource Include="Embedded\SevenZip\7z.exe" LogicalName="TANGERINE_ZIP.SevenZip.7z.exe" />
+		<EmbeddedResource Include="Embedded\SevenZip\7z.dll" LogicalName="TANGERINE_ZIP.SevenZip.7z.dll" />
+		<EmbeddedResource Include="Embedded\SevenZip\License.txt" LogicalName="TANGERINE_ZIP.SevenZip.License.txt" />
 	</ItemGroup>
 
 
@@ -72,6 +75,7 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
 
 		<PackageReference Include="SharpCompress" Version="0.50.1" />
+		<PackageReference Include="SharpZipLib" Version="1.4.2" />
 
 		<!-- Fody -->
 

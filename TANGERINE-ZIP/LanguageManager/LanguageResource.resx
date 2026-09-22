@@ -366,19 +366,36 @@ Stage Code is :</value>
   <data name="ContextProgressDeleted" xml:space="preserve"><value>Context-menu removal completed.</value></data>
   <data name="ContextProgressRollingBack" xml:space="preserve"><value>Rolling back completed setup steps…</value></data>
   <data name="ContextProgressCancelled" xml:space="preserve"><value>The operation was force stopped. Review any earlier error message before retrying.</value></data>
-  <data name="ContextExtractSingleMenu" xml:space="preserve"><value>Use TZIP to extract {name} to this folder</value></data>
+  <data name="ContextExtractSingleMenu" xml:space="preserve"><value>Use TZIP to extract {name} to a matching folder</value></data>
   <data name="ContextOpenSingleMenu" xml:space="preserve"><value>Use TZIP to open {name}</value></data>
   <data name="CreatePasswordTitle" xml:space="preserve"><value>Archive password</value></data>
   <data name="EnterPasswordTitle" xml:space="preserve"><value>Password required</value></data>
-  <data name="CreatePasswordDescription" xml:space="preserve"><value>Protect {0} with AES-256-GCM. Password-protected files created by TZIP must be opened with TZIP.</value></data>
+  <data name="CreatePasswordDescription" xml:space="preserve"><value>Create a standard password-protected {0} archive that compatible archive software can open.</value></data>
+  <data name="PasswordFormatUnsupportedDescription" xml:space="preserve"><value>{0} does not define standard password protection. Password is disabled so the file remains valid and interoperable.</value></data>
+  <data name="PasswordFormatUnsupported" xml:space="preserve"><value>This format does not support a standard archive password. Use ZIP, 7Z, or RAR.</value></data>
+  <data name="SevenZipStartFailed" xml:space="preserve"><value>The embedded 7-Zip compressor could not be started.</value></data>
+  <data name="SevenZipExitCode" xml:space="preserve"><value>7-Zip failed with exit code {0}.</value></data>
+  <data name="SevenZipEmbeddedMissing" xml:space="preserve"><value>The embedded 7-Zip component is missing or damaged.</value></data>
+  <data name="ConflictTitle" xml:space="preserve"><value>File already exists</value></data>
+  <data name="ConflictPrompt" xml:space="preserve"><value>The destination already contains this file. Choose how this conflict should be handled.</value></data>
+  <data name="ConflictFileDetails" xml:space="preserve"><value>Archive item: {0}&#xA;Existing file: {1}</value></data>
+  <data name="ConflictThisYes" xml:space="preserve"><value>Yes for this file</value></data>
+  <data name="ConflictThisNo" xml:space="preserve"><value>No for this file</value></data>
+  <data name="ConflictAllYes" xml:space="preserve"><value>Yes to all</value></data>
+  <data name="ConflictAllNo" xml:space="preserve"><value>No to all</value></data>
+  <data name="ConflictCancelTask" xml:space="preserve"><value>End this task</value></data>
+  <data name="InvalidConflictChoice" xml:space="preserve"><value>The overwrite response was invalid.</value></data>
+  <data name="ConflictResolverMissing" xml:space="preserve"><value>An overwrite decision was required, but no conflict dialog was available.</value></data>
+  <data name="ContextDestinationStatus" xml:space="preserve"><value>Output folder: {0}</value></data>
   <data name="EnterPasswordDescription" xml:space="preserve"><value>Enter the password for {0}.</value></data>
   <data name="EnableArchivePassword" xml:space="preserve"><value>Enable password protection</value></data>
   <data name="PasswordLabel" xml:space="preserve"><value>Password</value></data>
   <data name="ConfirmPasswordLabel" xml:space="preserve"><value>Confirm password</value></data>
   <data name="ShowPassword" xml:space="preserve"><value>Show password</value></data>
   <data name="PasswordMismatch" xml:space="preserve"><value>The two passwords do not match.</value></data>
+  <data name="PasswordAsciiOnly" xml:space="preserve"><value>For compatibility with ZIP, 7Z, RAR, and other archive software, a new password may use only printable English letters, numbers, spaces, and symbols.</value></data>
   <data name="ArchivePasswordRequired" xml:space="preserve"><value>This archive requires a password.</value></data>
-  <data name="ArchivePasswordInvalid" xml:space="preserve"><value>The password is incorrect.</value></data>
+  <data name="ArchivePasswordInvalid" xml:space="preserve"><value>The password is incorrect, or the encrypted data is damaged.</value></data>
   <data name="ArchivePasswordDamaged" xml:space="preserve"><value>Password verification failed. The encrypted archive is damaged or has been modified.</value></data>
   <data name="ArchivePasswordCreateFailed" xml:space="preserve"><value>Password protection could not be created.</value></data>
   <data name="ArchivePasswordCleanupFailed" xml:space="preserve"><value>Temporary decrypted data could not be removed. Close programs using it and remove the TZIP password temporary folder.</value></data>

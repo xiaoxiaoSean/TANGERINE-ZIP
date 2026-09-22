@@ -28,7 +28,7 @@ RAR 创建依赖用户按 WinRAR 官方许可取得的 `rar.exe`（官方说明�
 
 GZ、BZ2、XZ、LZ4、ZSTD 是单文件压缩流，因此创建时只能选择一个普通文件。ZIP、7Z、TAR、ISO、WIM 服务层支持多文件；ISO 使用 Joliet 文件名，WIM 使用 LZMS。
 
-所有列出的格式均可选择 TZIP 密码保护。由于 TAR、GZ、BZ2、XZ、LZ4、ZSTD、ISO、WIM 的标准格式不定义密码，创建密码文件时统一使用 AES-256-GCM 的 `TZIPENC2` 外层封装；未设置密码时仍输出原生标准格式。第三方原生加密 ZIP、RAR、7Z 通过 SharpCompress 密码读取流程处理。
+ZIP、7Z、RAR 支持可被第三方压缩软件读取的原生密码创建与解压。TAR、GZ、BZ2、XZ、LZ4、ZSTD、ISO、WIM 的标准格式没有密码字段，因此界面会禁用密码并明确说明，不会用私有外壳或其他格式冒充。详细兼容性和覆盖冲突协议见 `PASSWORD_ARCHIVES.md`。
 
 ## 3. 核心设计
 

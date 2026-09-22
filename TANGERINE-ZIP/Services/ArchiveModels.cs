@@ -21,6 +21,50 @@ internal enum OverwritePolicy
     Cancel
 }
 
+internal enum ConflictChoice
+{
+    ThisYes,
+    ThisNo,
+    AllYes,
+    AllNo,
+    Cancel
+}
+
+internal sealed record ArchiveConflict(string TargetPath, string EntryKey);
+
+internal sealed class ConflictResolutionState
+{
+    private readonly Func<ArchiveConflict, ConflictChoice> _resolver;
+    private bool? _overwriteAll;
+
+    public ConflictResolutionState(Func<ArchiveConflict, ConflictChoice> resolver) => _resolver = resolver;
+
+    public bool ShouldOverwrite(string targetPath, string entryKey, OverwritePolicy fallbackPolicy)
+    {
+        if (!File.Exists(targetPath)) return true;
+        if (_overwriteAll.HasValue) return _overwriteAll.Value;
+        if (fallbackPolicy == OverwritePolicy.OverwriteAll) return true;
+        if (fallbackPolicy == OverwritePolicy.SkipAll) return false;
+
+        ConflictChoice choice = _resolver(new ArchiveConflict(targetPath, entryKey));
+        return choice switch
+        {
+            ConflictChoice.ThisYes => true,
+            ConflictChoice.ThisNo => false,
+            ConflictChoice.AllYes => SetAll(true),
+            ConflictChoice.AllNo => SetAll(false),
+            ConflictChoice.Cancel => throw new OperationCanceledException(),
+            _ => throw new StageException("CNFLT0001", LanguageManager.Get("InvalidConflictChoice")) //CNFLT0001
+        };
+    }
+
+    private bool SetAll(bool overwrite)
+    {
+        _overwriteAll = overwrite;
+        return overwrite;
+    }
+}
+
 internal sealed class StageException : Exception
 {
     public StageException(string stageCode, string message, Exception? innerException = null)
@@ -43,6 +87,10 @@ internal static class ArchiveCapabilities
         FileDetector.FileType.Wim;
 
     public static bool CanCreate(FileDetector.FileType type) => CanOpen(type);
+
+    // Only these archive standards define interoperable password protection.
+    public static bool CanCreateWithPassword(FileDetector.FileType type) => type is
+        FileDetector.FileType.Zip or FileDetector.FileType.Rar or FileDetector.FileType.SevenZip;
 
     public static bool IsSingleFileStream(FileDetector.FileType type) => type is
         FileDetector.FileType.GZip or FileDetector.FileType.BZip2 or

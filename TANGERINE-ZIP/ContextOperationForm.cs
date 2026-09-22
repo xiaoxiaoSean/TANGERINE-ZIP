@@ -47,6 +47,8 @@ internal sealed class ContextOperationForm : Form
             _statusLabel.Text = LanguageManager.Get("ContextOperationCompleted");
             _completed = true;
             _actionButton.Text = LanguageManager.Get("Confirm");
+            // Explorer operations close themselves only after the awaited operation has completed without error.
+            BeginInvoke(Close);
         }
         catch (OperationCanceledException)
         {
