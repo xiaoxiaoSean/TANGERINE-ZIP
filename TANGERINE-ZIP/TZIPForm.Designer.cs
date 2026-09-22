@@ -31,12 +31,12 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TZIPForm));
             textBox1 = new TextBox();
             tableLayoutPanel1 = new TableLayoutPanel();
+            pictureBox2 = new PictureBox();
             button1 = new Button();
             pictureBox1 = new PictureBox();
-            pictureBox2 = new PictureBox();
             tableLayoutPanel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             SuspendLayout();
             // 
             // textBox1
@@ -49,7 +49,7 @@
             textBox1.ScrollBars = ScrollBars.Both;
             textBox1.Size = new Size(699, 266);
             textBox1.TabIndex = 0;
-            textBox1.Text = "TZIP v1.0.0\r\nfounder:xiaoxiaoSean\r\nthanks all contributor\r\nthanks the author and all contributors  of rar\r\nthanks the author and all contributors of all nuget packages";
+            textBox1.Text = resources.GetString("textBox1.Text");
             // 
             // tableLayoutPanel1
             // 
@@ -68,6 +68,17 @@
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 32F));
             tableLayoutPanel1.Size = new Size(1411, 849);
             tableLayoutPanel1.TabIndex = 1;
+            // 
+            // pictureBox2
+            // 
+            pictureBox2.Dock = DockStyle.Fill;
+            pictureBox2.Image = Resources.TZIPResource.TZIP;
+            pictureBox2.Location = new Point(708, 3);
+            pictureBox2.Name = "pictureBox2";
+            pictureBox2.Size = new Size(700, 571);
+            pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox2.TabIndex = 3;
+            pictureBox2.TabStop = false;
             // 
             // button1
             // 
@@ -91,17 +102,6 @@
             pictureBox1.TabIndex = 2;
             pictureBox1.TabStop = false;
             // 
-            // pictureBox2
-            // 
-            pictureBox2.Dock = DockStyle.Fill;
-            pictureBox2.Image = Resources.TZIPResource.TZIP;
-            pictureBox2.Location = new Point(708, 3);
-            pictureBox2.Name = "pictureBox2";
-            pictureBox2.Size = new Size(700, 571);
-            pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
-            pictureBox2.TabIndex = 3;
-            pictureBox2.TabStop = false;
-            // 
             // TZIPForm
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
@@ -115,8 +115,8 @@
             Load += TZIPForm_Load;
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
         }
 
