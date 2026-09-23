@@ -1,99 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
 using TANGERINE_ZIP.Resources;
-using TANGERINE_ZIP.Tools.LightTool;
-using TANGERINE_ZIP.Tools;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ScrollBar;
-namespace TANGERINE_ZIP
+
+namespace TANGERINE_ZIP;
+
+public sealed class TZIPForm : Window
 {
-    public partial class TZIPForm : Form
+    public TZIPForm()
     {
-#if ENABLE_LIGHT
-        private TangerineLightControl? tangerineLightControl;
-        private System.Windows.Forms.Timer? colorTimer;
-        private KnownColor[]? knownColors;
-        private int colorIndex;
-
-        private TangerineLightOverlay? _lightOverlay;
-#endif
-        public TZIPForm()
+        WpfUi.Style(this);
+        Icon = WpfUi.WindowIcon(typeof(TZIPForm));
+        Title = LanguageManager.Get("ApplicationTitle");
+        WindowState = WindowState.Maximized;
+        var root = WpfUi.Grid(2, 1);
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        WpfUi.Add(root, WpfUi.Logo(TZIPResource.Kiro), 0);
+        WpfUi.Add(root, WpfUi.Logo(TZIPResource.TZIP), 0, 1);
+        var information = new TextBox
         {
-            InitializeComponent();
-        }
-        private void TZIPForm_Load(object sender, EventArgs e)
-        {
-            DarkTheme.Apply(this);
-            Text = LanguageManager.Get("ApplicationTitle");
-#if ENABLE_LIGHT
-            this.WindowState= FormWindowState.Maximized;
-            _lightOverlay = new TangerineLightOverlay(this);
-            _lightOverlay.TargetFps = 12000;
-            _lightOverlay.Radius = 30f;
-            _lightOverlay.LightStrength = 2.0f;
-            _lightOverlay.EdgeStrength = 30.0f;
-            _lightOverlay.EdgeWidth = 30f;
-            _lightOverlay.disableWhenMouseSpeedGetTooFast = 100000000;
-            _lightOverlay.eDelay = 0;
-            _lightOverlay.eAnimationTime = 0;
-            tangerineLightControl =
-               new TangerineLightControl();
-            tangerineLightControl.BackColor = Color.Black;
-            tangerineLightControl.Dock =
-                DockStyle.Fill;
-            tangerineLightControl.LightRadius =
-               500f;
-           
-            tangerineLightControl.GlowStrength =
-                7.0f;
-            tangerineLightControl.EdgeThickness = 10;
-            tangerineLightControl.GlowColor =
-                Color.White;
-
-            tangerineLightControl.SetImage(
-                TZIPResource.Kiro
-            );
-
-            Controls.Add(
-                tangerineLightControl
-            );
-
-            tangerineLightControl.BringToFront();
-
-            knownColors = Enum.GetValues<KnownColor>();
-            colorTimer = new System.Windows.Forms.Timer
-            {
-                Interval = 50
-            };
-            colorTimer.Tick += (_, _) =>
-            {
-                if (tangerineLightControl == null || knownColors == null)
-                    return;
-
-                tangerineLightControl.GlowColor =
-                    Color.FromKnownColor(knownColors[colorIndex]);
-                colorIndex = (colorIndex + 1) % knownColors.Length;
-            };
-            colorTimer.Start();
-#else
-            PictureBox logo = new()
-            {
-                BackColor = Color.Black,
-                Dock = DockStyle.Fill,
-                Image = TZIPResource.Kiro,
-                SizeMode = PictureBoxSizeMode.Zoom
-            };
-            Controls.Add(logo);
-#endif
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
+            Text = new System.ComponentModel.ComponentResourceManager(typeof(TZIPForm)).GetString("textBox1.Text") ?? string.Empty,
+            IsReadOnly = true, TextWrapping = TextWrapping.Wrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Background = WpfUi.Surface, Foreground = WpfUi.Foreground, Margin = new Thickness(8)
+        };
+        WpfUi.Add(root, information, 1);
+        var close = WpfUi.Button(LanguageManager.Get("Close"));
+        close.Click += (_, _) => Close();
+        WpfUi.Add(root, close, 1, 1);
+        Content = root;
     }
 }

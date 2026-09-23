@@ -7,7 +7,7 @@
 		<RootNamespace>TANGERINE_ZIP</RootNamespace>
 
 		<Nullable>enable</Nullable>
-		<UseWindowsForms>true</UseWindowsForms>
+		<UseWPF>true</UseWPF>
 		<ImplicitUsings>enable</ImplicitUsings>
 
 		<UserSecretsId>655049f4-4e69-449c-824a-293a9573c864</UserSecretsId>
@@ -28,7 +28,7 @@
 		<!-- 对单文件中的程序集进行压缩 -->
 		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 
-		<!-- WinForms / 反射类库较多，不建议开启 Trim -->
+		<!-- Reflection-based archive libraries are not compatible with trimming. -->
 		<PublishTrimmed>false</PublishTrimmed>
 
 		<!-- 不输出调试符号 -->
@@ -38,11 +38,6 @@
 		<!-- 只发布需要的卫星语言资源 -->
 		<SatelliteResourceLanguages>en-US;zh-CN;zh-TW;zh-HK;zh-MO</SatelliteResourceLanguages>
 
-		<!-- 自定义条件编译参数 -->
-		<ENABLE_LIGHT Condition="'$(ENABLE_LIGHT)' == ''">false</ENABLE_LIGHT>
-		<DefineConstants Condition="'$(ENABLE_LIGHT)' == 'true'">
-			$(DefineConstants);ENABLE_LIGHT
-		</DefineConstants>
 	</PropertyGroup>
 
 

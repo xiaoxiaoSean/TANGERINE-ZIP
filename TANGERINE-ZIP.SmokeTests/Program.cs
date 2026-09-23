@@ -1,5 +1,12 @@
 using TANGERINE_ZIP.Services;
 using TANGERINE_ZIP.Tools;
+using System.IO;
+
+if (args.Length == 2 && args[0] == "--ui-probe")
+{
+    UiProbe.Run(args[1]);
+    return;
+}
 
 string repositoryRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
 string source = Path.Combine(repositoryRoot, "testfile", "1", "Linux教程.pdf");

@@ -18,15 +18,13 @@ namespace TANGERINE_ZIP
                 Environment.ExitCode = Services.ArchiveWorker.ExecuteAsync().GetAwaiter().GetResult();
                 return;
             }
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
+            var application = new System.Windows.Application();
             if (args.Length >= 2 && args[0].StartsWith("--context-", StringComparison.Ordinal))
             {
                 Services.ContextMenuCommandHandler.Run(args[0], args[1..]);
                 return;
             }
-            Application.Run(new Form1());
+            application.Run(new Form1());
         }
     }
 }

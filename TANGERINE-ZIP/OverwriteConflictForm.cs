@@ -1,68 +1,48 @@
 using TANGERINE_ZIP.Services;
-using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
-// Stage head: CNFFM
-internal sealed class OverwriteConflictForm : Form
+internal sealed class OverwriteConflictForm : Window
 {
+    public ConflictChoice Choice { get; private set; } = ConflictChoice.Cancel;
+
     public OverwriteConflictForm(ArchiveConflict conflict)
     {
-        Text = LanguageManager.Get("ConflictTitle");
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MinimizeBox = false;
-        MaximizeBox = false;
+        WpfUi.Style(this);
+        Title = LanguageManager.Get("ConflictTitle");
+        WpfUi.SizeWindow(this, 0.6, 0.38);
         ShowInTaskbar = false;
-        ClientSize = new Size(680, 250);
-
-        Label explanation = new()
+        var root = WpfUi.Grid(2, 2, 1);
+        root.Margin = new Thickness(18);
+        WpfUi.Add(root, WpfUi.Text(LanguageManager.Get("ConflictPrompt")), 0);
+        WpfUi.Add(root, new TextBox
         {
-            Dock = DockStyle.Top,
-            Height = 52,
-            Padding = new Padding(12),
-            Text = LanguageManager.Get("ConflictPrompt")
-        };
-        TextBox path = new()
-        {
-            Dock = DockStyle.Top,
-            Height = 70,
-            Multiline = true,
-            ReadOnly = true,
-            ScrollBars = ScrollBars.Vertical,
-            Text = string.Format(LanguageManager.Get("ConflictFileDetails"), conflict.EntryKey, conflict.TargetPath)
-        };
-        FlowLayoutPanel buttons = new()
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(10),
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true
-        };
+            Text = string.Format(LanguageManager.Get("ConflictFileDetails"), conflict.EntryKey, conflict.TargetPath),
+            IsReadOnly = true, TextWrapping = TextWrapping.Wrap, Background = WpfUi.Surface,
+            Foreground = WpfUi.Foreground, Margin = new Thickness(4)
+        }, 1);
+        var buttons = new UniformGrid { Rows = 1, Margin = new Thickness(0, 12, 0, 0) };
         AddButton(buttons, "ConflictThisYes", ConflictChoice.ThisYes);
         AddButton(buttons, "ConflictThisNo", ConflictChoice.ThisNo);
         AddButton(buttons, "ConflictAllYes", ConflictChoice.AllYes);
         AddButton(buttons, "ConflictAllNo", ConflictChoice.AllNo);
         AddButton(buttons, "ConflictCancelTask", ConflictChoice.Cancel);
-        Controls.Add(buttons);
-        Controls.Add(path);
-        Controls.Add(explanation);
-        DarkTheme.Apply(this);
+        WpfUi.Add(root, buttons, 2);
+        Content = root;
     }
 
-    public ConflictChoice Choice { get; private set; } = ConflictChoice.Cancel;
-
-    private void AddButton(Control parent, string resourceKey, ConflictChoice choice)
+    private void AddButton(Panel parent, string key, ConflictChoice choice)
     {
-        Button button = new() { Text = LanguageManager.Get(resourceKey), Width = 122, Height = 38, Margin = new Padding(4) };
-        button.Click += (_, _) => { Choice = choice; DialogResult = DialogResult.OK; Close(); };
-        parent.Controls.Add(button);
+        var button = WpfUi.Button(LanguageManager.Get(key));
+        button.Click += (_, _) => { Choice = choice; DialogResult = true; };
+        parent.Children.Add(button);
     }
 
-    public static ConflictChoice Ask(IWin32Window? owner, ArchiveConflict conflict)
+    public static ConflictChoice Ask(Window? owner, ArchiveConflict conflict)
     {
-        using OverwriteConflictForm form = new(conflict);
-        if (owner is null) form.ShowDialog(); else form.ShowDialog(owner);
+        var form = new OverwriteConflictForm(conflict);
+        if (owner is not null) form.Owner = owner;
+        form.ShowDialog();
         return form.Choice;
     }
 }

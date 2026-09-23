@@ -3,37 +3,37 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
-// Stage head: CTXOP
-internal sealed class ContextOperationForm : Form
+internal sealed class ContextOperationForm : Window
 {
     private readonly Func<IProgress<ArchiveProgress>, CancellationToken, Task> _operation;
     private readonly CancellationTokenSource _cancellation = new();
-    private readonly ProgressBar _progressBar = new() { Dock = DockStyle.Top, Height = 24, Minimum = 0, Maximum = 100 };
-    private readonly Label _statusLabel = new() { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
-    private readonly Button _actionButton = new() { Dock = DockStyle.Bottom, Height = 38 };
+    private readonly ProgressBar _progressBar = WpfUi.Progress();
+    private readonly TextBlock _statusLabel = WpfUi.Text(string.Empty);
+    private readonly Button _actionButton = WpfUi.Button(string.Empty);
     private bool _completed;
 
     public ContextOperationForm(string title, Func<IProgress<ArchiveProgress>, CancellationToken, Task> operation)
     {
         _operation = operation;
-        Text = title;
-        StartPosition = FormStartPosition.CenterScreen;
-        MinimizeBox = false;
-        MaximizeBox = false;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        ClientSize = new Size(620, 100);
-        Controls.Add(_statusLabel);
-        Controls.Add(_progressBar);
-        Controls.Add(_actionButton);
+        WpfUi.Style(this);
+        Title = title;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        WpfUi.SizeWindow(this, 0.5, 0.25);
+        var root = WpfUi.Grid(0.2, 1, 0.5);
+        root.Margin = new Thickness(16);
+        WpfUi.Add(root, _progressBar, 0);
+        WpfUi.Add(root, _statusLabel, 1);
+        WpfUi.Add(root, _actionButton, 2);
+        Content = root;
         _actionButton.Click += ActionButton_Click;
-        Shown += ContextOperationForm_Shown;
-        FormClosing += ContextOperationForm_FormClosing;
+        Loaded += ContextOperationForm_Shown;
+        Closing += ContextOperationForm_Closing;
+        Closed += (_, _) => _cancellation.Dispose();
     }
 
-    private async void ContextOperationForm_Shown(object? sender, EventArgs e)
+    private async void ContextOperationForm_Shown(object? sender, RoutedEventArgs e)
     {
-        DarkTheme.Apply(this);
-        _actionButton.Text = LanguageManager.Get("StopWork");
+        _actionButton.Content = LanguageManager.Get("StopWork");
         _statusLabel.Text = LanguageManager.Get("ContextOperationRunning");
         Progress<ArchiveProgress> progress = new(item =>
         {
@@ -46,49 +46,37 @@ internal sealed class ContextOperationForm : Form
             _progressBar.Value = 100;
             _statusLabel.Text = LanguageManager.Get("ContextOperationCompleted");
             _completed = true;
-            _actionButton.Text = LanguageManager.Get("Confirm");
-            // Explorer operations close themselves only after the awaited operation has completed without error.
-            BeginInvoke(Close);
+            _actionButton.Content = LanguageManager.Get("Confirm");
+            _ = Dispatcher.BeginInvoke(Close);
         }
         catch (OperationCanceledException)
         {
             _statusLabel.Text = LanguageManager.Get("OperationCancelled");
             _completed = true;
-            _actionButton.Text = LanguageManager.Get("Confirm");
+            _actionButton.Content = LanguageManager.Get("Confirm");
         }
         catch (Exception exception)
         {
-            string stageCode = exception is StageException stageException ? stageException.StageCode : "CTXOP0001";
-            MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error); //CTXOP0001
+            string code = exception is StageException stage ? stage.StageCode : "CTXOP0001";
+            MessageBox.Show(this, MessageTipGenerator.GenerateTip(code, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
             _completed = true;
-            _actionButton.Text = LanguageManager.Get("Confirm");
+            _actionButton.Content = LanguageManager.Get("Confirm");
         }
     }
 
-    private void ActionButton_Click(object? sender, EventArgs e)
+    private void ActionButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (_completed)
-        {
-            Close();
-            return;
-        }
-        if (MessageBox.Show(this, LanguageManager.Get("StopWorkRisk"), LanguageManager.Get("StopWork"),
-            MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-        _actionButton.Enabled = false;
+        if (_completed) { Close(); return; }
+        if (!WpfUi.Confirm(this, LanguageManager.Get("StopWorkRisk"), LanguageManager.Get("StopWork"))) return;
+        _actionButton.IsEnabled = false;
         _statusLabel.Text = LanguageManager.Get("StoppingWork");
         _cancellation.Cancel();
     }
 
-    private void ContextOperationForm_FormClosing(object? sender, FormClosingEventArgs e)
+    private void ContextOperationForm_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (_completed) return;
         e.Cancel = true;
-        ActionButton_Click(this, EventArgs.Empty);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing) _cancellation.Dispose();
-        base.Dispose(disposing);
+        ActionButton_Click(this, new RoutedEventArgs());
     }
 }

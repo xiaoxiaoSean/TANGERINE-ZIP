@@ -23,7 +23,7 @@ internal static class ContextMenuCommandHandler
         catch (Exception exception)
         {
             string stageCode = exception is StageException stageException ? stageException.StageCode : "CTXCM0003";
-            MessageBox.Show(MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error); //CTXCM0003
+            MessageBox.Show(MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //CTXCM0003
         }
     }
 
@@ -47,14 +47,14 @@ internal static class ContextMenuCommandHandler
             }
             finally { conflictPromptLock.Release(); }
         }
-        using ContextOperationForm form = new(LanguageManager.Get("ContextExtractProgress"),
+        ContextOperationForm form = new(LanguageManager.Get("ContextExtractProgress"),
             (progress, token) => ExtractManyAsync(paths, passwords, ResolveConflictAsync, progress, token));
-        Application.Run(form);
+        form.ShowDialog();
     }
 
     private static void RunCompress(string[] paths)
     {
-        using SaveFileDialog dialog = new()
+        SaveFileDialog dialog = new()
         {
             Title = LanguageManager.Get("ContextSelectOutput"),
             Filter = LanguageManager.Get("CreateArchiveFilter"),
@@ -62,22 +62,22 @@ internal static class ContextMenuCommandHandler
             OverwritePrompt = true,
             InitialDirectory = Path.GetDirectoryName(paths[0])
         };
-        if (dialog.ShowDialog() != DialogResult.OK) return;
+        if (dialog.ShowDialog() != true) return;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(dialog.FilterIndex);
         if (!ArchivePasswordForm.TryGetCreationPassword(null, Path.GetFileName(dialog.FileName), type, out string? password)) return;
-        using ContextOperationForm form = new(LanguageManager.Get("ContextCompressProgress"), (progress, token) =>
+        ContextOperationForm form = new(LanguageManager.Get("ContextCompressProgress"), (progress, token) =>
             new ArchiveWorkerClient().CreateAsync(paths, dialog.FileName, type, progress, token, password));
-        Application.Run(form);
+        form.ShowDialog();
     }
 
     private static void RunOpen(string[] paths)
     {
         if (paths.Length != 1)
         {
-            MessageBox.Show(LanguageManager.Get("ContextOpenMultiple"), LanguageManager.Get("ApplicationTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(LanguageManager.Get("ContextOpenMultiple"), LanguageManager.Get("ApplicationTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        Application.Run(new Form1(paths[0]));
+        new Form1(paths[0]).ShowDialog();
     }
 
     private static async Task ExtractManyAsync(string[] paths, ConcurrentDictionary<string, string?> passwords,

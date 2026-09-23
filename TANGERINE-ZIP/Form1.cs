@@ -1,26 +1,20 @@
 using TANGERINE_ZIP.Services;
 using TANGERINE_ZIP.Tools;
-using TANGERINE_ZIP.Tools.LightTool;
 
 namespace TANGERINE_ZIP;
 
 // Stage head: F0001
-public partial class Form1 : Form
+public partial class Form1 : Window
 {
     private readonly ArchiveWorkerClient _archiveService = new();
     private readonly RarToolService _rarToolService = new();
     private readonly OpenFileDialog _compressionSourceDialog = new();
     private readonly List<ArchiveEntryInfo> _archiveEntries = [];
-#if ENABLE_LIGHT
-    private TangerineLightOverlay? _lightOverlay;
-    private System.Windows.Forms.Timer? _fileBoxScrollTimer;
-    private float _normalEdgeStrength;
-#endif
-    private readonly ToolStripMenuItem _extractNestedTarMenuItem;
-    private readonly ToolStripMenuItem _stopWorkMenuItem;
-    private readonly ToolStripMenuItem _contextMenuToolStripMenuItem;
-    private readonly ToolStripMenuItem _createContextMenuToolStripMenuItem;
-    private readonly ToolStripMenuItem _deleteContextMenuToolStripMenuItem;
+    private readonly MenuItem _extractNestedTarMenuItem;
+    private readonly MenuItem _stopWorkMenuItem;
+    private readonly MenuItem _contextMenuToolStripMenuItem;
+    private readonly MenuItem _createContextMenuToolStripMenuItem;
+    private readonly MenuItem _deleteContextMenuToolStripMenuItem;
     private readonly string? _startupArchivePath;
     private CancellationTokenSource? _operationCancellation;
     private NestedTarInfo _nestedTarInfo = NestedTarInfo.None;
@@ -35,34 +29,30 @@ public partial class Form1 : Form
         _startupArchivePath = startupArchivePath;
         _compressionSourceDialog.Multiselect = true;
         _compressionSourceDialog.CheckFileExists = true;
-        _compressionSourceDialog.CheckPathExists = true;
         _compressionSourceDialog.RestoreDirectory = false;
-        // The classic native dialog avoids Explorer shell extensions and unavailable recent locations.
-        _compressionSourceDialog.AutoUpgradeEnabled = false;
-        _compressionSourceDialog.ClientGuid = new Guid("D198A293-BAA6-4F93-91F5-7F587C667D84");
         string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (Directory.Exists(userProfilePath)) _compressionSourceDialog.InitialDirectory = userProfilePath;
-        _stopWorkMenuItem = new ToolStripMenuItem { Visible = false };
+        _stopWorkMenuItem = new MenuItem { Visibility = Visibility.Collapsed };
         _stopWorkMenuItem.Click += StopWorkMenuItem_Click;
         mainMenu.Items.Add(_stopWorkMenuItem);
-        _contextMenuToolStripMenuItem = new ToolStripMenuItem();
-        _createContextMenuToolStripMenuItem = new ToolStripMenuItem();
-        _deleteContextMenuToolStripMenuItem = new ToolStripMenuItem();
+        _contextMenuToolStripMenuItem = new MenuItem();
+        _createContextMenuToolStripMenuItem = new MenuItem();
+        _deleteContextMenuToolStripMenuItem = new MenuItem();
         _createContextMenuToolStripMenuItem.Click += CreateContextMenuToolStripMenuItem_Click;
         _deleteContextMenuToolStripMenuItem.Click += DeleteContextMenuToolStripMenuItem_Click;
-        _contextMenuToolStripMenuItem.DropDownItems.AddRange([_createContextMenuToolStripMenuItem, _deleteContextMenuToolStripMenuItem]);
+        _contextMenuToolStripMenuItem.Items.Add(_createContextMenuToolStripMenuItem);
+        _contextMenuToolStripMenuItem.Items.Add(_deleteContextMenuToolStripMenuItem);
         mainMenu.Items.Add(_contextMenuToolStripMenuItem);
-        FormClosing += (_, args) =>
+        Closing += (_, args) =>
         {
             if (!_isBusy) return;
             args.Cancel = true;
             StopWorkMenuItem_Click(this, EventArgs.Empty);
         };
-        FormClosed += (_, _) => _compressionSourceDialog.Dispose();
-        _extractNestedTarMenuItem = new ToolStripMenuItem();
+        _extractNestedTarMenuItem = new MenuItem();
         _extractNestedTarMenuItem.Click += ExtractNestedTarMenuItem_Click;
-        extractToolStripMenuItem.DropDownItems.Add(new ToolStripSeparator());
-        extractToolStripMenuItem.DropDownItems.Add(_extractNestedTarMenuItem);
+        extractToolStripMenuItem.Items.Add(new Separator());
+        extractToolStripMenuItem.Items.Add(_extractNestedTarMenuItem);
     }
 
     private void Form1_Load(object sender, EventArgs e)
@@ -70,20 +60,10 @@ public partial class Form1 : Form
         try
         {
             ApplyLocalizedText();
-            DarkTheme.Apply(this);
-#if ENABLE_LIGHT
-            ConfigureLightEffect();
-#endif
             ConfigureEntryColors();
             SetArchiveControls(false);
             if (!string.IsNullOrWhiteSpace(_startupArchivePath))
-                BeginInvoke(async () => await OpenArchiveAsync(_startupArchivePath));
-            /*if (_rarToolService.ShouldCheckAtStartup && !_rarToolService.IsAvailable)
-            {
-                MessageBox.Show(this,
-                    MessageTipGenerator.GenerateTip("RARTL0001", LanguageManager.Get("RarToolMissing")),
-                    LanguageManager.Get("RarUnavailableTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning); //RARTL0001
-            }*///function:check if rar.exe is available,about: DONT_CHECK_RAR_EXE_AT_START file
+                Dispatcher.BeginInvoke(async () => await OpenArchiveAsync(_startupArchivePath));
         }
         catch (Exception exception)
         {
@@ -94,58 +74,43 @@ public partial class Form1 : Form
     private void ApplyLocalizedText()
     {
         statusLabel.Text = LanguageManager.Get("readytext");
-        OpenToolStripMenuItem.Text = LanguageManager.Get("openText");
-        extractToolStripMenuItem.Text = LanguageManager.Get("extractText");
-        compressToolStripMenuItem.Text = LanguageManager.Get("compressText");
-        SettingsToolStripMenuItem.Text = LanguageManager.Get("settingsText");
-        uninstallFileToolStripMenuItem.Text = LanguageManager.Get("uninstallFileText");
+        OpenToolStripMenuItem.Header = LanguageManager.Get("openText");
+        extractToolStripMenuItem.Header = LanguageManager.Get("extractText");
+        compressToolStripMenuItem.Header = LanguageManager.Get("compressText");
+        SettingsToolStripMenuItem.Header = LanguageManager.Get("settingsText");
+        uninstallFileToolStripMenuItem.Header = LanguageManager.Get("uninstallFileText");
         mainTab.Text = LanguageManager.Get("mainTabText");
-        extractDirectlyALLToolStripMenuItem.Text = LanguageManager.Get("extractDirectlyALLText");
-        extractToFolderALLToolStripMenuItem.Text = LanguageManager.Get("extractToFolderALLText");
-        extractDirectlySELECTEDToolStripMenuItem.Text = LanguageManager.Get("extractDirectlySELECTEDText");
-        extractToAFolderSELECTEDToolStripMenuItem.Text = LanguageManager.Get("extractToAFolderSELECTEDText");
-        compressSelectFileToolStripMenuItem.Text = LanguageManager.Get("SelectFilesToCompress");
+        extractDirectlyALLToolStripMenuItem.Header = LanguageManager.Get("extractDirectlyALLText");
+        extractToFolderALLToolStripMenuItem.Header = LanguageManager.Get("extractToFolderALLText");
+        extractDirectlySELECTEDToolStripMenuItem.Header = LanguageManager.Get("extractDirectlySELECTEDText");
+        extractToAFolderSELECTEDToolStripMenuItem.Header = LanguageManager.Get("extractToAFolderSELECTEDText");
+        compressSelectFileToolStripMenuItem.Header = LanguageManager.Get("SelectFilesToCompress");
         _compressionSourceDialog.Title = LanguageManager.Get("SelectFilesToCompress");
         _compressionSourceDialog.Filter = LanguageManager.Get("AllFilesFilter");
-        _extractNestedTarMenuItem.Text = LanguageManager.Get("ExtractNestedTar");
-        _stopWorkMenuItem.Text = LanguageManager.Get("StopWork");
-        _contextMenuToolStripMenuItem.Text = LanguageManager.Get("ContextMenu");
-        _createContextMenuToolStripMenuItem.Text = LanguageManager.Get("CreateContextMenu");
-        _deleteContextMenuToolStripMenuItem.Text = LanguageManager.Get("DeleteContextMenu");
+        _extractNestedTarMenuItem.Header = LanguageManager.Get("ExtractNestedTar");
+        _stopWorkMenuItem.Header = LanguageManager.Get("StopWork");
+        _contextMenuToolStripMenuItem.Header = LanguageManager.Get("ContextMenu");
+        _createContextMenuToolStripMenuItem.Header = LanguageManager.Get("CreateContextMenu");
+        _deleteContextMenuToolStripMenuItem.Header = LanguageManager.Get("DeleteContextMenu");
         mainOpenFileDialog.Title = LanguageManager.Get("SelectArchive");
         mainOpenFileDialog.Filter = LanguageManager.Get("ArchiveDialogFilter");
     }
 
-#if ENABLE_LIGHT
-    private void ConfigureLightEffect()
-    {
-        _lightOverlay = new TangerineLightOverlay(this)
-        {
-            TargetFps = 60, Radius = 120f, LightStrength = 0.02f, EdgeStrength = 1.9f,
-            EdgeWidth = 3f, disableWhenMouseSpeedGetTooFast = 100000
-        };
-        _normalEdgeStrength = _lightOverlay.EdgeStrength;
-        _fileBoxScrollTimer = new System.Windows.Forms.Timer { Interval = 120 };
-        _fileBoxScrollTimer.Tick += FileBoxScrollTimer_Tick;
-        fileBox.ViewChanged += FileBox_ViewChanged;
-        _lightOverlay.Show(this);
-    }
-#endif
-
     private void ConfigureEntryColors()
     {
-        fileBox.SetItemColorProvider(index =>
+        fileBox.ItemContainerGenerator.StatusChanged += (_, _) =>
         {
-            string displayName = fileBox.Items[index]?.ToString() ?? string.Empty;
-            if (displayName == LanguageManager.Get("goToParentDirectoryText")) return Color.White;
-            return FindEntry(displayName)?.IsDirectory == true ? Color.LightGoldenrodYellow : Color.WhiteSmoke;
-        });
+            foreach (string item in fileBox.Items.OfType<string>())
+                if (fileBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
+                    container.Foreground = FindEntry(item)?.IsDirectory == true
+                        ? WpfUi.DirectoryForeground : WpfUi.Foreground;
+        };
     }
 
     private async void OpenToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
-        if (mainOpenFileDialog.ShowDialog(this) != DialogResult.OK) return;
+        if (mainOpenFileDialog.ShowDialog(this) != true) return;
         await OpenArchiveAsync(mainOpenFileDialog.FileName);
     }
 
@@ -211,8 +176,8 @@ public partial class Form1 : Form
         try
         {
             string executablePath = Environment.ProcessPath ?? throw new StageException("F00010009", LanguageManager.Get("ContextExecutableMissing")); //F00010009
-            using ContextMenuSetupWizardForm wizard = new(ContextMenuSetupMode.Create, executablePath);
-            wizard.ShowDialog(this);
+            ContextMenuSetupWizardForm wizard = new(ContextMenuSetupMode.Create, executablePath) { Owner = this };
+            wizard.ShowDialog();
         }
         catch (Exception exception) { ShowException("F00010009", exception); } //F00010009
     }
@@ -222,8 +187,8 @@ public partial class Form1 : Form
         try
         {
             string executablePath = Environment.ProcessPath ?? throw new StageException("F00010010", LanguageManager.Get("ContextExecutableMissing")); //F00010010
-            using ContextMenuSetupWizardForm wizard = new(ContextMenuSetupMode.Delete, executablePath);
-            wizard.ShowDialog(this);
+            ContextMenuSetupWizardForm wizard = new(ContextMenuSetupMode.Delete, executablePath) { Owner = this };
+            wizard.ShowDialog();
         }
         catch (Exception exception) { ShowException("F00010010", exception); } //F00010010
     }
@@ -233,8 +198,8 @@ public partial class Form1 : Form
         _isBusy = true;
         _operationCancellation = new CancellationTokenSource();
         CancellationTokenSource operationIdentity = _operationCancellation;
-        _stopWorkMenuItem.Visible = true;
-        _stopWorkMenuItem.Enabled = true;
+        _stopWorkMenuItem.Visibility = Visibility.Visible;
+        _stopWorkMenuItem.IsEnabled = true;
         SetMenuEnabled(false);
         statusLabel.Text = initialStatus;
         statusProgressBar.Value = 0;
@@ -251,7 +216,7 @@ public partial class Form1 : Form
             _operationCancellation.Dispose();
             _operationCancellation = null;
             _isBusy = false;
-            _stopWorkMenuItem.Visible = false;
+            _stopWorkMenuItem.Visibility = Visibility.Collapsed;
             SetMenuEnabled(true);
         }
     }
@@ -262,12 +227,11 @@ public partial class Form1 : Form
         {
             CancellationTokenSource? current = _operationCancellation;
             if (current is null || current.IsCancellationRequested) return;
-            DialogResult answer = MessageBox.Show(this, LanguageManager.Get("StopWorkRisk"), LanguageManager.Get("StopWork"),
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+            bool answer = WpfUi.Confirm(this, LanguageManager.Get("StopWorkRisk"), LanguageManager.Get("StopWork"));
             // The modal confirmation pumps messages; the job may finish while the user reads it.
-            if (answer != DialogResult.Yes || !ReferenceEquals(current, _operationCancellation)) return;
+            if (!answer || !ReferenceEquals(current, _operationCancellation)) return;
             current.Cancel();
-            _stopWorkMenuItem.Enabled = false;
+            _stopWorkMenuItem.IsEnabled = false;
             statusLabel.Text = LanguageManager.Get("StoppingWork");
         }
         catch (Exception exception) { ShowException("F00010008", exception); } //F00010008
@@ -282,9 +246,9 @@ public partial class Form1 : Form
             selectedEntries = GetSelectedArchiveEntries();
             if (selectedEntries.Count == 0) { ShowInformation("NoSelectedEntries"); return; }
         }
-        mainFolderBrowserDialog.Description = LanguageManager.Get("SelectExtractFolderText");
-        if (mainFolderBrowserDialog.ShowDialog(this) != DialogResult.OK) return;
-        string destination = mainFolderBrowserDialog.SelectedPath;
+        mainFolderBrowserDialog.Title = LanguageManager.Get("SelectExtractFolderText");
+        if (mainFolderBrowserDialog.ShowDialog(this) != true) return;
+        string destination = mainFolderBrowserDialog.FolderName;
         if (createArchiveFolder) destination = Path.Combine(destination, Path.GetFileNameWithoutExtension(_archivePath));
         try
         {
@@ -305,14 +269,14 @@ public partial class Form1 : Form
     {
         if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
         _compressionSourceDialog.FileName = string.Empty;
-        if (_compressionSourceDialog.ShowDialog(this) != DialogResult.OK) return;
+        if (_compressionSourceDialog.ShowDialog(this) != true) return;
         string[] sourcePaths = _compressionSourceDialog.FileNames;
         if (sourcePaths.Length == 0) return;
         mainSaveFileDialog.Title = LanguageManager.Get("SelectOutputArchive");
         mainSaveFileDialog.Filter = LanguageManager.Get("CreateArchiveFilter");
         mainSaveFileDialog.AddExtension = true;
         mainSaveFileDialog.OverwritePrompt = true;
-        if (mainSaveFileDialog.ShowDialog(this) != DialogResult.OK) return;
+        if (mainSaveFileDialog.ShowDialog(this) != true) return;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(mainSaveFileDialog.FilterIndex);
         if (!ArchivePasswordForm.TryGetCreationPassword(this, Path.GetFileName(mainSaveFileDialog.FileName), type, out string? password)) return;
         try
@@ -344,9 +308,9 @@ public partial class Form1 : Form
             }
         }
 
-        mainFolderBrowserDialog.Description = LanguageManager.Get("SelectExtractFolderText");
-        if (mainFolderBrowserDialog.ShowDialog(this) != DialogResult.OK) return;
-        string destination = Path.Combine(mainFolderBrowserDialog.SelectedPath, Path.GetFileNameWithoutExtension(_archivePath));
+        mainFolderBrowserDialog.Title = LanguageManager.Get("SelectExtractFolderText");
+        if (mainFolderBrowserDialog.ShowDialog(this) != true) return;
+        string destination = Path.Combine(mainFolderBrowserDialog.FolderName, Path.GetFileNameWithoutExtension(_archivePath));
         try
         {
             await RunOperationAsync(LanguageManager.Get("ExtractingNestedTar"), (progress, token) =>
@@ -377,14 +341,9 @@ public partial class Form1 : Form
             string name = slash >= 0 ? relative[..slash] : relative;
             children[name] = slash >= 0 || entry.IsDirectory;
         }
-        fileBox.BeginUpdate();
-        try
-        {
-            fileBox.Items.Clear();
-            if (!string.IsNullOrEmpty(_archiveCurrentDirectory)) fileBox.Items.Add(LanguageManager.Get("goToParentDirectoryText"));
-            foreach ((string name, _) in children) fileBox.Items.Add(name);
-        }
-        finally { fileBox.EndUpdate(); }
+        fileBox.Items.Clear();
+        if (!string.IsNullOrEmpty(_archiveCurrentDirectory)) fileBox.Items.Add(LanguageManager.Get("goToParentDirectoryText"));
+        foreach ((string name, _) in children) fileBox.Items.Add(name);
         RefreshCurrentDirectoryStatus();
     }
 
@@ -420,8 +379,8 @@ public partial class Form1 : Form
     }
 
     private void RefreshCurrentDirectoryStatus() => statusLabel.Text = string.Format(LanguageManager.Get("CurrentDirectoryFormat"), string.IsNullOrEmpty(_archiveCurrentDirectory) ? LanguageManager.Get("Root") : _archiveCurrentDirectory);
-    private void SetArchiveControls(bool loaded) { uninstallFileToolStripMenuItem.Visible = loaded; extractToolStripMenuItem.Visible = loaded; _extractNestedTarMenuItem.Visible = loaded && _nestedTarInfo.HasNestedTar; }
-    private void SetMenuEnabled(bool enabled) { OpenToolStripMenuItem.Enabled = enabled; extractToolStripMenuItem.Enabled = enabled; compressToolStripMenuItem.Enabled = enabled; uninstallFileToolStripMenuItem.Enabled = enabled; _extractNestedTarMenuItem.Enabled = enabled; _contextMenuToolStripMenuItem.Enabled = enabled; }
+    private void SetArchiveControls(bool loaded) { uninstallFileToolStripMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractToolStripMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; _extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar ? Visibility.Visible : Visibility.Collapsed; }
+    private void SetMenuEnabled(bool enabled) { OpenToolStripMenuItem.IsEnabled = enabled; extractToolStripMenuItem.IsEnabled = enabled; compressToolStripMenuItem.IsEnabled = enabled; uninstallFileToolStripMenuItem.IsEnabled = enabled; _extractNestedTarMenuItem.IsEnabled = enabled; _contextMenuToolStripMenuItem.IsEnabled = enabled; }
 
     private void UnloadArchive()
     {
@@ -437,33 +396,18 @@ public partial class Form1 : Form
     private async void extractToAFolderSELECTEDToolStripMenuItem_Click(object sender, EventArgs e) => await ExtractAsync(true, true);
     private void compressToolStripMenuItem_Click(object sender, EventArgs e) { }
     private void SettingsToolStripMenuItem_Click(object sender, EventArgs e) => ShowInformation("Unavailble1");
-    private void TZIPToolStripMenuItem_DoubleClick(object sender, EventArgs e) { using TZIPForm aboutForm = new(); aboutForm.ShowDialog(this); }
-    private void ShowInformation(string resourceKey) => MessageBox.Show(this, LanguageManager.Get(resourceKey), LanguageManager.Get("ApplicationTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+    private void ShowInformation(string resourceKey) => MessageBox.Show(this, LanguageManager.Get(resourceKey), LanguageManager.Get("ApplicationTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
 
     private void ShowException(string fallbackStageCode, Exception exception)
     {
         string stageCode = exception is StageException stageException ? stageException.StageCode : fallbackStageCode;
-        MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error); //F00010006
+        MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //F00010006
     }
 
     private void TZIPToolStripMenuItem_Click(object sender, EventArgs e)
     {
-        TZIPForm tzip=new TZIPForm();
+        TZIPForm tzip=new TZIPForm { Owner = this };
         tzip.ShowDialog();
-        tzip.Dispose();
     }
 
-#if ENABLE_LIGHT
-    private void FileBox_ViewChanged(object? sender, EventArgs e)
-    {
-        if (_lightOverlay is null || _fileBoxScrollTimer is null) return;
-        _lightOverlay.EdgeStrength = 0f; _fileBoxScrollTimer.Stop(); _fileBoxScrollTimer.Start(); _lightOverlay.InvalidateCapture();
-    }
-
-    private void FileBoxScrollTimer_Tick(object? sender, EventArgs e)
-    {
-        _fileBoxScrollTimer?.Stop();
-        if (_lightOverlay is not null) { _lightOverlay.EdgeStrength = _normalEdgeStrength; _lightOverlay.InvalidateCapture(); }
-    }
-#endif
 }
