@@ -162,12 +162,11 @@ Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。�
 ```powershell
 dotnet restore TANGERINE-ZIP.slnx --configfile NuGet.Config
 dotnet build TANGERINE-ZIP.slnx -c Release --no-restore
-dotnet run --project TANGERINE-ZIP.SmokeTests/TANGERINE-ZIP.SmokeTests.csproj -c Debug --no-restore
 dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -o artifacts/single-file
 dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -p:ENABLE_LIGHT=true -o artifacts/single-file-light
 ```
 
-当前测试是短时定向测试，使用 `testfile/1/Linux教程.pdf` 验证 ZIP 中文条目名、无扩展名 BZ2 中的单 TAR 内容检测/自动展开，以及 ZIP 中两个 TAR 的选择和分目录一键解压。测试数据位于随机临时目录，结束后只删除该次测试创建的目录。
+按用户最新要求，仓库中的冒烟测试项目已删除，后续不再执行冒烟测试。历史验证结果记录在 `20260923.md` 和 `2026092302.md`，不代表当前版本的新增测试结果。
 
 本次发布结果的可运行文件为 `artifacts/single-file-context-menu-final/TANGERINE-ZIP.exe`。PDB 仅用于调试，可不随软件分发；Win11 右键菜单宿主、MSIX 和公开证书均嵌入此 EXE，安装时释放到系统管理的位置。只有创建 RAR 时需要应用程序目录中的可选 `rar.exe`。
 

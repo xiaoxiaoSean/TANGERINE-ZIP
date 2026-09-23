@@ -41,11 +41,6 @@
 	</PropertyGroup>
 
 
-	<!-- SmokeTests 可以访问内部成员 -->
-	<ItemGroup>
-		<InternalsVisibleTo Include="TANGERINE-ZIP.SmokeTests" />
-	</ItemGroup>
-
 	<ItemGroup>
 		<Resource Include="Resources\Kiro.png;Resources\TZIP.png" />
 		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.msix" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix" />
