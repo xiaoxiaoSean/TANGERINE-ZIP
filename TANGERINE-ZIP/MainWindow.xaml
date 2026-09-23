@@ -23,7 +23,7 @@
                     <WrapPanel />
                 </ItemsPanelTemplate>
             </Menu.ItemsPanel>
-            <MenuItem x:Name="aboutMenuItem" Header="TZIP" Click="AboutMenu_Click" />
+            <MenuItem x:Name="aboutMenuItem" Header="关于TZIP" Click="AboutMenu_Click" />
             <MenuItem x:Name="openArchiveMenuItem" Header="Open" Click="OpenArchiveMenu_Click" />
             <MenuItem x:Name="extractMenuItem" Header="Extract">
                 <MenuItem x:Name="extractAllHereMenuItem" Header="Extract all" Click="ExtractAllHereMenu_Click" />

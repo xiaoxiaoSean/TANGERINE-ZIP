@@ -1,5 +1,7 @@
 using System.Windows.Input;
 using System.Windows.Media.Effects;
+using TANGERINE_ZIP.Services;
+using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
@@ -12,11 +14,27 @@ internal static class MouseWhiteThickening
 {
     public static void Attach(Window window, double radius)
     {
-        if (window.Content is not FrameworkElement content)
-            throw new InvalidOperationException("A WPF window must have a content element before the mouse effect is attached.");
-        if (!double.IsFinite(radius) || radius <= 0)
-            throw new ArgumentOutOfRangeException(nameof(radius));
+        try
+        {
+            if (window.Content is not FrameworkElement content)
+                throw new StageException("MWFXT0001", LanguageManager.Get("MouseEffectContentMissing")); //MWFXT0001
+            if (!double.IsFinite(radius) || radius <= 0)
+                throw new StageException("MWFXT0002", LanguageManager.Get("MouseEffectInvalidRadius")); //MWFXT0002
+            AttachCore(window, content, radius);
+        }
+        catch (Exception exception)
+        {
+            // A cosmetic effect must never make archive operations unavailable.
+            // Report the failure with its module stage code, then keep the original visuals.
+            if (window.Content is FrameworkElement content) content.Effect = null;
+            string stageCode = exception is StageException stageException ? stageException.StageCode : "MWFXT0003";
+            MessageBox.Show(window, MessageTipGenerator.GenerateTip(stageCode, exception.Message),
+                LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //MWFXT0003
+        }
+    }
 
+    private static void AttachCore(Window window, FrameworkElement content, double radius)
+    {
         MouseWhiteThickenEffect effect = new() { Radius = radius };
         content.Effect = effect;
 
@@ -40,12 +58,14 @@ internal static class MouseWhiteThickening
         void ClearPointer(object? sender, EventArgs args) => effect.Cursor = new Point(-100, -100);
 
         content.SizeChanged += UpdateViewport;
-        window.AddHandler(UIElement.PreviewMouseMoveEvent, new MouseEventHandler(UpdatePointer), true);
+        MouseEventHandler pointerHandler = UpdatePointer;
+        window.AddHandler(UIElement.PreviewMouseMoveEvent, pointerHandler, true);
         window.MouseLeave += ClearPointer;
         window.Deactivated += ClearPointer;
         window.Closed += (_, _) =>
         {
             content.SizeChanged -= UpdateViewport;
+            window.RemoveHandler(UIElement.PreviewMouseMoveEvent, pointerHandler);
             window.MouseLeave -= ClearPointer;
             window.Deactivated -= ClearPointer;
             content.Effect = null;

@@ -11,9 +11,6 @@ public sealed partial class AboutWindow : Window
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         WpfUi.SizeWindow(this, 0.6, 0.6);
         Title = LanguageManager.Get("ApplicationTitle");
-        // The about-page text is loaded from the same culture-specific ResX as the
-        // rest of the WPF interface; XAML contains no hard-coded English paragraph.
-        informationText.Text = LanguageManager.Get("AboutInformation");
         closeButton.Content = LanguageManager.Get("Close");
     }
 

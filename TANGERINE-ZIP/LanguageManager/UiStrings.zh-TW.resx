@@ -275,10 +275,7 @@
   <data name="ApplicationTitle" xml:space="preserve">
     <value>TANGERINE ZIP</value>
   </data>
-  <data name="AboutInformation" xml:space="preserve">
-    <value>TANGERINE ZIP v1.1.0&#10;創辦人：xiaoxiaoSean&#10;感謝所有貢獻者、RAR 的作者與貢獻者，以及各 NuGet 套件的作者與貢獻者。&#10;自 v1.0.0 起新增：壓縮密碼、Windows 11 第一層右鍵選單、快速視窗自動關閉。&#10;修正：透過右鍵選單啟動的解壓問題。</value>
-  </data>
-  <data name="SelectFilesToCompress" xml:space="preserve">
+    <data name="SelectFilesToCompress" xml:space="preserve">
     <value>選取要壓縮的檔案</value>
   </data>
   <data name="SelectArchive" xml:space="preserve">
@@ -686,5 +683,11 @@
   </data>
   <data name="ArchivePasswordCleanupFailed" xml:space="preserve">
     <value>無法移除暫時解密資料。請關閉正在使用它的程式，並刪除 TANGERINE ZIP 密碼暫存資料夾。</value>
+  </data>
+  <data name="MouseEffectContentMissing" xml:space="preserve">
+    <value>視窗沒有 WPF 內容，無法啟用滑鼠視覺效果。</value>
+  </data>
+  <data name="MouseEffectInvalidRadius" xml:space="preserve">
+    <value>滑鼠效果半徑必須是大於零的有限數值。</value>
   </data>
 </root>

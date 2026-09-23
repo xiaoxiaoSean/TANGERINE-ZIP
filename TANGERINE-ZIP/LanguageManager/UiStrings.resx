@@ -266,10 +266,7 @@ Stage Code is :</value>
   <data name="ApplicationTitle" xml:space="preserve">
     <value>TANGERINE ZIP</value>
   </data>
-  <data name="AboutInformation" xml:space="preserve">
-    <value>TANGERINE ZIP v1.1.0&#10;Founder: xiaoxiaoSean&#10;Thanks to all contributors, the RAR authors and contributors, and the authors and contributors of the NuGet packages.&#10;Changes since v1.0.0:&#10;Added compression passwords, the Windows 11 first-level context menu, and automatic closing of the quick window.&#10;Fixed extraction started from the context menu.</value>
-  </data>
-  <data name="SelectFilesToCompress" xml:space="preserve">
+    <data name="SelectFilesToCompress" xml:space="preserve">
     <value>Select files to compress</value>
   </data>
   <data name="SelectArchive" xml:space="preserve">
@@ -683,5 +680,11 @@ Existing file: {1}</value>
   </data>
   <data name="ArchivePasswordCleanupFailed" xml:space="preserve">
     <value>Temporary decrypted data could not be removed. Close programs using it and remove the TANGERINE ZIP password temporary folder.</value>
+  </data>
+  <data name="MouseEffectContentMissing" xml:space="preserve">
+    <value>A visual effect cannot be attached because the window has no WPF content.</value>
+  </data>
+  <data name="MouseEffectInvalidRadius" xml:space="preserve">
+    <value>The mouse-effect radius must be a positive finite number.</value>
   </data>
 </root>
