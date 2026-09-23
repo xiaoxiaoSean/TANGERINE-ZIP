@@ -490,6 +490,12 @@ Stage Code is :
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
     <value>This wizard removes both the Windows 11 extension and any TZIP legacy context-menu entries left by older versions.</value>
   </data>
+  <data name="ContextMenuGroupedMode" xml:space="preserve">
+    <value>Windows 11 first-level: TZIP &gt; Extract / Compress / Open</value>
+  </data>
+  <data name="ContextMenuDirectMode" xml:space="preserve">
+    <value>Windows 11 first-level: Extract / Compress / Open</value>
+  </data>
   <data name="ContextWizardStartCreate" xml:space="preserve">
     <value>Start setup</value>
   </data>
@@ -500,7 +506,7 @@ Stage Code is :
     <value>The primary context-menu extension requires Windows 11.</value>
   </data>
   <data name="ContextMenuModernCreated" xml:space="preserve">
-    <value>TZIP was added to the primary Windows 11 context menu. Reopen File Explorer windows if the menu is not refreshed immediately.</value>
+    <value>The Windows 11 context menu was created. Reopen File Explorer windows if it does not refresh immediately.</value>
   </data>
   <data name="ContextSetupIncomplete" xml:space="preserve">
     <value>The context-menu operation did not complete.</value>

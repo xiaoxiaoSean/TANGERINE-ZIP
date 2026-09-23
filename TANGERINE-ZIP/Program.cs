@@ -8,7 +8,8 @@ namespace TANGERINE_ZIP
         [STAThread]
         static void Main(string[] args)
         {
-            if (args.Length == 2 && args[0] is Services.ContextMenuCertificateHelper.InstallSwitch or Services.ContextMenuCertificateHelper.RemoveSwitch)
+            if ((args.Length is 2 or 3) &&
+                (args[0] is Services.ContextMenuCertificateHelper.InstallSwitch or Services.ContextMenuCertificateHelper.RemoveSwitch))
             {
                 Environment.ExitCode = Services.ContextMenuCertificateHelper.Execute(args);
                 return;

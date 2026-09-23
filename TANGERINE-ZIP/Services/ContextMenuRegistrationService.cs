@@ -10,6 +10,7 @@ using System.Text.Json;
 namespace TANGERINE_ZIP.Services;
 
 internal sealed record ContextMenuProgress(int Percentage, string ResourceKey, string? Detail = null);
+internal enum ContextMenuPresentation { Grouped, Direct }
 
 // Stage head: CTXMN
 internal static class ContextMenuRegistrationService
@@ -18,7 +19,8 @@ internal static class ContextMenuRegistrationService
     private const string PackageResourceName = "TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix";
     private const string CertificateResourceName = "TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.cer";
     private const string SettingsPath = @"Software\TangerineZip\ContextMenu";
-    private const string MinimumPackageVersion = "2.0.0.0";
+    private const string MinimumPackageVersion = "2.1.0.0";
+    private const string LegacyCertificateThumbprint = "080D2C60C6B53BD797A97DC3032FD40A17560095";
     private const uint ShcneAssocChanged = 0x08000000;
     private const uint ShcnfIdList = 0;
     private static readonly SemaphoreSlim OperationGate = new(1, 1);
@@ -38,12 +40,17 @@ internal static class ContextMenuRegistrationService
         return X509CertificateLoader.LoadCertificate(copy.ToArray());
     }
 
-    internal static async Task CreateAsync(string executablePath, IProgress<ContextMenuProgress> progress, CancellationToken token)
+    internal static ContextMenuPresentation GetSavedMenuMode() =>
+        ReadSetting("MenuMode") == "direct" ? ContextMenuPresentation.Direct : ContextMenuPresentation.Grouped;
+
+    internal static async Task CreateAsync(string executablePath, ContextMenuPresentation menuMode,
+        IProgress<ContextMenuProgress> progress, CancellationToken token)
     {
         await OperationGate.WaitAsync(token);
         string? temporaryDirectory = null;
         bool packageExisted = false;
         bool certificateOwnershipAdded = false;
+        string? installedPackageFamilyName = null;
         string ownerSid = GetCurrentUserSid();
         try
         {
@@ -55,8 +62,12 @@ internal static class ContextMenuRegistrationService
                 throw new StageException("CTXMN0002", LanguageManager.Get("ContextExecutableMissing")); //CTXMN0002
 
             packageExisted = await IsPackageInstalledAsync(token);
-            Report(progress, 10, "ContextProgressRemovingLegacy");
-            RemoveLegacyMenus();
+            if (packageExisted || HasSavedSettings() || HasLegacyMenus())
+            {
+                Report(progress, 10, "ContextProgressReplacingExisting");
+                await RemoveExistingForCreateAsync(executablePath, packageExisted, progress, token);
+                packageExisted = false;
+            }
             token.ThrowIfCancellationRequested();
 
             Report(progress, 18, "ContextProgressExtracting");
@@ -69,35 +80,39 @@ internal static class ContextMenuRegistrationService
             Report(progress, 46, "ContextProgressInstallingPackage");
             await InstallPackageAsync(packagePath, token);
             string packageFamilyName = await GetPackageFamilyNameAsync(token);
+            installedPackageFamilyName = packageFamilyName;
 
             Report(progress, 72, "ContextProgressWritingCommands");
-            await WriteCommandFilesAsync(packageFamilyName, executablePath, token);
+            await WriteCommandFilesAsync(packageFamilyName, executablePath, menuMode, token);
 
             Report(progress, 90, "ContextProgressVerifying");
-            await VerifyInstallationAsync(packageFamilyName, token);
+            await VerifyInstallationAsync(packageFamilyName, menuMode, token);
+            using X509Certificate2 installedCertificate = LoadEmbeddedCertificate();
             using (RegistryKey settings = Registry.CurrentUser.CreateSubKey(SettingsPath, writable: true)
                 ?? throw new InvalidOperationException())
             {
                 settings.SetValue("PackageFamilyName", packageFamilyName, RegistryValueKind.String);
                 settings.SetValue("ExecutablePath", Path.GetFullPath(executablePath), RegistryValueKind.String);
-                settings.SetValue("CertificateOwnerSid", certificateOwnershipAdded ? ownerSid : string.Empty, RegistryValueKind.String);
+                settings.SetValue("CertificateOwnerSid", HasCurrentCertificateOwnership(ownerSid) ? ownerSid : string.Empty, RegistryValueKind.String);
+                settings.SetValue("CertificateThumbprint", installedCertificate.Thumbprint, RegistryValueKind.String);
+                settings.SetValue("MenuMode", menuMode == ContextMenuPresentation.Direct ? "direct" : "grouped", RegistryValueKind.String);
             }
             NotifyShell();
             Report(progress, 100, "ContextProgressCompleted");
         }
         catch (OperationCanceledException)
         {
-            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, progress);
+            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, installedPackageFamilyName, progress);
             throw;
         }
         catch (StageException)
         {
-            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, progress);
+            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, installedPackageFamilyName, progress);
             throw;
         }
         catch (Exception exception)
         {
-            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, progress);
+            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, installedPackageFamilyName, progress);
             throw new StageException("CTXMN0003", exception.Message, exception); //CTXMN0003
         }
         finally
@@ -114,6 +129,56 @@ internal static class ContextMenuRegistrationService
         }
     }
 
+    private static bool HasSavedSettings()
+    {
+        using RegistryKey? settings = Registry.CurrentUser.OpenSubKey(SettingsPath);
+        return settings is not null;
+    }
+
+    private static bool HasLegacyMenus()
+    {
+        foreach (string shellPath in LegacyShellPaths)
+        {
+            using RegistryKey? shell = Registry.CurrentUser.OpenSubKey(shellPath);
+            foreach (string name in LegacyVerbNames)
+            {
+                using RegistryKey? verb = shell?.OpenSubKey(name);
+                if (verb is not null) return true;
+            }
+        }
+        return false;
+    }
+
+    // CreateAsync already holds OperationGate. Never call the public DeleteAsync from here.
+    private static async Task RemoveExistingForCreateAsync(string executablePath, bool packageExisted,
+        IProgress<ContextMenuProgress> progress, CancellationToken token)
+    {
+        Report(progress, 10, "ContextProgressRemovingLegacy");
+        RemoveLegacyMenus();
+        token.ThrowIfCancellationRequested();
+
+        Report(progress, 12, "ContextProgressRemovingCommands");
+        string? packageFamilyName = ReadSetting("PackageFamilyName");
+        if (string.IsNullOrWhiteSpace(packageFamilyName) && packageExisted)
+            packageFamilyName = await GetPackageFamilyNameAsync(token);
+        if (!string.IsNullOrWhiteSpace(packageFamilyName)) DeleteCommandFiles(packageFamilyName);
+
+        if (packageExisted)
+        {
+            Report(progress, 14, "ContextProgressRemovingPackage");
+            await RemovePackageAsync(token);
+        }
+        string? ownerSid = ReadSetting("CertificateOwnerSid");
+        if (!string.IsNullOrWhiteSpace(ownerSid))
+        {
+            Report(progress, 16, "ContextProgressRemovingCertificate");
+            string thumbprint = ReadSetting("CertificateThumbprint") ?? LegacyCertificateThumbprint;
+            await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch, ownerSid, token, thumbprint);
+        }
+        Registry.CurrentUser.DeleteSubKeyTree(SettingsPath, throwOnMissingSubKey: false);
+        NotifyShell();
+    }
+
     internal static async Task DeleteAsync(string executablePath, IProgress<ContextMenuProgress> progress, CancellationToken token)
     {
         await OperationGate.WaitAsync(token);
@@ -128,6 +193,8 @@ internal static class ContextMenuRegistrationService
 
             Report(progress, 38, "ContextProgressRemovingCommands");
             string? packageFamilyName = ReadSetting("PackageFamilyName");
+            if (string.IsNullOrWhiteSpace(packageFamilyName) && await IsPackageInstalledAsync(token))
+                packageFamilyName = await GetPackageFamilyNameAsync(token);
             try
             {
                 if (!string.IsNullOrWhiteSpace(packageFamilyName)) DeleteCommandFiles(packageFamilyName);
@@ -146,7 +213,8 @@ internal static class ContextMenuRegistrationService
             if (!string.IsNullOrWhiteSpace(ownerSid))
             {
                 Report(progress, 78, "ContextProgressRemovingCertificate");
-                try { await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch, ownerSid, token); certificateRemoved = true; }
+                string thumbprint = ReadSetting("CertificateThumbprint") ?? LegacyCertificateThumbprint;
+                try { await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch, ownerSid, token, thumbprint); certificateRemoved = true; }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception exception) { failures.Add(exception); }
             }
@@ -191,10 +259,27 @@ internal static class ContextMenuRegistrationService
         return exitCode == 0 && !alreadyOwned;
     }
 
-    private static async Task RollBackCreateAsync(string executablePath, string ownerSid, bool packageExisted, bool certificateOwnershipAdded, IProgress<ContextMenuProgress> progress)
+    private static bool HasCurrentCertificateOwnership(string ownerSid)
+    {
+        using X509Certificate2 certificate = LoadEmbeddedCertificate();
+        using RegistryKey? ownership = Registry.LocalMachine.OpenSubKey(
+            $@"{ContextMenuCertificateHelper.OwnershipPath}\{certificate.Thumbprint}");
+        return ownership?.GetValue("OwnerSids") is string[] owners
+            && owners.Contains(ownerSid, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static async Task RollBackCreateAsync(string executablePath, string ownerSid, bool packageExisted,
+        bool certificateOwnershipAdded, string? installedPackageFamilyName, IProgress<ContextMenuProgress> progress)
     {
         List<Exception> failures = [];
         Report(progress, 0, "ContextProgressRollingBack");
+        if (!string.IsNullOrWhiteSpace(installedPackageFamilyName))
+        {
+            try { DeleteCommandFiles(installedPackageFamilyName); }
+            catch (Exception exception) { failures.Add(exception); }
+            try { Registry.CurrentUser.DeleteSubKeyTree(SettingsPath, throwOnMissingSubKey: false); }
+            catch (Exception exception) { failures.Add(exception); }
+        }
         if (!packageExisted)
         {
             try { await RemovePackageAsync(CancellationToken.None); }
@@ -224,7 +309,8 @@ internal static class ContextMenuRegistrationService
         Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
         ?? throw new StageException(stageCode, LanguageManager.Get("ContextWizardEmbeddedMissing")); //CTXMN0005
 
-    private static async Task WriteCommandFilesAsync(string packageFamilyName, string executablePath, CancellationToken token)
+    private static async Task WriteCommandFilesAsync(string packageFamilyName, string executablePath,
+        ContextMenuPresentation menuMode, CancellationToken token)
     {
         string menuDirectory = GetCommandDirectory(packageFamilyName);
         Directory.CreateDirectory(menuDirectory);
@@ -250,6 +336,10 @@ internal static class ContextMenuRegistrationService
             await File.WriteAllTextAsync(temporaryPath, json, new UTF8Encoding(false), token);
             File.Move(temporaryPath, destinationPath, overwrite: true);
         }
+        string modePath = Path.Combine(menuDirectory, "TZIP-mode.txt");
+        await File.WriteAllTextAsync(modePath + ".tmp",
+            menuMode == ContextMenuPresentation.Direct ? "direct" : "grouped", new UTF8Encoding(false), token);
+        File.Move(modePath + ".tmp", modePath, overwrite: true);
     }
 
     private static object CreateCommand(string title, string titleSingle, int index, string executablePath, string action, bool allowMultiple) => new
@@ -273,12 +363,16 @@ internal static class ContextMenuRegistrationService
         workingDirectory = "{parent}"
     };
 
-    private static async Task VerifyInstallationAsync(string packageFamilyName, CancellationToken token)
+    private static async Task VerifyInstallationAsync(string packageFamilyName,
+        ContextMenuPresentation menuMode, CancellationToken token)
     {
-        if (!await IsPackageInstalledAsync(token))
+        if (!await IsCurrentPackageInstalledAsync(token))
             throw new StageException("CTXMN0007", LanguageManager.Get("ContextRegistrationMismatch")); //CTXMN0007
         string commandDirectory = GetCommandDirectory(packageFamilyName);
         if (Directory.EnumerateFiles(commandDirectory, "TZIP-*.json").Count() != 3)
+            throw new StageException("CTXMN0008", LanguageManager.Get("ContextRegistrationMismatch")); //CTXMN0008
+        string savedMode = await File.ReadAllTextAsync(Path.Combine(commandDirectory, "TZIP-mode.txt"), token);
+        if (savedMode != (menuMode == ContextMenuPresentation.Direct ? "direct" : "grouped"))
             throw new StageException("CTXMN0008", LanguageManager.Get("ContextRegistrationMismatch")); //CTXMN0008
     }
 
@@ -290,6 +384,10 @@ internal static class ContextMenuRegistrationService
         string commandDirectory = GetCommandDirectory(packageFamilyName);
         if (!Directory.Exists(commandDirectory)) return;
         foreach (string file in Directory.EnumerateFiles(commandDirectory, "TZIP-*.json", SearchOption.TopDirectoryOnly)) File.Delete(file);
+        foreach (string file in Directory.EnumerateFiles(commandDirectory, "TZIP-*.json.tmp", SearchOption.TopDirectoryOnly)) File.Delete(file);
+        string modePath = Path.Combine(commandDirectory, "TZIP-mode.txt");
+        if (File.Exists(modePath)) File.Delete(modePath);
+        if (File.Exists(modePath + ".tmp")) File.Delete(modePath + ".tmp");
     }
 
     private static async Task InstallPackageAsync(string packagePath, CancellationToken token)
@@ -307,6 +405,14 @@ internal static class ContextMenuRegistrationService
     }
 
     private static async Task<bool> IsPackageInstalledAsync(CancellationToken token)
+    {
+        string output = await RunPowerShellAsync(
+            "$item = Get-AppxPackage -Name $env:TZIP_CONTEXT_ARGUMENT -ErrorAction SilentlyContinue | Select-Object -First 1; if ($null -ne $item) { [Console]::Out.Write('yes') }",
+            PackageName, "CTXMN0011", token);
+        return output.Trim().Equals("yes", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<bool> IsCurrentPackageInstalledAsync(CancellationToken token)
     {
         string output = await RunPowerShellAsync(
             "$item = Get-AppxPackage -Name $env:TZIP_CONTEXT_ARGUMENT -ErrorAction SilentlyContinue | Sort-Object Version -Descending | Select-Object -First 1; if ($null -ne $item -and [version]$item.Version -ge [version]'" + MinimumPackageVersion + "') { [Console]::Out.Write('yes') }",
@@ -360,13 +466,15 @@ internal static class ContextMenuRegistrationService
         return output;
     }
 
-    private static async Task<int> RunElevatedHelperAsync(string executablePath, string action, string ownerSid, CancellationToken token)
+    private static async Task<int> RunElevatedHelperAsync(string executablePath, string action, string ownerSid,
+        CancellationToken token, string? certificateThumbprint = null)
     {
         try
         {
             ProcessStartInfo startInfo = new(executablePath) { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden };
             startInfo.ArgumentList.Add(action);
             startInfo.ArgumentList.Add(ownerSid);
+            if (!string.IsNullOrWhiteSpace(certificateThumbprint)) startInfo.ArgumentList.Add(certificateThumbprint);
             using Process process = Process.Start(startInfo) ?? throw new StageException("CTXMN0016", LanguageManager.Get("ContextMenuElevationFailed")); //CTXMN0016
             try { await process.WaitForExitAsync(token); }
             catch (OperationCanceledException)

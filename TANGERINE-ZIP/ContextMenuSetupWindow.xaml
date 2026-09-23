@@ -13,17 +13,24 @@
     </Window.Resources>
     <Grid Margin="18">
         <Grid.RowDefinitions>
-            <RowDefinition Height="1.5*" />
-            <RowDefinition Height="1*" />
-            <RowDefinition Height="0.4*" />
-            <RowDefinition Height="5.6*" />
-            <RowDefinition Height="1.5*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock x:Name="descriptionText" Grid.Row="0" Text="Set up the Explorer context menu" Margin="4" />
-        <TextBlock x:Name="_statusText" Grid.Row="1" Margin="4" />
-        <ProgressBar x:Name="_operationProgressBar" Grid.Row="2" Minimum="0" Maximum="100" />
-        <ListBox x:Name="_progressLogList" Grid.Row="3" />
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel x:Name="menuModeOptions" Grid.Row="1" Margin="4">
+            <RadioButton x:Name="groupedModeOption" GroupName="ContextMenuMode" IsChecked="True"
+                         Foreground="{StaticResource ForegroundBrush}" Margin="4" />
+            <RadioButton x:Name="directModeOption" GroupName="ContextMenuMode"
+                         Foreground="{StaticResource ForegroundBrush}" Margin="4" />
+        </StackPanel>
+        <TextBlock x:Name="_statusText" Grid.Row="2" Margin="4" />
+        <ProgressBar x:Name="_operationProgressBar" Grid.Row="3" Minimum="0" Maximum="100" />
+        <ListBox x:Name="_progressLogList" Grid.Row="4" />
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="_startButton" Content="Start" Click="StartButton_Click" />
             <Button x:Name="_cancelButton" Content="Cancel" Click="CancelButton_Click" />
         </StackPanel>

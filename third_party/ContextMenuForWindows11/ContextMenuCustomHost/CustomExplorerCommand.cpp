@@ -12,21 +12,21 @@ using namespace winrt::Windows::Data::Json;
 using namespace std::filesystem;
 
 CustomExplorerCommand::CustomExplorerCommand() = default;
+CustomExplorerCommand::CustomExplorerCommand(int directCommandIndex) : m_directCommandIndex(directCommandIndex) {}
 
 IFACEMETHODIMP CustomExplorerCommand::GetFlags(_Out_ EXPCMDFLAGS* flags) {
-	if (m_commands.size() > 1) {
-		*flags = ECF_HASSUBCOMMANDS;
-	}
-	else {
-		*flags = ECF_DEFAULT;
-	}
+	*flags = m_directCommandIndex < 0 ? ECF_HASSUBCOMMANDS : ECF_DEFAULT;
 	return S_OK;
 }
 
 IFACEMETHODIMP CustomExplorerCommand::GetIcon(_In_opt_ IShellItemArray* items, _Outptr_result_nullonfailure_ PWSTR* icon) {
 	*icon = nullptr;
 
-	if (m_commands.size() == 1) {
+	if (m_directCommandIndex >= 0 && m_commands.empty() && items) {
+		EXPCMDSTATE state{};
+		GetState(items, TRUE, &state);
+	}
+	if (m_directCommandIndex >= 0 && m_commands.size() == 1) {
 		return m_commands.at(0)->GetIcon(items, icon);
 	}
 	return BaseExplorerCommand::GetIcon(items, icon);
@@ -35,7 +35,11 @@ IFACEMETHODIMP CustomExplorerCommand::GetIcon(_In_opt_ IShellItemArray* items, _
 IFACEMETHODIMP CustomExplorerCommand::GetTitle(_In_opt_ IShellItemArray* items, _Outptr_result_nullonfailure_ PWSTR* name) {
 	*name = nullptr;
 
-	if (m_commands.size() == 1) {
+	if (m_directCommandIndex >= 0 && m_commands.empty() && items) {
+		EXPCMDSTATE state{};
+		GetState(items, TRUE, &state);
+	}
+	if (m_directCommandIndex >= 0 && m_commands.size() == 1) {
 		return m_commands.at(0)->GetTitle(items, name);
 	}
 
@@ -60,6 +64,20 @@ IFACEMETHODIMP CustomExplorerCommand::GetState(_In_opt_ IShellItemArray* selecti
 		*cmdState = ECS_DISABLED;
 		return E_PENDING;
 	}
+
+	auto localFolder = winrt::Windows::Storage::AppDataPaths::GetDefault().LocalAppData();
+	path modePath{ localFolder.c_str() };
+	modePath /= "custom_commands";
+	modePath /= "TZIP-mode.txt";
+	std::ifstream modeFile(modePath, std::ios::binary);
+	std::string mode;
+	std::getline(modeFile, mode);
+	const bool directMode = mode == "direct";
+	if ((m_directCommandIndex >= 0) != directMode) {
+		*cmdState = ECS_HIDDEN;
+		return S_OK;
+	}
+	m_commands.clear();
 
 	if (m_site) {
 		// hidden menu on the classic context menu
@@ -160,7 +178,7 @@ IFACEMETHODIMP CustomExplorerCommand::GetState(_In_opt_ IShellItemArray* selecti
 IFACEMETHODIMP CustomExplorerCommand::EnumSubCommands(__RPC__deref_out_opt IEnumExplorerCommand** enumCommands) {
 	wil::assign_null_to_opt_param(enumCommands);
 
-	if (m_commands.size() == 1) {
+	if (m_directCommandIndex >= 0) {
 		return E_NOTIMPL;
 	}
 	const auto customCommands = Make<CustomExplorerCommandEnum>(m_commands);
@@ -337,12 +355,16 @@ void CustomExplorerCommand::ReadCommands(IShellItemArray* selection, bool multip
 			return l->m_index < r->m_index;
 			});
 	}
+	if (m_directCommandIndex >= 0) {
+		m_commands.erase(std::remove_if(m_commands.begin(), m_commands.end(),
+			[this](const auto& command) { return command->m_index != m_directCommandIndex; }), m_commands.end());
+	}
 
 	DEBUG_LOG(L"CustomExplorerCommand::ReadCommands commands count={}", m_commands.size());
 }
 
 IFACEMETHODIMP CustomExplorerCommand::Invoke(_In_opt_ IShellItemArray* selection, _In_opt_ IBindCtx* ctx) noexcept try {
-	if (m_commands.size() == 1) {
+	if (m_directCommandIndex >= 0 && m_commands.size() == 1) {
 		if (m_site) {
 			m_commands.at(0)->SetSite(m_site.get());
 		}

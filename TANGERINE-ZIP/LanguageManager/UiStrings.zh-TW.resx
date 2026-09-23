@@ -491,6 +491,12 @@
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
     <value>此精靈會移除 Windows 11 擴充功能，並清理舊版 TZIP 遺留的傳統右鍵選單項目。</value>
   </data>
+  <data name="ContextMenuGroupedMode" xml:space="preserve">
+    <value>Win11 第一層選單：TZIP &gt; 解壓 / 壓縮 / 開啟</value>
+  </data>
+  <data name="ContextMenuDirectMode" xml:space="preserve">
+    <value>Win11 第一層選單：直接顯示解壓 / 壓縮 / 開啟</value>
+  </data>
   <data name="ContextWizardStartCreate" xml:space="preserve">
     <value>開始建立</value>
   </data>
@@ -501,7 +507,7 @@
     <value>第一層右鍵選單擴充功能需要 Windows 11。</value>
   </data>
   <data name="ContextMenuModernCreated" xml:space="preserve">
-    <value>TZIP 已加入 Windows 11 第一層右鍵選單。若選單未立即更新，請重新開啟檔案總管視窗。</value>
+    <value>Windows 11 第一層右鍵選單已建立。若選單未立即更新，請重新開啟檔案總管視窗。</value>
   </data>
   <data name="ContextSetupIncomplete" xml:space="preserve">
     <value>右鍵選單作業未完成。</value>

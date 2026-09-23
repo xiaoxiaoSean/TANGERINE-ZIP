@@ -17,13 +17,14 @@ internal static class ContextMenuCertificateHelper
     {
         try
         {
-            if (args.Length != 2) return 2;
+            if (args.Length is not (2 or 3)) return 2;
             string ownerSid = new SecurityIdentifier(args[1]).Value;
+            if (args.Length == 3 && args[0] != RemoveSwitch) return 2;
             using X509Certificate2 certificate = ContextMenuRegistrationService.LoadEmbeddedCertificate();
             return args[0] switch
             {
                 InstallSwitch => Install(certificate, ownerSid),
-                RemoveSwitch => Remove(certificate, ownerSid),
+                RemoveSwitch => Remove(args.Length == 3 ? args[2] : certificate.Thumbprint, ownerSid),
                 _ => 2
             };
         }
@@ -58,10 +59,12 @@ internal static class ContextMenuCertificateHelper
         return 0;
     }
 
-    private static int Remove(X509Certificate2 certificate, string ownerSid)
+    private static int Remove(string thumbprint, string ownerSid)
     {
+        if (thumbprint.Length is not (40 or 64) || thumbprint.Any(character => !Uri.IsHexDigit(character)))
+            return 2;
         using RegistryKey? ownershipRoot = Registry.LocalMachine.OpenSubKey(OwnershipPath, writable: true);
-        using RegistryKey? ownership = ownershipRoot?.OpenSubKey(certificate.Thumbprint, writable: true);
+        using RegistryKey? ownership = ownershipRoot?.OpenSubKey(thumbprint, writable: true);
         if (ownership?.GetValue("CreatedByTzip") is not int createdByTzip || createdByTzip != 1)
             return CertificatePreexisting;
 
@@ -75,12 +78,12 @@ internal static class ContextMenuCertificateHelper
 
         using X509Store store = new(StoreName.TrustedPeople, StoreLocation.LocalMachine);
         store.Open(OpenFlags.ReadWrite);
-        foreach (X509Certificate2 match in store.Certificates.Find(X509FindType.FindByThumbprint, certificate.Thumbprint, false))
+        foreach (X509Certificate2 match in store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false))
         {
             using (match) store.Remove(match);
         }
         ownership.Close();
-        ownershipRoot?.DeleteSubKeyTree(certificate.Thumbprint, throwOnMissingSubKey: false);
+        ownershipRoot?.DeleteSubKeyTree(thumbprint, throwOnMissingSubKey: false);
         return 0;
     }
 

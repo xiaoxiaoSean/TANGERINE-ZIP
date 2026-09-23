@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory = $true)] [string] $ShellExtensionPath,
     [Parameter(Mandatory = $true)] [string] $ContextMenuHostPath,
     [Parameter(Mandatory = $true)] [string] $OutputPackagePath,
-    [Parameter(Mandatory = $true)] [string] $CertificateThumbprint
+    [Parameter(Mandatory = $true)] [string] $CertificateThumbprint,
+    [string] $PublicCertificatePath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,3 +34,9 @@ New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($resolvedOutputP
 if ($LASTEXITCODE -ne 0) { throw 'CTXPB0003: MakeAppx failed.' } #CTXPB0003
 & (Join-Path $sdkVersion.FullName 'x64\signtool.exe') sign /fd SHA256 /s My /sha1 $CertificateThumbprint $resolvedOutputPath
 if ($LASTEXITCODE -ne 0) { throw 'CTXPB0004: SignTool failed.' } #CTXPB0004
+
+if (-not [string]::IsNullOrWhiteSpace($PublicCertificatePath)) {
+    $resolvedCertificatePath = [IO.Path]::GetFullPath($PublicCertificatePath)
+    New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($resolvedCertificatePath)) -Force | Out-Null
+    Export-Certificate -Cert $signingCertificate -FilePath $resolvedCertificatePath -Force | Out-Null
+}

@@ -490,6 +490,12 @@
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
     <value>此向导会移除 Windows 11 扩展，并清理旧版本 TZIP 遗留的传统右键菜单项。</value>
   </data>
+  <data name="ContextMenuGroupedMode" xml:space="preserve">
+    <value>Win11 一级菜单：TZIP &gt; 解压 / 压缩 / 打开</value>
+  </data>
+  <data name="ContextMenuDirectMode" xml:space="preserve">
+    <value>Win11 一级菜单：直接显示解压 / 压缩 / 打开</value>
+  </data>
   <data name="ContextWizardStartCreate" xml:space="preserve">
     <value>开始建立</value>
   </data>
@@ -500,7 +506,7 @@
     <value>一级右键菜单扩展需要 Windows 11。</value>
   </data>
   <data name="ContextMenuModernCreated" xml:space="preserve">
-    <value>TZIP 已加入 Windows 11 一级右键菜单。如果菜单未立即刷新，请重新打开资源管理器窗口。</value>
+    <value>Windows 11 一级右键菜单已建立。如果菜单未立即刷新，请重新打开资源管理器窗口。</value>
   </data>
   <data name="ContextSetupIncomplete" xml:space="preserve">
     <value>右键菜单操作未完成。</value>

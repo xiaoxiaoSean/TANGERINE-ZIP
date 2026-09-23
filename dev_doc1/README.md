@@ -139,13 +139,13 @@ MessageBox.Show(
 
 ### Windows 11 一级右键菜单
 
-Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。项目采用开源项目 [ikas-mc/ContextMenuForWindows11](https://github.com/ikas-mc/ContextMenuForWindows11) 的 `IExplorerCommand` 原生宿主实现，许可证为 LGPL-3.0。对应源码及许可证保留在 `third_party/ContextMenuForWindows11`，便于替换或重新链接；TZIP 的修改仅包括独立 CLSID、默认顶层标题和构建路径。MSIX 使用独立包身份 `TangerineZip.ContextMenu`，不会覆盖用户另行安装的 Custom Context Menu。
+Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。项目采用开源项目 [ikas-mc/ContextMenuForWindows11](https://github.com/ikas-mc/ContextMenuForWindows11) 的 `IExplorerCommand` 原生宿主实现，许可证为 LGPL-3.0。对应源码及许可证保留在 `third_party/ContextMenuForWindows11`，便于替换或重新链接；TZIP 为两种菜单布局分别注册独立 CLSID。MSIX 使用独立包身份 `TangerineZip.ContextMenu`，不会覆盖用户另行安装的 Custom Context Menu。
 
-主 EXE 内嵌已签名 MSIX、公钥证书及 LGPL-3.0 许可证。建立向导依次执行：平台/资源验证、清理旧版注册表菜单、释放包、请求管理员信任证书、安装包、写入三条本地化命令、验证注册。移除向导会独立尝试清理所有旧菜单路径、命令文件、MSIX、证书所有权和用户设置；一个步骤失败不会阻止其他清理步骤，最终统一显示全部错误。证书辅助程序只接受主程序内嵌证书，并在 `HKLM\SOFTWARE\TangerineZip\ContextMenuCertificates` 记录使用者 SID；预先存在或仍由其他用户使用的证书不会被删除。
+主 EXE 内嵌已签名 MSIX、公钥证书及 LGPL-3.0 许可证。建立向导可选“TZIP > 解压／压缩／打开”或一级菜单直接显示三项，默认读取上次选择。每次建立先检测已安装的 MSIX、用户设置与旧式菜单；存在时先删除命令文件、原包、TZIP 所有的旧证书和设置，再按所选布局重新建立。布局写入包的 LocalState `custom_commands/TZIP-mode.txt`，原生扩展据此只显示对应的一组菜单。移除向导会独立尝试清理所有旧菜单路径、命令文件、MSIX、证书所有权和用户设置；一个步骤失败不会阻止其他清理步骤，最终统一显示全部错误。证书辅助程序只接受主程序内嵌证书进行安装；删除旧版证书时按保存的指纹查找，并在 `HKLM\SOFTWARE\TangerineZip\ContextMenuCertificates` 核对 TZIP 所有权及使用者 SID。预先存在或仍由其他用户使用的证书不会被删除。
 
 向导通过 `ContextMenuProgress` 报告确定百分比和逐阶段日志。用户点击“停止工作”并确认风险后会取消令牌、终止正在运行的 PowerShell/提权进程树，并在建立流程中尽力回滚本次新增的包与证书所有权。取消或回滚失败使用 StageCode 显示，不会静默忽略。Win11 上安装失败时不会创建传统菜单作为假成功回退。
 
-三条命令均由 Explorer 传递一个或多个完整 Unicode 路径：解压与打开仍由 `ContextMenuCommandHandler` 通过 `FileDetector` 判断内容；压缩命令显示现有格式与位置对话框。顶层菜单和命令名称使用执行向导时的 UI 语言，支持 `en-US`、`zh-CN`、`zh-TW`、`zh-HK`、`zh-MO`。
+三条命令均由 Explorer 传递一个或多个完整 Unicode 路径：解压与打开仍由 `ContextMenuCommandHandler` 通过 `FileDetector` 判断内容；压缩命令显示现有格式与位置对话框。顶层菜单和命令名称使用执行向导时的 UI 语言，支持 `en-US`、`zh-CN`、`zh-TW`、`zh-HK`、`zh-MO`。当前内嵌包版本为 `2.1.0.0`。
 
 构建原生宿主和签名包：
 
@@ -155,10 +155,11 @@ Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。�
   -ShellExtensionPath ./artifacts/context-menu-native/TangerineZipContextMenuHost.dll `
   -ContextMenuHostPath ./artifacts/context-menu-native/ContextMenuHost.exe `
   -OutputPackagePath ./TANGERINE-ZIP/Embedded/TangerineZipContextMenu.msix `
-  -CertificateThumbprint <具有代码签名私钥的证书指纹>
+  -CertificateThumbprint <具有代码签名私钥的证书指纹> `
+  -PublicCertificatePath ./TANGERINE-ZIP/Embedded/TangerineZipContextMenu.cer
 ```
 
-清单中的 `Publisher` 必须与签名证书 Subject 完全一致。只将公开 `.cer` 放入 `TANGERINE-ZIP/Embedded`，禁止提交 `.pfx` 或私钥。变更原生源码后，必须先重新生成并签名 MSIX，再发布主程序，否则单文件 EXE 会继续嵌入旧版本。
+清单中的 `Publisher` 必须与签名证书 Subject 完全一致。打包脚本签名成功后，用 `PublicCertificatePath` 同步导出相同证书的公开 `.cer`；禁止提交 `.pfx` 或私钥。变更原生源码后，必须先重新生成并签名 MSIX，再发布主程序，否则单文件 EXE 会继续嵌入旧版本。当前包的公开证书指纹为 `47754AC1B3C6B08B98A464E99FBDB0F50E5991B2`；后续重新签名时以实际证书为准。
 
 在仓库根目录执行：
 
