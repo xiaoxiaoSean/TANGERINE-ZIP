@@ -714,4 +714,55 @@ Existing file: {1}</value>
   <data name="MouseEffectMarkerIsDirectory" xml:space="preserve">
     <value>NO_MOUSE_EFFECT is a folder rather than a file. Rename or remove that folder before changing this setting.</value>
   </data>
+  <data name="SettingsMouseRadius" xml:space="preserve">
+    <value>Mouse glow range</value>
+  </data>
+  <data name="SettingsMouseRadiusDescription" xml:space="preserve">
+    <value>Distance from the pointer over which light strokes become thicker. Default: 140 DIP. Allowed: 40–360 DIP.</value>
+  </data>
+  <data name="SettingsMouseRadiusValue" xml:space="preserve">
+    <value>{0} DIP</value>
+  </data>
+  <data name="SettingsMouseThickness" xml:space="preserve">
+    <value>Outline thickness</value>
+  </data>
+  <data name="SettingsMouseThicknessDescription" xml:space="preserve">
+    <value>Maximum stroke expansion at the pointer center; it fades to zero at the edge. Default: 0.95 DIP. Allowed: 0.20–1.25 DIP to avoid double images.</value>
+  </data>
+  <data name="SettingsMouseThicknessValue" xml:space="preserve">
+    <value>{0} DIP</value>
+  </data>
+  <data name="MouseConfigInvalidTitle" xml:space="preserve">
+    <value>Invalid mouse-effect configuration</value>
+  </data>
+  <data name="MouseConfigInvalidPrompt" xml:space="preserve">
+    <value>The value in {0} is invalid. Allowed range: {1}–{2}. Delete this file and recreate it with the default value? Deletion cannot be undone. Choosing No closes TZIP.</value>
+  </data>
+  <data name="MouseConfigUnexpectedFile" xml:space="preserve">
+    <value>The configuration file selected for deletion is not recognized.</value>
+  </data>
+  <data name="MouseConfigDeleteIncomplete" xml:space="preserve">
+    <value>The configuration file still exists after deletion.</value>
+  </data>
+  <data name="MouseConfigDeleteFailed" xml:space="preserve">
+    <value>Cannot delete {0}: {1}</value>
+  </data>
+  <data name="MouseConfigCreateFailed" xml:space="preserve">
+    <value>Cannot create {0}: {1}</value>
+  </data>
+  <data name="MouseConfigReadFailed" xml:space="preserve">
+    <value>Cannot read {0}: {1}</value>
+  </data>
+  <data name="MouseConfigValueOutOfRange" xml:space="preserve">
+    <value>The value must be between {0} and {1}.</value>
+  </data>
+  <data name="MouseConfigSaveMismatch" xml:space="preserve">
+    <value>The saved value does not match the requested value.</value>
+  </data>
+  <data name="MouseConfigSaveFailed" xml:space="preserve">
+    <value>Cannot save {0}: {1}</value>
+  </data>
+  <data name="MouseConfigTemporaryCleanupFailed" xml:space="preserve">
+    <value>Cannot remove temporary file {0}: {1}</value>
+  </data>
 </root>

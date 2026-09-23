@@ -4,6 +4,7 @@ sampler2D scene : register(s0);
 float2 cursor : register(c0);
 float2 viewport : register(c1);
 float radius : register(c2);
+float thickness : register(c3);
 
 float WhiteCoverage(float4 sampleColor)
 {
@@ -18,9 +19,9 @@ float4 main(float2 uv : TEXCOORD) : COLOR
     float distanceFromCursor = length((uv - cursor) * viewport);
     float proximity = saturate(1.0 - distanceFromCursor / radius);
 
-    // At most one device-independent pixel is added at the center. A sub-pixel
-    // offset and linear texture sampling keep the new stroke connected to it.
-    float2 strokeOffset = (0.95 * proximity) / viewport;
+    // The validated thickness is small enough that linear interpolation keeps
+    // the expanded stroke connected to its source instead of drawing a copy.
+    float2 strokeOffset = (thickness * proximity) / viewport;
     float sourceCoverage = WhiteCoverage(original);
     float expandedCoverage = WhiteCoverage(tex2D(scene, uv + float2(strokeOffset.x, 0)));
     expandedCoverage = max(expandedCoverage, WhiteCoverage(tex2D(scene, uv - float2(strokeOffset.x, 0))));

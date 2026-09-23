@@ -717,4 +717,55 @@
   <data name="MouseEffectMarkerIsDirectory" xml:space="preserve">
     <value>NO_MOUSE_EFFECT 是資料夾而非檔案。更改此設定前，請重新命名或移除該資料夾。</value>
   </data>
+  <data name="SettingsMouseRadius" xml:space="preserve">
+    <value>滑鼠光暈範圍</value>
+  </data>
+  <data name="SettingsMouseRadiusDescription" xml:space="preserve">
+    <value>滑鼠周圍淺色筆畫增粗的作用距離。預設值：140 DIP；允許範圍：40–360 DIP。</value>
+  </data>
+  <data name="SettingsMouseRadiusValue" xml:space="preserve">
+    <value>{0} DIP</value>
+  </data>
+  <data name="SettingsMouseThickness" xml:space="preserve">
+    <value>描邊效果粗細</value>
+  </data>
+  <data name="SettingsMouseThicknessDescription" xml:space="preserve">
+    <value>滑鼠中心的最大筆畫擴張量，向作用範圍邊緣逐漸減至零。預設值：0.95 DIP；允許範圍：0.20–1.25 DIP，以免出現重影。</value>
+  </data>
+  <data name="SettingsMouseThicknessValue" xml:space="preserve">
+    <value>{0} DIP</value>
+  </data>
+  <data name="MouseConfigInvalidTitle" xml:space="preserve">
+    <value>滑鼠效果設定無效</value>
+  </data>
+  <data name="MouseConfigInvalidPrompt" xml:space="preserve">
+    <value>{0} 的數值無效。允許範圍：{1}–{2}。要刪除此檔案並以預設值重新建立嗎？刪除後無法還原。選擇「否」會關閉 TZIP。</value>
+  </data>
+  <data name="MouseConfigUnexpectedFile" xml:space="preserve">
+    <value>無法識別要刪除的設定檔案。</value>
+  </data>
+  <data name="MouseConfigDeleteIncomplete" xml:space="preserve">
+    <value>刪除後設定檔案仍然存在。</value>
+  </data>
+  <data name="MouseConfigDeleteFailed" xml:space="preserve">
+    <value>無法刪除 {0}：{1}</value>
+  </data>
+  <data name="MouseConfigCreateFailed" xml:space="preserve">
+    <value>無法建立 {0}：{1}</value>
+  </data>
+  <data name="MouseConfigReadFailed" xml:space="preserve">
+    <value>無法讀取 {0}：{1}</value>
+  </data>
+  <data name="MouseConfigValueOutOfRange" xml:space="preserve">
+    <value>數值必須介乎 {0} 至 {1}。</value>
+  </data>
+  <data name="MouseConfigSaveMismatch" xml:space="preserve">
+    <value>儲存的數值與要求的數值不一致。</value>
+  </data>
+  <data name="MouseConfigSaveFailed" xml:space="preserve">
+    <value>無法儲存 {0}：{1}</value>
+  </data>
+  <data name="MouseConfigTemporaryCleanupFailed" xml:space="preserve">
+    <value>無法刪除暫存檔案 {0}：{1}</value>
+  </data>
 </root>

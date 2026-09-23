@@ -716,4 +716,55 @@
   <data name="MouseEffectMarkerIsDirectory" xml:space="preserve">
     <value>NO_MOUSE_EFFECT 是文件夹而不是文件。更改此设置前，请重命名或移除该文件夹。</value>
   </data>
+  <data name="SettingsMouseRadius" xml:space="preserve">
+    <value>鼠标光晕范围</value>
+  </data>
+  <data name="SettingsMouseRadiusDescription" xml:space="preserve">
+    <value>鼠标周围浅色笔画增粗的作用距离。默认值：140 DIP；允许范围：40–360 DIP。</value>
+  </data>
+  <data name="SettingsMouseRadiusValue" xml:space="preserve">
+    <value>{0} DIP</value>
+  </data>
+  <data name="SettingsMouseThickness" xml:space="preserve">
+    <value>描边效果粗细</value>
+  </data>
+  <data name="SettingsMouseThicknessDescription" xml:space="preserve">
+    <value>鼠标中心的最大笔画扩张量，向作用范围边缘逐渐减至零。默认值：0.95 DIP；允许范围：0.20–1.25 DIP，以避免重影。</value>
+  </data>
+  <data name="SettingsMouseThicknessValue" xml:space="preserve">
+    <value>{0} DIP</value>
+  </data>
+  <data name="MouseConfigInvalidTitle" xml:space="preserve">
+    <value>鼠标效果配置无效</value>
+  </data>
+  <data name="MouseConfigInvalidPrompt" xml:space="preserve">
+    <value>{0} 中的值无效。允许范围：{1}–{2}。是否删除此文件并按默认值重新创建？删除后无法恢复。选择“否”将关闭 TZIP。</value>
+  </data>
+  <data name="MouseConfigUnexpectedFile" xml:space="preserve">
+    <value>无法识别要删除的配置文件。</value>
+  </data>
+  <data name="MouseConfigDeleteIncomplete" xml:space="preserve">
+    <value>删除后配置文件仍然存在。</value>
+  </data>
+  <data name="MouseConfigDeleteFailed" xml:space="preserve">
+    <value>无法删除 {0}：{1}</value>
+  </data>
+  <data name="MouseConfigCreateFailed" xml:space="preserve">
+    <value>无法创建 {0}：{1}</value>
+  </data>
+  <data name="MouseConfigReadFailed" xml:space="preserve">
+    <value>无法读取 {0}：{1}</value>
+  </data>
+  <data name="MouseConfigValueOutOfRange" xml:space="preserve">
+    <value>值必须在 {0} 到 {1} 之间。</value>
+  </data>
+  <data name="MouseConfigSaveMismatch" xml:space="preserve">
+    <value>保存的值与请求的值不一致。</value>
+  </data>
+  <data name="MouseConfigSaveFailed" xml:space="preserve">
+    <value>无法保存 {0}：{1}</value>
+  </data>
+  <data name="MouseConfigTemporaryCleanupFailed" xml:space="preserve">
+    <value>无法删除临时文件 {0}：{1}</value>
+  </data>
 </root>

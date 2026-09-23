@@ -35,7 +35,13 @@ internal static class MouseWhiteThickening
 
     private static void AttachCore(Window window, FrameworkElement content, double radius)
     {
-        MouseWhiteThickenEffect effect = new() { Radius = radius };
+        MouseWhiteThickenEffect effect = new()
+        {
+            // The per-window first field remains the fallback for windows
+            // constructed outside normal startup; the saved global range wins.
+            Radius = MouseEffectSettings.ParametersInitialized ? MouseEffectSettings.Radius : radius,
+            Thickness = MouseEffectSettings.Thickness
+        };
         content.Effect = MouseEffectSettings.IsEnabled ? effect : null;
 
         void UpdateViewport(object? sender, SizeChangedEventArgs args)
@@ -81,12 +87,27 @@ internal static class MouseWhiteThickening
             }
         }
 
+        void ApplyParameters(double savedRadius, double savedThickness)
+        {
+            try
+            {
+                effect.Radius = savedRadius;
+                effect.Thickness = savedThickness;
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(window, MessageTipGenerator.GenerateTip("MWFXT0005", exception.Message),
+                    LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //MWFXT0005
+            }
+        }
+
         content.SizeChanged += UpdateViewport;
         MouseEventHandler pointerHandler = UpdatePointer;
         window.AddHandler(UIElement.PreviewMouseMoveEvent, pointerHandler, true);
         window.MouseLeave += ClearPointer;
         window.Deactivated += ClearPointer;
         MouseEffectSettings.Changed += ApplySetting;
+        MouseEffectSettings.ParametersChanged += ApplyParameters;
         window.Closed += (_, _) =>
         {
             content.SizeChanged -= UpdateViewport;
@@ -94,6 +115,7 @@ internal static class MouseWhiteThickening
             window.MouseLeave -= ClearPointer;
             window.Deactivated -= ClearPointer;
             MouseEffectSettings.Changed -= ApplySetting;
+            MouseEffectSettings.ParametersChanged -= ApplyParameters;
             content.Effect = null;
         };
         effect.Viewport = new Point(Math.Max(content.ActualWidth, 1), Math.Max(content.ActualHeight, 1));
@@ -123,6 +145,9 @@ internal sealed class MouseWhiteThickenEffect : ShaderEffect
     public static readonly DependencyProperty RadiusProperty =
         DependencyProperty.Register(nameof(Radius), typeof(double), typeof(MouseWhiteThickenEffect),
             new UIPropertyMetadata(120.0, PixelShaderConstantCallback(2)));
+    public static readonly DependencyProperty ThicknessProperty =
+        DependencyProperty.Register(nameof(Thickness), typeof(double), typeof(MouseWhiteThickenEffect),
+            new UIPropertyMetadata(0.95, PixelShaderConstantCallback(3)));
 
     public MouseWhiteThickenEffect()
     {
@@ -131,10 +156,12 @@ internal sealed class MouseWhiteThickenEffect : ShaderEffect
         UpdateShaderValue(CursorProperty);
         UpdateShaderValue(ViewportProperty);
         UpdateShaderValue(RadiusProperty);
+        UpdateShaderValue(ThicknessProperty);
     }
 
     public Brush Input { get => (Brush)GetValue(InputProperty); set => SetValue(InputProperty, value); }
     public Point Cursor { get => (Point)GetValue(CursorProperty); set => SetValue(CursorProperty, value); }
     public Point Viewport { get => (Point)GetValue(ViewportProperty); set => SetValue(ViewportProperty, value); }
     public double Radius { get => (double)GetValue(RadiusProperty); set => SetValue(RadiusProperty, value); }
+    public double Thickness { get => (double)GetValue(ThicknessProperty); set => SetValue(ThicknessProperty, value); }
 }
