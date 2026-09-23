@@ -1,4 +1,4 @@
 ﻿To loacte which Stage
 Search first 5 Letter of Stage Code in Below list,then go to corresponding file and then search all of the Stage Code
-FO001=TANGERINE-ZIP/form1.cs
-FFPCF=TANGERINE-ZIP/FreeFilePickerForm.cs
+FO001=TANGERINE-ZIP/MainWindow.xaml.cs
+FFPCF=TANGERINE-ZIP/FilePickerWindow.xaml.cs

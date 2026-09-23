@@ -25,12 +25,19 @@
                 <MenuItem x:Name="extractAllToFolderMenuItem" Header="Extract all to folder" Click="ExtractAllToFolderMenu_Click" />
                 <MenuItem x:Name="extractSelectedHereMenuItem" Header="Extract selected" Click="ExtractSelectedHereMenu_Click" />
                 <MenuItem x:Name="extractSelectedToFolderMenuItem" Header="Extract selected to folder" Click="ExtractSelectedToFolderMenu_Click" />
+                <Separator />
+                <MenuItem x:Name="extractNestedTarMenuItem" Header="Extract nested TAR" Click="ExtractNestedTarMenuItem_Click" />
             </MenuItem>
             <MenuItem x:Name="compressMenuItem" Header="Compress">
                 <MenuItem x:Name="compressFilesMenuItem" Header="Select files" Click="CompressFilesMenu_Click" />
             </MenuItem>
             <MenuItem x:Name="settingsMenuItem" Header="Settings" Click="SettingsMenu_Click" />
             <MenuItem x:Name="unloadArchiveMenuItem" Header="Unload" Click="UnloadArchiveMenu_Click" />
+            <MenuItem x:Name="stopWorkMenuItem" Header="Stop" Visibility="Collapsed" Click="StopWorkMenuItem_Click" />
+            <MenuItem x:Name="contextMenuItem" Header="Context menu">
+                <MenuItem x:Name="createContextMenuItem" Header="Create" Click="CreateContextMenu_Click" />
+                <MenuItem x:Name="deleteContextMenuItem" Header="Delete" Click="DeleteContextMenu_Click" />
+            </MenuItem>
         </Menu>
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>

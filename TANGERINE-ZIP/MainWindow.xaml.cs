@@ -12,11 +12,6 @@ public partial class MainWindow : Window
     private readonly SaveFileDialog archiveSaveDialog = new();
     private readonly OpenFolderDialog destinationFolderDialog = new();
     private readonly List<ArchiveEntryInfo> _archiveEntries = [];
-    private readonly MenuItem _extractNestedTarMenuItem;
-    private readonly MenuItem _stopWorkMenuItem;
-    private readonly MenuItem _contextMenuItem;
-    private readonly MenuItem _createContextMenuItem;
-    private readonly MenuItem _deleteContextMenuItem;
     private readonly string? _startupArchivePath;
     private CancellationTokenSource? _operationCancellation;
     private NestedTarInfo _nestedTarInfo = NestedTarInfo.None;
@@ -38,27 +33,12 @@ public partial class MainWindow : Window
         _sourceFilesDialog.RestoreDirectory = false;
         string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (Directory.Exists(userProfilePath)) _sourceFilesDialog.InitialDirectory = userProfilePath;
-        _stopWorkMenuItem = new MenuItem { Visibility = Visibility.Collapsed };
-        _stopWorkMenuItem.Click += StopWorkMenuItem_Click;
-        menuBar.Items.Add(_stopWorkMenuItem);
-        _contextMenuItem = new MenuItem();
-        _createContextMenuItem = new MenuItem();
-        _deleteContextMenuItem = new MenuItem();
-        _createContextMenuItem.Click += CreateContextMenu_Click;
-        _deleteContextMenuItem.Click += DeleteContextMenu_Click;
-        _contextMenuItem.Items.Add(_createContextMenuItem);
-        _contextMenuItem.Items.Add(_deleteContextMenuItem);
-        menuBar.Items.Add(_contextMenuItem);
         Closing += (_, args) =>
         {
             if (!_isBusy) return;
             args.Cancel = true;
             StopWorkMenuItem_Click(this, EventArgs.Empty);
         };
-        _extractNestedTarMenuItem = new MenuItem();
-        _extractNestedTarMenuItem.Click += ExtractNestedTarMenuItem_Click;
-        extractMenuItem.Items.Add(new Separator());
-        extractMenuItem.Items.Add(_extractNestedTarMenuItem);
     }
 
     private void MainWindow_Loaded(object sender, EventArgs e)
@@ -85,7 +65,7 @@ public partial class MainWindow : Window
         compressMenuItem.Header = LanguageManager.Get("compressText");
         settingsMenuItem.Header = LanguageManager.Get("settingsText");
         unloadArchiveMenuItem.Header = LanguageManager.Get("uninstallFileText");
-        archiveHeaderText.Text = LanguageManager.Get("mainTabText");
+        archiveHeaderText.Text = LanguageManager.Get("ArchiveHeaderText");
         extractAllHereMenuItem.Header = LanguageManager.Get("extractDirectlyALLText");
         extractAllToFolderMenuItem.Header = LanguageManager.Get("extractToFolderALLText");
         extractSelectedHereMenuItem.Header = LanguageManager.Get("extractDirectlySELECTEDText");
@@ -93,11 +73,11 @@ public partial class MainWindow : Window
         compressFilesMenuItem.Header = LanguageManager.Get("SelectFilesToCompress");
         _sourceFilesDialog.Title = LanguageManager.Get("SelectFilesToCompress");
         _sourceFilesDialog.Filter = LanguageManager.Get("AllFilesFilter");
-        _extractNestedTarMenuItem.Header = LanguageManager.Get("ExtractNestedTar");
-        _stopWorkMenuItem.Header = LanguageManager.Get("StopWork");
-        _contextMenuItem.Header = LanguageManager.Get("ContextMenu");
-        _createContextMenuItem.Header = LanguageManager.Get("CreateContextMenu");
-        _deleteContextMenuItem.Header = LanguageManager.Get("DeleteContextMenu");
+        extractNestedTarMenuItem.Header = LanguageManager.Get("ExtractNestedTar");
+        stopWorkMenuItem.Header = LanguageManager.Get("StopWork");
+        contextMenuItem.Header = LanguageManager.Get("ContextMenu");
+        createContextMenuItem.Header = LanguageManager.Get("CreateContextMenu");
+        deleteContextMenuItem.Header = LanguageManager.Get("DeleteContextMenu");
         archiveOpenDialog.Title = LanguageManager.Get("SelectArchive");
         archiveOpenDialog.Filter = LanguageManager.Get("ArchiveDialogFilter");
     }
@@ -204,8 +184,8 @@ public partial class MainWindow : Window
         _isBusy = true;
         _operationCancellation = new CancellationTokenSource();
         CancellationTokenSource operationIdentity = _operationCancellation;
-        _stopWorkMenuItem.Visibility = Visibility.Visible;
-        _stopWorkMenuItem.IsEnabled = true;
+        stopWorkMenuItem.Visibility = Visibility.Visible;
+        stopWorkMenuItem.IsEnabled = true;
         SetMenuEnabled(false);
         operationStatusText.Text = initialStatus;
         operationProgressBar.Value = 0;
@@ -222,7 +202,7 @@ public partial class MainWindow : Window
             _operationCancellation.Dispose();
             _operationCancellation = null;
             _isBusy = false;
-            _stopWorkMenuItem.Visibility = Visibility.Collapsed;
+            stopWorkMenuItem.Visibility = Visibility.Collapsed;
             SetMenuEnabled(true);
         }
     }
@@ -237,7 +217,7 @@ public partial class MainWindow : Window
             // The modal confirmation pumps messages; the job may finish while the user reads it.
             if (!answer || !ReferenceEquals(current, _operationCancellation)) return;
             current.Cancel();
-            _stopWorkMenuItem.IsEnabled = false;
+            stopWorkMenuItem.IsEnabled = false;
             operationStatusText.Text = LanguageManager.Get("StoppingWork");
         }
         catch (Exception exception) { ShowException("F00010008", exception); } //F00010008
@@ -385,13 +365,13 @@ public partial class MainWindow : Window
     }
 
     private void RefreshCurrentDirectoryStatus() => operationStatusText.Text = string.Format(LanguageManager.Get("CurrentDirectoryFormat"), string.IsNullOrEmpty(_archiveCurrentDirectory) ? LanguageManager.Get("Root") : _archiveCurrentDirectory);
-    private void SetArchiveControls(bool loaded) { unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; _extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar ? Visibility.Visible : Visibility.Collapsed; }
-    private void SetMenuEnabled(bool enabled) { openArchiveMenuItem.IsEnabled = enabled; extractMenuItem.IsEnabled = enabled; compressMenuItem.IsEnabled = enabled; unloadArchiveMenuItem.IsEnabled = enabled; _extractNestedTarMenuItem.IsEnabled = enabled; _contextMenuItem.IsEnabled = enabled; }
+    private void SetArchiveControls(bool loaded) { unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar ? Visibility.Visible : Visibility.Collapsed; }
+    private void SetMenuEnabled(bool enabled) { openArchiveMenuItem.IsEnabled = enabled; extractMenuItem.IsEnabled = enabled; compressMenuItem.IsEnabled = enabled; unloadArchiveMenuItem.IsEnabled = enabled; extractNestedTarMenuItem.IsEnabled = enabled; contextMenuItem.IsEnabled = enabled; }
 
     private void UnloadArchive()
     {
         _archivePath = string.Empty; _archivePassword = null; _archiveCurrentDirectory = string.Empty; _nestedTarInfo = NestedTarInfo.None; _archiveEntries.Clear(); archiveEntriesList.Items.Clear();
-        operationProgressBar.Value = 0; operationStatusText.Text = LanguageManager.Get("readytext"); archiveHeaderText.Text = LanguageManager.Get("mainTabText"); SetArchiveControls(false);
+        operationProgressBar.Value = 0; operationStatusText.Text = LanguageManager.Get("readytext"); archiveHeaderText.Text = LanguageManager.Get("ArchiveHeaderText"); SetArchiveControls(false);
     }
 
     private void UnloadArchiveMenu_Click(object sender, EventArgs e) => UnloadArchive();
@@ -414,4 +394,8 @@ public partial class MainWindow : Window
         aboutWindow.ShowDialog();
     }
 
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+
+    }
 }

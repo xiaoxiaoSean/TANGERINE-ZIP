@@ -80,34 +80,9 @@
 	</ItemGroup>
 
 
-	<!-- 自动生成资源 Designer -->
 	<ItemGroup>
 		<Compile Update="*.xaml.cs">
 			<DependentUpon>%(Filename)</DependentUpon>
 		</Compile>
-		<Compile Update="Resources\TZIPResource.Designer.cs">
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-			<DependentUpon>TZIPResource.resx</DependentUpon>
-		</Compile>
-	</ItemGroup>
-
-
-	<!-- 资源 -->
-	<ItemGroup>
-
-		<EmbeddedResource Update="LanguageManager\LanguageResource.resx">
-			<Generator></Generator>
-		</EmbeddedResource>
-
-		<EmbeddedResource Update="LanguageManager\LanguageResource.zh-CN.resx">
-			<Generator></Generator>
-		</EmbeddedResource>
-
-		<EmbeddedResource Update="Resources\TZIPResource.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
-			<LastGenOutput>TZIPResource.Designer.cs</LastGenOutput>
-		</EmbeddedResource>
-
 	</ItemGroup>
 </Project>

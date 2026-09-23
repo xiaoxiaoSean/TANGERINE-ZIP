@@ -16,6 +16,9 @@ internal static class UiProbe
             {
                 _ = new Application();
                 Directory.CreateDirectory(outputDirectory);
+                foreach (string key in new[] { "ArchiveHeaderText", "FilePickerWindowTitle", "FilePickerWindowGoBack" })
+                    if (LanguageManager.Get(key) == key)
+                        throw new InvalidOperationException($"Missing localized WPF resource: {key}");
                 foreach (Type windowType in new[]
                 {
                     typeof(MainWindow), typeof(ArchivePasswordWindow), typeof(ContextMenuSetupWindow),
@@ -30,7 +33,7 @@ internal static class UiProbe
                     Console.WriteLine($"PASS XAML designer constructor: {windowType.Name}");
                 }
                 var main = new MainWindow();
-                typeof(MainWindow).GetMethod("MainWindow_Load", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                typeof(MainWindow).GetMethod("MainWindow_Loaded", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(main, [main, EventArgs.Empty]);
                 var windows = new (string Name, Window Window)[]
                 {

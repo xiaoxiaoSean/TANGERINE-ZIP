@@ -6,7 +6,7 @@ public static class LanguageManager
 {
     private static readonly ResourceManager rm =
         new ResourceManager(
-            "TANGERINE_ZIP.LanguageManager.LanguageResource",
+            "TANGERINE_ZIP.LanguageManager.UiStrings",
             Assembly.GetExecutingAssembly());
 
     public static string Get(string key)

@@ -4,7 +4,7 @@
 
 ## 1. 实现概览
 
-项目以 .NET 10 WinForms 为 UI，归档逻辑集中在 `Services/ArchiveService.cs`。主窗体只负责选择文件、展示条目、导航、覆盖策略、进度及错误提示。所有耗时操作均通过 `Task`/异步流或后台任务执行，UI 线程不会执行压缩、解压或镜像扫描。
+项目以 .NET 10 WPF 为 UI。八个窗口由 XAML 和对应的代码文件组成，可在 Visual Studio 的 WPF 设计器中打开。归档逻辑集中在 `Services/ArchiveService.cs`。主窗口只负责选择文件、展示条目、导航、覆盖策略、进度及错误提示。所有耗时操作均通过 `Task`/异步流或后台任务执行，UI 线程不会执行压缩、解压或镜像扫描。
 
 发布目标为 Windows x64 自包含单文件。`PublishSingleFile`、`SelfContained` 与 `IncludeNativeLibrariesForSelfExtract` 已写入项目文件；XZ 和 WIM 的原生库由 .NET 单文件宿主解出后按 `NATIVE_DLL_SEARCH_DIRECTORIES` 定位。
 
@@ -44,7 +44,7 @@ ZIP、7Z、RAR 支持可被第三方压缩软件读取的原生密码创建与�
 
 ### 进度
 
-`ArchiveProgress` 包含百分比和当前条目。流格式按已读取输入字节计算；归档格式按条目字节累计；ISO 按文件数据累计；WIM 使用 wimlib 回调。`Progress<T>` 将更新自动封送回 WinForms UI 线程。
+`ArchiveProgress` 包含百分比和当前条目。流格式按已读取输入字节计算；归档格式按条目字节累计；ISO 按文件数据累计；WIM 使用 wimlib 回调。`Progress<T>` 将更新自动封送回 WPF UI 线程。
 
 ### 覆盖策略
 
@@ -54,20 +54,20 @@ ZIP、7Z、RAR 支持可被第三方压缩软件读取的原生密码创建与�
 - “否”：跳过全部现有文件；
 - “取消”：不开始操作。
 
-保存压缩包时还使用 WinForms 的 `OverwritePrompt`。输出文件不能同时是输入文件（`ARCSV0009`）。
+保存压缩包时还使用 `SaveFileDialog.OverwritePrompt`。输出文件不能同时是输入文件（`ARCSV0009`）。
 
 ## 4. 本地化与主题
 
 语言中性值为 `en-US`。`LanguageManager.Get` 先查询当前 UI 文化，缺失时回退到 `en-US`，最后才返回资源键。资源已覆盖：
 
-- `LanguageResource.resx`（中性英文）
-- `LanguageResource.en-US.resx`
-- `LanguageResource.zh-CN.resx`
-- `LanguageResource.zh-TW.resx`
-- `LanguageResource.zh-HK.resx`
-- `LanguageResource.zh-MO.resx`
+- `UiStrings.resx`（中性英文）
+- `UiStrings.en-US.resx`
+- `UiStrings.zh-CN.resx`
+- `UiStrings.zh-TW.resx`
+- `UiStrings.zh-HK.resx`
+- `UiStrings.zh-MO.resx`
 
-窗体运行时调用 `DarkTheme.Apply`，递归设置黑色背景和浅色前景，也处理菜单及下拉项。新增的所有用户可见文字均从 `LanguageManager` 获取。
+窗口使用 `Theme.xaml` 设置黑色背景和浅色前景，也处理菜单及下拉项。运行时文字通过 `LanguageManager` 获取。
 
 光效由 MSBuild 属性 `ENABLE_LIGHT` 控制。默认值为 `false`，因此默认发布配置不会定义同名预处理符号，也不会实例化光效窗口或计时器。需要光效时使用 `-p:ENABLE_LIGHT=true`。
 
@@ -179,4 +179,4 @@ dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -p:ENA
 - 文件类型判断只能进入 `FileDetector`，且只允许使用内容签名或 TAR 头校验。保存对话框的格式选择通过 `FileDetector.GetTypeFromCreateFilterIndex` 映射，不根据用户输入的后缀推断类型。
 - 不要关闭路径边界校验，也不要直接调用库提供的“一键解压到目录”绕过覆盖策略。
 - Native NuGet 版本变化后必须重新执行单文件发布和 XZ/WIM 往返测试。
-- `PublishTrimmed` 保持为 `false`，以避免 WinForms、资源管理器和反射/PInvoke 库被错误裁剪。
+- `PublishTrimmed` 保持为 `false`，以避免资源管理器集成和反射/PInvoke 库被错误裁剪。
