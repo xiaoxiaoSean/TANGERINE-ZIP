@@ -1,7 +1,7 @@
-<Window x:Class="TANGERINE_ZIP.OverWriteOrNotForm"
+<Window x:Class="TANGERINE_ZIP.OverwriteDecisionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Overwrite?" WindowStartupLocation="CenterOwner"
+        Title="Overwrite?" Icon="Resources/TZIP.png" WindowStartupLocation="CenterOwner"
         Background="Black" Foreground="WhiteSmoke" FontFamily="Microsoft YaHei UI">
     <Window.Resources>
         <ResourceDictionary>
@@ -23,7 +23,7 @@
             <TextBlock x:Name="descriptionText" Text="Choose how to handle an existing file" Margin="4" />
         </ScrollViewer>
         <Image Grid.Row="0" Grid.Column="1" Source="Resources/TZIP.png" Stretch="Uniform" />
-        <ListBox x:Name="_choices" Grid.Row="1" Grid.Column="0" />
+        <ListBox x:Name="_choicesList" Grid.Row="1" Grid.Column="0" />
         <Button x:Name="executeButton" Grid.Row="1" Grid.Column="1" Content="Execute" Click="Execute_Click" />
     </Grid>
 </Window>

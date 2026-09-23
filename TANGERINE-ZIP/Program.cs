@@ -24,7 +24,7 @@ namespace TANGERINE_ZIP
                 Services.ContextMenuCommandHandler.Run(args[0], args[1..]);
                 return;
             }
-            application.Run(new Form1());
+            application.Run(new MainWindow());
         }
     }
 }

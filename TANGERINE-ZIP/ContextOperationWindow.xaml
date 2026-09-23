@@ -1,9 +1,9 @@
-<Window x:Class="TANGERINE_ZIP.ContextOperationForm" x:ClassModifier="internal"
+<Window x:Class="TANGERINE_ZIP.ContextOperationWindow" x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Archive operation" WindowStartupLocation="CenterScreen"
         Background="Black" Foreground="WhiteSmoke" FontFamily="Microsoft YaHei UI"
-        Loaded="ContextOperationForm_Shown" Closing="ContextOperationForm_Closing">
+        Loaded="ContextOperationWindow_Shown" Closing="ContextOperationWindow_Closing">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -17,8 +17,8 @@
             <RowDefinition Height="1*" />
             <RowDefinition Height="0.5*" />
         </Grid.RowDefinitions>
-        <ProgressBar x:Name="_progressBar" Grid.Row="0" Minimum="0" Maximum="100" />
-        <TextBlock x:Name="_statusLabel" Grid.Row="1" Text="Operation in progress" Margin="4" />
+        <ProgressBar x:Name="_operationProgressBar" Grid.Row="0" Minimum="0" Maximum="100" />
+        <TextBlock x:Name="_statusText" Grid.Row="1" Text="Operation in progress" Margin="4" />
         <Button x:Name="_actionButton" Grid.Row="2" Content="Stop" Click="ActionButton_Click" />
     </Grid>
 </Window>

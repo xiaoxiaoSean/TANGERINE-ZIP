@@ -5,16 +5,16 @@ namespace TANGERINE_ZIP;
 
 internal enum ContextMenuSetupMode { Create, Delete }
 
-internal sealed partial class ContextMenuSetupWizardForm : Window
+internal sealed partial class ContextMenuSetupWindow : Window
 {
     private readonly ContextMenuSetupMode _mode;
     private readonly string _executablePath = string.Empty;
     private CancellationTokenSource? _cancellation;
     private bool _isBusy;
 
-    public ContextMenuSetupWizardForm() => InitializeComponent();
+    public ContextMenuSetupWindow() => InitializeComponent();
 
-    internal ContextMenuSetupWizardForm(ContextMenuSetupMode mode, string executablePath)
+    internal ContextMenuSetupWindow(ContextMenuSetupMode mode, string executablePath)
     {
         _mode = mode;
         _executablePath = executablePath;
@@ -22,7 +22,7 @@ internal sealed partial class ContextMenuSetupWizardForm : Window
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         WpfUi.SizeWindow(this, 0.65, 0.65);
         Title = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateTitle" : "ContextWizardDeleteTitle");
-        descriptionLabel.Text = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateDescription" : "ContextWizardDeleteDescription");
+        descriptionText.Text = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateDescription" : "ContextWizardDeleteDescription");
         _startButton.Content = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardStartCreate" : "ContextWizardStartDelete");
         _cancelButton.Content = LanguageManager.Get("Cancel");
     }
@@ -34,8 +34,8 @@ internal sealed partial class ContextMenuSetupWizardForm : Window
         _cancellation = new CancellationTokenSource();
         _startButton.IsEnabled = false;
         _cancelButton.Content = LanguageManager.Get("StopWork");
-        _progressLog.Items.Clear();
-        _progressBar.Value = 0;
+        _progressLogList.Items.Clear();
+        _operationProgressBar.Value = 0;
         try
         {
             Progress<ContextMenuProgress> progress = new(UpdateProgress);
@@ -44,19 +44,19 @@ internal sealed partial class ContextMenuSetupWizardForm : Window
             else
                 await ContextMenuRegistrationService.DeleteAsync(_executablePath, progress, _cancellation.Token);
             string key = _mode == ContextMenuSetupMode.Create ? "ContextMenuModernCreated" : "ContextMenuDeleted";
-            _statusLabel.Text = LanguageManager.Get(key);
+            _statusText.Text = LanguageManager.Get(key);
             MessageBox.Show(this, LanguageManager.Get(key), Title, MessageBoxButton.OK, MessageBoxImage.Information);
             _isBusy = false;
             DialogResult = true;
         }
         catch (OperationCanceledException)
         {
-            _statusLabel.Text = LanguageManager.Get("OperationCancelled");
-            _progressLog.Items.Add(LanguageManager.Get("ContextProgressCancelled"));
+            _statusText.Text = LanguageManager.Get("OperationCancelled");
+            _progressLogList.Items.Add(LanguageManager.Get("ContextProgressCancelled"));
         }
         catch (Exception exception)
         {
-            _statusLabel.Text = LanguageManager.Get("ContextSetupIncomplete");
+            _statusText.Text = LanguageManager.Get("ContextSetupIncomplete");
             string code = exception is StageException stage ? stage.StageCode : "CTXWZ0001";
             MessageBox.Show(this, MessageTipGenerator.GenerateTip(code, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -74,12 +74,12 @@ internal sealed partial class ContextMenuSetupWizardForm : Window
     private void UpdateProgress(ContextMenuProgress progress)
     {
         if (!_isBusy) return;
-        _progressBar.Value = Math.Clamp(progress.Percentage, 0, 100);
+        _operationProgressBar.Value = Math.Clamp(progress.Percentage, 0, 100);
         string message = LanguageManager.Get(progress.ResourceKey);
         if (!string.IsNullOrWhiteSpace(progress.Detail)) message = $"{message} {progress.Detail}";
-        _statusLabel.Text = message;
-        _progressLog.Items.Add($"{progress.Percentage,3}%  {message}");
-        _progressLog.ScrollIntoView(_progressLog.Items[^1]);
+        _statusText.Text = message;
+        _progressLogList.Items.Add($"{progress.Percentage,3}%  {message}");
+        _progressLogList.ScrollIntoView(_progressLogList.Items[^1]);
     }
 
     private void CancelButton_Click(object? sender, RoutedEventArgs e)
@@ -87,11 +87,11 @@ internal sealed partial class ContextMenuSetupWizardForm : Window
         if (!_isBusy) { Close(); return; }
         if (!WpfUi.Confirm(this, LanguageManager.Get("ContextSetupCancelRisk"), LanguageManager.Get("StopWork"))) return;
         _cancelButton.IsEnabled = false;
-        _statusLabel.Text = LanguageManager.Get("StoppingWork");
+        _statusText.Text = LanguageManager.Get("StoppingWork");
         _cancellation?.Cancel();
     }
 
-    private void ContextMenuSetupWizardForm_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    private void ContextMenuSetupWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (!_isBusy) return;
         e.Cancel = true;

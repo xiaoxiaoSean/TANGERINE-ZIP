@@ -2,13 +2,13 @@ using TANGERINE_ZIP.Services;
 
 namespace TANGERINE_ZIP;
 
-internal sealed partial class OverwriteConflictForm : Window
+internal sealed partial class OverwriteConflictWindow : Window
 {
     public ConflictChoice Choice { get; private set; } = ConflictChoice.Cancel;
 
-    public OverwriteConflictForm() => InitializeComponent();
+    public OverwriteConflictWindow() => InitializeComponent();
 
-    public OverwriteConflictForm(ArchiveConflict conflict)
+    public OverwriteConflictWindow(ArchiveConflict conflict)
     {
         InitializeComponent();
         FontSize = SystemParameters.WorkArea.Height * 0.018;
@@ -31,9 +31,9 @@ internal sealed partial class OverwriteConflictForm : Window
 
     public static ConflictChoice Ask(Window? owner, ArchiveConflict conflict)
     {
-        var form = new OverwriteConflictForm(conflict);
-        if (owner is not null) form.Owner = owner;
-        form.ShowDialog();
-        return form.Choice;
+        var window = new OverwriteConflictWindow(conflict);
+        if (owner is not null) window.Owner = owner;
+        window.ShowDialog();
+        return window.Choice;
     }
 }

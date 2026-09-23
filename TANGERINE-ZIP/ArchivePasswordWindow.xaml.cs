@@ -3,13 +3,13 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
-internal sealed partial class ArchivePasswordForm : Window
+internal sealed partial class ArchivePasswordWindow : Window
 {
     private readonly bool _creating;
 
-    public ArchivePasswordForm() => InitializeComponent();
+    public ArchivePasswordWindow() => InitializeComponent();
 
-    public ArchivePasswordForm(string archiveName, bool creating, string? errorMessage = null, bool passwordSupported = true)
+    public ArchivePasswordWindow(string archiveName, bool creating, string? errorMessage = null, bool passwordSupported = true)
     {
         InitializeComponent();
         _creating = creating;
@@ -22,8 +22,8 @@ internal sealed partial class ArchivePasswordForm : Window
         _enablePassword.IsChecked = passwordSupported;
         _enablePassword.IsEnabled = passwordSupported;
         _enablePassword.Visibility = creating ? Visibility.Visible : Visibility.Collapsed;
-        passwordLabel.Text = LanguageManager.Get("PasswordLabel");
-        confirmationLabel.Text = LanguageManager.Get("ConfirmPasswordLabel");
+        passwordText.Text = LanguageManager.Get("PasswordLabel");
+        confirmationText.Text = LanguageManager.Get("ConfirmPasswordLabel");
         confirmationFields.Visibility = creating ? Visibility.Visible : Visibility.Collapsed;
         _showPassword.Content = LanguageManager.Get("ShowPassword");
         confirmButton.Content = LanguageManager.Get("Confirm");
@@ -45,20 +45,20 @@ internal sealed partial class ArchivePasswordForm : Window
 
     private void ShowPasswords(bool show)
     {
-        if (show) { _visiblePassword.Text = _password.Password; _visibleConfirmation.Text = _confirmation.Password; }
-        else { _password.Password = _visiblePassword.Text; _confirmation.Password = _visibleConfirmation.Text; }
-        _password.Visibility = _confirmation.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+        if (show) { _visiblePassword.Text = _password.Password; _visibleConfirmation.Text = _confirmButtonation.Password; }
+        else { _password.Password = _visiblePassword.Text; _confirmButtonation.Password = _visibleConfirmation.Text; }
+        _password.Visibility = _confirmButtonation.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
         _visiblePassword.Visibility = _visibleConfirmation.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private string EnteredPassword => _showPassword.IsChecked == true ? _visiblePassword.Text : _password.Password;
-    private string EnteredConfirmation => _showPassword.IsChecked == true ? _visibleConfirmation.Text : _confirmation.Password;
+    private string EnteredConfirmation => _showPassword.IsChecked == true ? _visibleConfirmation.Text : _confirmButtonation.Password;
     public string? PasswordValue { get; private set; }
 
     private void UpdateEnabledState()
     {
         bool enabled = !_creating || _enablePassword.IsChecked == true;
-        _password.IsEnabled = _visiblePassword.IsEnabled = _confirmation.IsEnabled = _visibleConfirmation.IsEnabled = _showPassword.IsEnabled = enabled;
+        _password.IsEnabled = _visiblePassword.IsEnabled = _confirmButtonation.IsEnabled = _visibleConfirmation.IsEnabled = _showPassword.IsEnabled = enabled;
     }
 
     private void Confirm_Click(object sender, RoutedEventArgs e)
@@ -76,19 +76,19 @@ internal sealed partial class ArchivePasswordForm : Window
 
     public static bool TryGetCreationPassword(Window? owner, string archiveName, FileDetector.FileType type, out string? password)
     {
-        ArchivePasswordForm form = new(archiveName, true, passwordSupported: ArchiveCapabilities.CanCreateWithPassword(type));
-        if (owner is not null) form.Owner = owner;
-        bool accepted = form.ShowDialog() == true;
-        password = accepted ? form.PasswordValue : null;
+        ArchivePasswordWindow window = new(archiveName, true, passwordSupported: ArchiveCapabilities.CanCreateWithPassword(type));
+        if (owner is not null) window.Owner = owner;
+        bool accepted = window.ShowDialog() == true;
+        password = accepted ? window.PasswordValue : null;
         return accepted;
     }
 
     public static bool TryGetExtractionPassword(Window? owner, string archiveName, string? errorMessage, out string? password)
     {
-        ArchivePasswordForm form = new(archiveName, false, errorMessage);
-        if (owner is not null) form.Owner = owner;
-        bool accepted = form.ShowDialog() == true;
-        password = accepted ? form.PasswordValue : null;
+        ArchivePasswordWindow window = new(archiveName, false, errorMessage);
+        if (owner is not null) window.Owner = owner;
+        bool accepted = window.ShowDialog() == true;
+        password = accepted ? window.PasswordValue : null;
         return accepted;
     }
 }

@@ -2,7 +2,7 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
-public sealed partial class FreeFilePickerForm : Window
+public sealed partial class FilePickerWindow : Window
 {
     private string? _currentPath;
     private string? _initialPath;
@@ -11,18 +11,17 @@ public sealed partial class FreeFilePickerForm : Window
 
     public IReadOnlyList<string> SelectedFiles { get; private set; } = [];
 
-    public FreeFilePickerForm()
+    public FilePickerWindow()
     {
         InitializeComponent();
         FontSize = SystemParameters.WorkArea.Height * 0.018;
-        Icon = WpfUi.WindowIcon(typeof(FreeFilePickerForm));
         WpfUi.SizeWindow(this, 0.7, 0.7);
-        Title = LanguageManager.Get("FreeFilePickerFormTitle");
-        _confirm.Content = LanguageManager.Get("Confirm");
+        Title = LanguageManager.Get("FilePickerWindowTitle");
+        _confirmButton.Content = LanguageManager.Get("Confirm");
         Closed += (_, _) => { _loadCancellation?.Cancel(); _loadCancellation?.Dispose(); };
     }
 
-    public void ShowTipText(string inputTip) => _tip.Text = inputTip;
+    public void ShowTipText(string inputTip) => _tipText.Text = inputTip;
     public void InputPath(string inputPath)
     {
         _initialPath = inputPath;
@@ -41,8 +40,8 @@ public sealed partial class FreeFilePickerForm : Window
     private async Task LoadPathAsync(string path)
     {
         var current = ReplaceLoadCancellation();
-        _fileListBox.Items.Clear();
-        _fileListBox.Items.Add(LanguageManager.Get("LoadingFiles"));
+        _filesList.Items.Clear();
+        _filesList.Items.Add(LanguageManager.Get("LoadingFiles"));
         _displayPaths.Clear();
         try
         {
@@ -52,12 +51,12 @@ public sealed partial class FreeFilePickerForm : Window
                 return PathSorter.MergeAndSort(Directory.GetFiles(path), Directory.GetDirectories(path));
             }, current.Token);
             if (current.IsCancellationRequested || !IsLoaded) return;
-            _fileListBox.Items.Clear();
-            _fileListBox.Items.Add(LanguageManager.Get("goToParentDirectoryText") + "...");
+            _filesList.Items.Clear();
+            _filesList.Items.Add(LanguageManager.Get("goToParentDirectoryText") + "...");
             foreach (string item in items)
             {
                 string name = Path.GetFileName(item);
-                _fileListBox.Items.Add(name);
+                _filesList.Items.Add(name);
                 _displayPaths[name] = item;
             }
             _currentPath = path;
@@ -69,15 +68,15 @@ public sealed partial class FreeFilePickerForm : Window
     private async Task LoadDrivesAsync()
     {
         var current = ReplaceLoadCancellation();
-        _fileListBox.Items.Clear();
-        _fileListBox.Items.Add(LanguageManager.Get("LoadingFiles"));
+        _filesList.Items.Clear();
+        _filesList.Items.Add(LanguageManager.Get("LoadingFiles"));
         _displayPaths.Clear();
         try
         {
             string[] drives = await Task.Run(() => DriveInfo.GetDrives().Where(d => d.IsReady).Select(d => d.Name).ToArray(), current.Token);
             if (current.IsCancellationRequested || !IsLoaded) return;
-            _fileListBox.Items.Clear();
-            foreach (string drive in drives) { _fileListBox.Items.Add(drive); _displayPaths[drive] = drive; }
+            _filesList.Items.Clear();
+            foreach (string drive in drives) { _filesList.Items.Add(drive); _displayPaths[drive] = drive; }
             _currentPath = null;
         }
         catch (OperationCanceledException) { }
@@ -86,7 +85,7 @@ public sealed partial class FreeFilePickerForm : Window
 
     private void ConfirmButton_Click(object? sender, RoutedEventArgs e)
     {
-        SelectedFiles = _fileListBox.SelectedItems.Cast<object>().Select(item => item.ToString() ?? string.Empty)
+        SelectedFiles = _filesList.SelectedItems.Cast<object>().Select(item => item.ToString() ?? string.Empty)
             .Where(_displayPaths.ContainsKey).Select(item => _displayPaths[item]).Where(File.Exists)
             .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         if (SelectedFiles.Count == 0)
@@ -97,11 +96,11 @@ public sealed partial class FreeFilePickerForm : Window
         DialogResult = true;
     }
 
-    private async void FileListBox_DoubleClick(object? sender, System.Windows.Input.MouseButtonEventArgs e)
+    private async void FilesList_MouseDoubleClick(object? sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         try
         {
-            if (_fileListBox.SelectedItem is not string item) return;
+            if (_filesList.SelectedItem is not string item) return;
             if (item == LanguageManager.Get("goToParentDirectoryText") + "...")
             {
                 string? parent = _currentPath is null ? null : Directory.GetParent(_currentPath)?.FullName;
@@ -115,7 +114,7 @@ public sealed partial class FreeFilePickerForm : Window
         catch (Exception exception) { ShowError("F00020004", exception); }
     }
 
-    private async void FreeFilePickerForm_Load(object? sender, RoutedEventArgs e)
+    private async void FilePickerWindow_Loaded(object? sender, RoutedEventArgs e)
     {
         if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this)) return;
         try

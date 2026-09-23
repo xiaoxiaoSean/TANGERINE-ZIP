@@ -3,19 +3,19 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
-internal sealed partial class ContextOperationForm : Window
+internal sealed partial class ContextOperationWindow : Window
 {
     private readonly Func<IProgress<ArchiveProgress>, CancellationToken, Task> _operation;
     private readonly CancellationTokenSource _cancellation = new();
     private bool _completed;
 
-    public ContextOperationForm()
+    public ContextOperationWindow()
     {
         InitializeComponent();
         _operation = (_, _) => Task.CompletedTask;
     }
 
-    public ContextOperationForm(string title, Func<IProgress<ArchiveProgress>, CancellationToken, Task> operation)
+    public ContextOperationWindow(string title, Func<IProgress<ArchiveProgress>, CancellationToken, Task> operation)
     {
         _operation = operation;
         InitializeComponent();
@@ -25,28 +25,28 @@ internal sealed partial class ContextOperationForm : Window
         Closed += (_, _) => _cancellation.Dispose();
     }
 
-    private async void ContextOperationForm_Shown(object? sender, RoutedEventArgs e)
+    private async void ContextOperationWindow_Shown(object? sender, RoutedEventArgs e)
     {
         if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this)) return;
         _actionButton.Content = LanguageManager.Get("StopWork");
-        _statusLabel.Text = LanguageManager.Get("ContextOperationRunning");
+        _statusText.Text = LanguageManager.Get("ContextOperationRunning");
         Progress<ArchiveProgress> progress = new(item =>
         {
-            _progressBar.Value = Math.Clamp(item.Percentage, 0, 100);
-            if (!string.IsNullOrWhiteSpace(item.EntryKey)) _statusLabel.Text = item.EntryKey;
+            _operationProgressBar.Value = Math.Clamp(item.Percentage, 0, 100);
+            if (!string.IsNullOrWhiteSpace(item.EntryKey)) _statusText.Text = item.EntryKey;
         });
         try
         {
             await _operation(progress, _cancellation.Token);
-            _progressBar.Value = 100;
-            _statusLabel.Text = LanguageManager.Get("ContextOperationCompleted");
+            _operationProgressBar.Value = 100;
+            _statusText.Text = LanguageManager.Get("ContextOperationCompleted");
             _completed = true;
             _actionButton.Content = LanguageManager.Get("Confirm");
             _ = Dispatcher.BeginInvoke(Close);
         }
         catch (OperationCanceledException)
         {
-            _statusLabel.Text = LanguageManager.Get("OperationCancelled");
+            _statusText.Text = LanguageManager.Get("OperationCancelled");
             _completed = true;
             _actionButton.Content = LanguageManager.Get("Confirm");
         }
@@ -64,11 +64,11 @@ internal sealed partial class ContextOperationForm : Window
         if (_completed) { Close(); return; }
         if (!WpfUi.Confirm(this, LanguageManager.Get("StopWorkRisk"), LanguageManager.Get("StopWork"))) return;
         _actionButton.IsEnabled = false;
-        _statusLabel.Text = LanguageManager.Get("StoppingWork");
+        _statusText.Text = LanguageManager.Get("StoppingWork");
         _cancellation.Cancel();
     }
 
-    private void ContextOperationForm_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    private void ContextOperationWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (_completed) return;
         e.Cancel = true;

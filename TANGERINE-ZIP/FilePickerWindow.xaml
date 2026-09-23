@@ -1,9 +1,9 @@
-<Window x:Class="TANGERINE_ZIP.FreeFilePickerForm"
+<Window x:Class="TANGERINE_ZIP.FilePickerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="File picker" WindowStartupLocation="CenterOwner"
+        Title="File picker" Icon="Resources/TZIP.png" WindowStartupLocation="CenterOwner"
         Background="Black" Foreground="WhiteSmoke" FontFamily="Microsoft YaHei UI"
-        Loaded="FreeFilePickerForm_Load">
+        Loaded="FilePickerWindow_Loaded">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -21,10 +21,10 @@
             <RowDefinition Height="6.5*" />
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
-        <TextBox x:Name="_tip" Grid.Row="0" Grid.Column="0" IsReadOnly="True" TextWrapping="Wrap" />
+        <TextBox x:Name="_tipText" Grid.Row="0" Grid.Column="0" IsReadOnly="True" TextWrapping="Wrap" />
         <Image Grid.Row="0" Grid.Column="1" Source="Resources/TZIP.png" Stretch="Uniform" />
-        <ListBox x:Name="_fileListBox" Grid.Row="1" Grid.ColumnSpan="2" SelectionMode="Extended"
-                 MouseDoubleClick="FileListBox_DoubleClick" />
-        <Button x:Name="_confirm" Grid.Row="2" Grid.ColumnSpan="2" Content="Confirm" Click="ConfirmButton_Click" />
+        <ListBox x:Name="_filesList" Grid.Row="1" Grid.ColumnSpan="2" SelectionMode="Extended"
+                 MouseDoubleClick="FilesList_MouseDoubleClick" />
+        <Button x:Name="_confirmButton" Grid.Row="2" Grid.ColumnSpan="2" Content="Confirm" Click="ConfirmButton_Click" />
     </Grid>
 </Window>

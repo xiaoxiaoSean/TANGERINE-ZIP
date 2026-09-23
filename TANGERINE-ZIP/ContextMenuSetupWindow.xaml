@@ -1,9 +1,9 @@
-<Window x:Class="TANGERINE_ZIP.ContextMenuSetupWizardForm" x:ClassModifier="internal"
+<Window x:Class="TANGERINE_ZIP.ContextMenuSetupWindow" x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Context menu setup" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Background="Black" Foreground="WhiteSmoke" FontFamily="Microsoft YaHei UI"
-        Closing="ContextMenuSetupWizardForm_Closing">
+        Closing="ContextMenuSetupWindow_Closing">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -19,10 +19,10 @@
             <RowDefinition Height="5.6*" />
             <RowDefinition Height="1.5*" />
         </Grid.RowDefinitions>
-        <TextBlock x:Name="descriptionLabel" Grid.Row="0" Text="Set up the Explorer context menu" Margin="4" />
-        <TextBlock x:Name="_statusLabel" Grid.Row="1" Margin="4" />
-        <ProgressBar x:Name="_progressBar" Grid.Row="2" Minimum="0" Maximum="100" />
-        <ListBox x:Name="_progressLog" Grid.Row="3" />
+        <TextBlock x:Name="descriptionText" Grid.Row="0" Text="Set up the Explorer context menu" Margin="4" />
+        <TextBlock x:Name="_statusText" Grid.Row="1" Margin="4" />
+        <ProgressBar x:Name="_operationProgressBar" Grid.Row="2" Minimum="0" Maximum="100" />
+        <ListBox x:Name="_progressLogList" Grid.Row="3" />
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="_startButton" Content="Start" Click="StartButton_Click" />
             <Button x:Name="_cancelButton" Content="Cancel" Click="CancelButton_Click" />

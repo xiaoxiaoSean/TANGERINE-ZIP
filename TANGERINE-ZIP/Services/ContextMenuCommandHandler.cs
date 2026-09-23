@@ -40,16 +40,16 @@ internal static class ContextMenuCommandHandler
             try
             {
                 if (overwriteAll.HasValue) return overwriteAll.Value ? ConflictChoice.AllYes : ConflictChoice.AllNo;
-                ConflictChoice choice = OverwriteConflictForm.Ask(null, conflict);
+                ConflictChoice choice = OverwriteConflictWindow.Ask(null, conflict);
                 if (choice == ConflictChoice.AllYes) overwriteAll = true;
                 if (choice == ConflictChoice.AllNo) overwriteAll = false;
                 return choice;
             }
             finally { conflictPromptLock.Release(); }
         }
-        ContextOperationForm form = new(LanguageManager.Get("ContextExtractProgress"),
+        ContextOperationWindow window = new(LanguageManager.Get("ContextExtractProgress"),
             (progress, token) => ExtractManyAsync(paths, passwords, ResolveConflictAsync, progress, token));
-        form.ShowDialog();
+        window.ShowDialog();
     }
 
     private static void RunCompress(string[] paths)
@@ -64,10 +64,10 @@ internal static class ContextMenuCommandHandler
         };
         if (dialog.ShowDialog() != true) return;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(dialog.FilterIndex);
-        if (!ArchivePasswordForm.TryGetCreationPassword(null, Path.GetFileName(dialog.FileName), type, out string? password)) return;
-        ContextOperationForm form = new(LanguageManager.Get("ContextCompressProgress"), (progress, token) =>
+        if (!ArchivePasswordWindow.TryGetCreationPassword(null, Path.GetFileName(dialog.FileName), type, out string? password)) return;
+        ContextOperationWindow window = new(LanguageManager.Get("ContextCompressProgress"), (progress, token) =>
             new ArchiveWorkerClient().CreateAsync(paths, dialog.FileName, type, progress, token, password));
-        form.ShowDialog();
+        window.ShowDialog();
     }
 
     private static void RunOpen(string[] paths)
@@ -77,7 +77,7 @@ internal static class ContextMenuCommandHandler
             MessageBox.Show(LanguageManager.Get("ContextOpenMultiple"), LanguageManager.Get("ApplicationTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        new Form1(paths[0]).ShowDialog();
+        new MainWindow(paths[0]).ShowDialog();
     }
 
     private static async Task ExtractManyAsync(string[] paths, ConcurrentDictionary<string, string?> passwords,
@@ -112,7 +112,7 @@ internal static class ContextMenuCommandHandler
                         await passwordPromptLock.WaitAsync(operationToken);
                         try
                         {
-                            if (!ArchivePasswordForm.TryGetExtractionPassword(null, Path.GetFileName(path),
+                            if (!ArchivePasswordWindow.TryGetExtractionPassword(null, Path.GetFileName(path),
                                     MessageTipGenerator.GenerateTip(exception.StageCode, exception.Message), out password))
                             {
                                 batchCancellation.Cancel();

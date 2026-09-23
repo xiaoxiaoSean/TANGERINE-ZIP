@@ -21,12 +21,4 @@ internal static class WpfUi
     public static bool Confirm(Window? owner, string message, string title) =>
         MessageBox.Show(owner, message, title, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
 
-    public static ImageSource? WindowIcon(Type resourceOwner)
-    {
-        var resources = new System.ComponentModel.ComponentResourceManager(resourceOwner);
-        return resources.GetObject("$this.Icon") is System.Drawing.Icon icon
-            ? System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty,
-                System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions())
-            : null;
-    }
 }

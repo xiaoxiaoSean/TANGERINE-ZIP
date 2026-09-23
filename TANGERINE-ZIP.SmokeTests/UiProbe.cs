@@ -18,9 +18,9 @@ internal static class UiProbe
                 Directory.CreateDirectory(outputDirectory);
                 foreach (Type windowType in new[]
                 {
-                    typeof(Form1), typeof(ArchivePasswordForm), typeof(ContextMenuSetupWizardForm),
-                    typeof(ContextOperationForm), typeof(OverwriteConflictForm), typeof(FreeFilePickerForm),
-                    typeof(OverWriteOrNotForm), typeof(TZIPForm)
+                    typeof(MainWindow), typeof(ArchivePasswordWindow), typeof(ContextMenuSetupWindow),
+                    typeof(ContextOperationWindow), typeof(OverwriteConflictWindow), typeof(FilePickerWindow),
+                    typeof(OverwriteDecisionWindow), typeof(AboutWindow)
                 })
                 {
                     var constructor = windowType.GetConstructor(Type.EmptyTypes)
@@ -29,19 +29,19 @@ internal static class UiProbe
                         throw new InvalidOperationException($"{windowType.Name}: XAML content unavailable");
                     Console.WriteLine($"PASS XAML designer constructor: {windowType.Name}");
                 }
-                var main = new Form1();
-                typeof(Form1).GetMethod("Form1_Load", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                var main = new MainWindow();
+                typeof(MainWindow).GetMethod("MainWindow_Load", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(main, [main, EventArgs.Empty]);
                 var windows = new (string Name, Window Window)[]
                 {
                     ("main", main),
-                    ("password", new ArchivePasswordForm("sample.zip", true)),
-                    ("conflict", new OverwriteConflictForm(new ArchiveConflict("entry.txt", "C:\\Target\\entry.txt"))),
-                    ("wizard", new ContextMenuSetupWizardForm(ContextMenuSetupMode.Create, "sample.exe")),
-                    ("operation", new ContextOperationForm("Extract", (_, _) => Task.CompletedTask)),
-                    ("picker", new FreeFilePickerForm()),
-                    ("overwrite", new OverWriteOrNotForm()),
-                    ("about", new TZIPForm())
+                    ("password", new ArchivePasswordWindow("sample.zip", true)),
+                    ("conflict", new OverwriteConflictWindow(new ArchiveConflict("entry.txt", "C:\\Target\\entry.txt"))),
+                    ("wizard", new ContextMenuSetupWindow(ContextMenuSetupMode.Create, "sample.exe")),
+                    ("operation", new ContextOperationWindow("Extract", (_, _) => Task.CompletedTask)),
+                    ("picker", new FilePickerWindow()),
+                    ("overwrite", new OverwriteDecisionWindow()),
+                    ("about", new AboutWindow())
                 };
                 foreach ((string name, Window window) in windows)
                 {
