@@ -708,7 +708,7 @@ internal sealed class ArchiveService
             }
             return CallbackStatus.Continue;
         });
-        int image = wim.AddEmptyImage("Tangerine ZIP");
+        int image = wim.AddEmptyImage("TANGERINE ZIP");
         foreach (string path in sourcePaths)
             wim.AddTree(image, path, "\\" + Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)), AddFlags.None);
         wim.Write(outputPath, Wim.AllImages, WriteFlags.CheckIntegrity, 0);

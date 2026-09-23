@@ -3,7 +3,7 @@
 
 IFACEMETHODIMP BaseExplorerCommand::GetTitle(_In_opt_ IShellItemArray* items, _Outptr_result_nullonfailure_ PWSTR* name) {
 	*name = nullptr;
-	auto title = wil::make_cotaskmem_string_nothrow(L"TZIP");
+	auto title = wil::make_cotaskmem_string_nothrow(L"TANGERINE ZIP");
 	RETURN_IF_NULL_ALLOC(title);
 	*name = title.release();
 	return S_OK;

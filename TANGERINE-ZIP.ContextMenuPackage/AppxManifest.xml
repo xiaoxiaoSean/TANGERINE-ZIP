@@ -7,10 +7,10 @@
          xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
          IgnorableNamespaces="uap uap10 com desktop4 desktop5 rescap">
-  <Identity Name="TangerineZip.ContextMenu" Publisher="CN=Tangerine ZIP Development" Version="2.1.0.0" ProcessorArchitecture="x64" />
+  <Identity Name="TangerineZip.ContextMenu" Publisher="CN=TANGERINE ZIP Development" Version="2.2.0.0" ProcessorArchitecture="x64" />
   <Properties>
-    <DisplayName>Tangerine ZIP context menu</DisplayName>
-    <PublisherDisplayName>Tangerine ZIP</PublisherDisplayName>
+    <DisplayName>TANGERINE ZIP context menu</DisplayName>
+    <PublisherDisplayName>TANGERINE ZIP</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Resources><Resource Language="en-us" /></Resources>
@@ -20,12 +20,12 @@
   <Capabilities><rescap:Capability Name="runFullTrust" /></Capabilities>
   <Applications>
     <Application Id="TZIP" Executable="ContextMenuHost.exe" uap10:TrustLevel="mediumIL" uap10:RuntimeBehavior="win32App">
-      <uap:VisualElements DisplayName="Tangerine ZIP" Description="Tangerine ZIP" BackgroundColor="transparent"
+      <uap:VisualElements DisplayName="TANGERINE ZIP" Description="TANGERINE ZIP" BackgroundColor="transparent"
                           Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\Logo.png" AppListEntry="none" />
       <Extensions>
         <com:Extension Category="windows.comServer">
           <com:ComServer>
-            <com:SurrogateServer DisplayName="Tangerine ZIP shell commands">
+            <com:SurrogateServer DisplayName="TANGERINE ZIP shell commands">
               <com:Class Id="FFCE1E90-8F9C-4F49-A9B6-C35A69B30AE9" Path="TangerineZipContextMenuHost.dll" ThreadingModel="STA" />
               <com:Class Id="B131D00A-8FA9-4C89-A354-3EA513D21FF3" Path="TangerineZipContextMenuHost.dll" ThreadingModel="STA" />
               <com:Class Id="216A28CB-0C5B-47BD-A1AB-74A97A9449AE" Path="TangerineZipContextMenuHost.dll" ThreadingModel="STA" />
@@ -36,6 +36,8 @@
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
           <desktop4:FileExplorerContextMenus>
             <desktop5:ItemType Type="*">
+              <!-- The extension registers every entry once. GetState reads the
+                   selected layout and hides either the parent or the direct trio. -->
               <desktop5:Verb Id="TzipArchiveOperations" Clsid="FFCE1E90-8F9C-4F49-A9B6-C35A69B30AE9" />
               <desktop5:Verb Id="TzipExtract" Clsid="B131D00A-8FA9-4C89-A354-3EA513D21FF3" />
               <desktop5:Verb Id="TzipCompress" Clsid="216A28CB-0C5B-47BD-A1AB-74A97A9449AE" />

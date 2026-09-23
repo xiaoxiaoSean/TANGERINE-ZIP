@@ -61,6 +61,9 @@ internal static class ContextMenuCertificateHelper
 
     private static int Remove(string thumbprint, string ownerSid)
     {
+        // Replacement may remove a certificate from an earlier package version.
+        // Accept its saved thumbprint only when our HKLM ownership record says
+        // TANGERINE ZIP created it; never delete an unrelated trusted certificate.
         if (thumbprint.Length is not (40 or 64) || thumbprint.Any(character => !Uri.IsHexDigit(character)))
             return 2;
         using RegistryKey? ownershipRoot = Registry.LocalMachine.OpenSubKey(OwnershipPath, writable: true);

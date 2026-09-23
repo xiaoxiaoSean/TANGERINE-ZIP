@@ -15,6 +15,8 @@ CustomExplorerCommand::CustomExplorerCommand() = default;
 CustomExplorerCommand::CustomExplorerCommand(int directCommandIndex) : m_directCommandIndex(directCommandIndex) {}
 
 IFACEMETHODIMP CustomExplorerCommand::GetFlags(_Out_ EXPCMDFLAGS* flags) {
+	// Explorer may ask for flags before GetState has loaded the command JSON.
+	// Select submenu behavior from the COM class, never from the current count.
 	*flags = m_directCommandIndex < 0 ? ECF_HASSUBCOMMANDS : ECF_DEFAULT;
 	return S_OK;
 }
@@ -43,7 +45,9 @@ IFACEMETHODIMP CustomExplorerCommand::GetTitle(_In_opt_ IShellItemArray* items, 
 		return m_commands.at(0)->GetTitle(items, name);
 	}
 
-	const auto title = winrt::unbox_value_or<winrt::hstring>(ApplicationData::Current().LocalSettings().Values().Lookup(L"Custom_Menu_Name"), L"TZIP");
+	// The grouped root always uses the public product name. Direct commands use
+	// the localized JSON titles and never inherit this parent label.
+	const winrt::hstring title = L"TANGERINE ZIP";
 	auto titleStr = wil::make_cotaskmem_string_nothrow(title.data());
 	RETURN_IF_NULL_ALLOC(titleStr);
 	*name = titleStr.release();
@@ -73,6 +77,8 @@ IFACEMETHODIMP CustomExplorerCommand::GetState(_In_opt_ IShellItemArray* selecti
 	std::string mode;
 	std::getline(modeFile, mode);
 	const bool directMode = mode == "direct";
+	// All four COM classes are registered in the package. Only the grouped
+	// parent or the three direct commands may be visible for one saved layout.
 	if ((m_directCommandIndex >= 0) != directMode) {
 		*cmdState = ECS_HIDDEN;
 		return S_OK;

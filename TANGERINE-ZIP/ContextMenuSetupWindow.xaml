@@ -17,20 +17,27 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock x:Name="descriptionText" Grid.Row="0" Text="Set up the Explorer context menu" Margin="4" />
+        <!-- Layout text comes from UiStrings. The grouped entry has a branded
+             parent; the direct entry exposes the same three actions without it. -->
         <StackPanel x:Name="menuModeOptions" Grid.Row="1" Margin="4">
             <RadioButton x:Name="groupedModeOption" GroupName="ContextMenuMode" IsChecked="True"
                          Foreground="{StaticResource ForegroundBrush}" Margin="4" />
             <RadioButton x:Name="directModeOption" GroupName="ContextMenuMode"
                          Foreground="{StaticResource ForegroundBrush}" Margin="4" />
         </StackPanel>
-        <TextBlock x:Name="_statusText" Grid.Row="2" Margin="4" />
-        <ProgressBar x:Name="_operationProgressBar" Grid.Row="3" Minimum="0" Maximum="100" />
-        <ListBox x:Name="_progressLogList" Grid.Row="4" />
-        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+        <!-- The UAC hint is visible before any elevation request. Auto sizing and
+             wrapping keep the translated text readable at different window sizes. -->
+        <TextBlock x:Name="uacConsentHintText" Grid.Row="2" Margin="4" TextWrapping="Wrap"
+                   Foreground="{StaticResource ForegroundBrush}" />
+        <TextBlock x:Name="_statusText" Grid.Row="3" Margin="4" />
+        <ProgressBar x:Name="_operationProgressBar" Grid.Row="4" Minimum="0" Maximum="100" />
+        <ListBox x:Name="_progressLogList" Grid.Row="5" />
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="_startButton" Content="Start" Click="StartButton_Click" />
             <Button x:Name="_cancelButton" Content="Cancel" Click="CancelButton_Click" />
         </StackPanel>

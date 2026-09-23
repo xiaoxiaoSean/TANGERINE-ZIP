@@ -154,7 +154,7 @@
     <value>镜像文件</value>
   </data>
   <data name="ArchiveHeaderText" xml:space="preserve">
-    <value>TZIP</value>
+    <value>TANGERINE ZIP</value>
   </data>
   <data name="NoOpenedFile" xml:space="preserve">
     <value>还没有打开文件</value>
@@ -205,7 +205,7 @@
     <value>希望覆盖吗？</value>
   </data>
   <data name="OverWriteText" xml:space="preserve">
-    <value>在你的目标文件夹中，TZIP检测到了相同的文件
+    <value>在你的目标文件夹中，TANGERINE ZIP 检测到了相同的文件
 点击"是"以覆盖这个文件
 "否"以跳过这个文件
 "全部是"会覆写这个文件，并且在出现下一次同样情况后，下面的文件也会被全部覆写
@@ -272,7 +272,10 @@
     <value>根</value>
   </data>
   <data name="ApplicationTitle" xml:space="preserve">
-    <value>Tangerine ZIP</value>
+    <value>TANGERINE ZIP</value>
+  </data>
+  <data name="AboutInformation" xml:space="preserve">
+    <value>TANGERINE ZIP v1.1.0&#10;创始人：xiaoxiaoSean&#10;感谢所有贡献者、RAR 的作者与贡献者，以及各 NuGet 软件包的作者与贡献者。&#10;自 v1.0.0 起新增：压缩密码、Windows 11 一级右键菜单、快捷窗口自动关闭。&#10;修复：通过右键菜单启动的解压问题。</value>
   </data>
   <data name="SelectFilesToCompress" xml:space="preserve">
     <value>选择要压缩的文件</value>
@@ -422,22 +425,22 @@
     <value>删除右键菜单</value>
   </data>
   <data name="ContextMenuCreateWarning" xml:space="preserve">
-    <value>如果移动 TZIP.exe，务必重新建立右键菜单。是否继续？</value>
+    <value>如果移动 TANGERINE-ZIP.exe，务必重新建立右键菜单。是否继续？</value>
   </data>
   <data name="ContextMenuCreated" xml:space="preserve">
-    <value>已为当前用户建立 TZIP 右键菜单。</value>
+    <value>已为当前用户建立 TANGERINE ZIP 右键菜单。</value>
   </data>
   <data name="ContextMenuDeleted" xml:space="preserve">
-    <value>已移除当前用户的 TZIP 右键菜单。</value>
+    <value>已移除当前用户的 TANGERINE ZIP 右键菜单。</value>
   </data>
   <data name="ContextExtractMenu" xml:space="preserve">
-    <value>用 TZIP 将选定文件解压到当前文件夹</value>
+    <value>解压</value>
   </data>
   <data name="ContextCompressMenu" xml:space="preserve">
-    <value>用 TZIP 将选定文件压缩为压缩文件</value>
+    <value>压缩</value>
   </data>
   <data name="ContextOpenMenu" xml:space="preserve">
-    <value>用 TZIP 打开</value>
+    <value>打开</value>
   </data>
   <data name="ContextNoFiles" xml:space="preserve">
     <value>未提供存在的文件。</value>
@@ -455,10 +458,10 @@
     <value>此选项不适合多个文件。</value>
   </data>
   <data name="ContextExtractProgress" xml:space="preserve">
-    <value>正在使用 TZIP 解压</value>
+    <value>正在使用 TANGERINE ZIP 解压</value>
   </data>
   <data name="ContextCompressProgress" xml:space="preserve">
-    <value>正在使用 TZIP 压缩</value>
+    <value>正在使用 TANGERINE ZIP 压缩</value>
   </data>
   <data name="ContextOperationRunning" xml:space="preserve">
     <value>正在处理…</value>
@@ -470,7 +473,7 @@
     <value>已完成。</value>
   </data>
   <data name="ContextExecutableMissing" xml:space="preserve">
-    <value>无法获取 TZIP 可执行文件路径。</value>
+    <value>无法获取 TANGERINE ZIP 可执行文件路径。</value>
   </data>
   <data name="Cancel" xml:space="preserve">
     <value>取消</value>
@@ -485,16 +488,19 @@
     <value>移除 Windows 11 右键菜单</value>
   </data>
   <data name="ContextWizardCreateDescription" xml:space="preserve">
-    <value>此向导会将 TZIP 安装到 Windows 11 一级右键菜单。Windows 可能要求管理员确认，以信任已签名的扩展。如果移动 TZIP.exe，请重新运行此向导。</value>
+    <value>请选择 Windows 11 一级右键菜单布局。已有设置会先移除再建立；如果移动 TANGERINE-ZIP.exe，请重新建立菜单。</value>
   </data>
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
-    <value>此向导会移除 Windows 11 扩展，并清理旧版本 TZIP 遗留的传统右键菜单项。</value>
+    <value>此向导会移除 Windows 11 扩展，并清理旧版本 TANGERINE ZIP 遗留的传统右键菜单项。</value>
   </data>
   <data name="ContextMenuGroupedMode" xml:space="preserve">
-    <value>Win11 一级菜单：TZIP &gt; 解压 / 压缩 / 打开</value>
+    <value>Win11 一级菜单：TANGERINE ZIP &gt; 解压 / 压缩 / 打开</value>
   </data>
   <data name="ContextMenuDirectMode" xml:space="preserve">
-    <value>Win11 一级菜单：直接显示解压 / 压缩 / 打开</value>
+    <value>Win11 一级菜单：解压 / 压缩 / 打开（无上级菜单）</value>
+  </data>
+  <data name="ContextUacConsentHint" xml:space="preserve">
+    <value>如出现 Windows UAC 提示框，请同意 TANGERINE ZIP 的管理员提权请求。</value>
   </data>
   <data name="ContextWizardStartCreate" xml:space="preserve">
     <value>开始建立</value>
@@ -512,7 +518,7 @@
     <value>右键菜单操作未完成。</value>
   </data>
   <data name="ContextSetupCancelRisk" xml:space="preserve">
-    <value>强制停止可能留下未完整安装的软件包或证书。TZIP 会尝试回滚已完成的步骤。是否立即停止？</value>
+    <value>强制停止可能留下未完整安装的软件包或证书。TANGERINE ZIP 会尝试回滚已完成的步骤。是否立即停止？</value>
   </data>
   <data name="ContextWizardEmbeddedMissing" xml:space="preserve">
     <value>内置的右键菜单组件缺失。</value>
@@ -542,7 +548,7 @@
     <value>正在检查 Windows 和内置组件…</value>
   </data>
   <data name="ContextProgressRemovingLegacy" xml:space="preserve">
-    <value>正在清理旧版 TZIP 右键菜单项…</value>
+    <value>正在清理旧版 TANGERINE ZIP 右键菜单项…</value>
   </data>
   <data name="ContextProgressExtracting" xml:space="preserve">
     <value>正在准备 Windows 11 扩展软件包…</value>
@@ -550,11 +556,14 @@
   <data name="ContextProgressTrustingCertificate" xml:space="preserve">
     <value>正在请求信任已签名的扩展…</value>
   </data>
+  <data name="ContextProgressAwaitingUac" xml:space="preserve">
+    <value>等待确认 TANGERINE ZIP 的 UAC 管理员提权请求…</value>
+  </data>
   <data name="ContextProgressInstallingPackage" xml:space="preserve">
     <value>正在安装 Windows 11 扩展软件包…</value>
   </data>
   <data name="ContextProgressWritingCommands" xml:space="preserve">
-    <value>正在写入本地化的 TZIP 命令…</value>
+    <value>正在写入本地化的 TANGERINE ZIP 命令…</value>
   </data>
   <data name="ContextProgressVerifying" xml:space="preserve">
     <value>正在验证软件包注册和命令文件…</value>
@@ -563,13 +572,13 @@
     <value>右键菜单建立完成。</value>
   </data>
   <data name="ContextProgressRemovingCommands" xml:space="preserve">
-    <value>正在移除 TZIP 命令定义…</value>
+    <value>正在移除 TANGERINE ZIP 命令定义…</value>
   </data>
   <data name="ContextProgressRemovingPackage" xml:space="preserve">
     <value>正在移除 Windows 11 扩展软件包…</value>
   </data>
   <data name="ContextProgressRemovingCertificate" xml:space="preserve">
-    <value>正在移除由 TZIP 建立的证书信任…</value>
+    <value>正在移除由 TANGERINE ZIP 建立的证书信任…</value>
   </data>
   <data name="ContextProgressCleaningSettings" xml:space="preserve">
     <value>正在清理右键菜单设置…</value>
@@ -584,10 +593,10 @@
     <value>操作已被强制停止。重试前请查看此前显示的错误信息。</value>
   </data>
   <data name="ContextExtractSingleMenu" xml:space="preserve">
-    <value>用 TZIP 将 {name} 解压到同名文件夹</value>
+    <value>解压</value>
   </data>
   <data name="ContextOpenSingleMenu" xml:space="preserve">
-    <value>用 TZIP 打开 {name}</value>
+    <value>打开</value>
   </data>
   <data name="CreatePasswordTitle" xml:space="preserve">
     <value>压缩包密码</value>
@@ -681,6 +690,6 @@
     <value>无法创建密码保护。</value>
   </data>
   <data name="ArchivePasswordCleanupFailed" xml:space="preserve">
-    <value>无法移除临时解密数据。请关闭正在使用它的程序，并删除 TZIP 密码临时文件夹。</value>
+    <value>无法移除临时解密数据。请关闭正在使用它的程序，并删除 TANGERINE ZIP 密码临时文件夹。</value>
   </data>
 </root>

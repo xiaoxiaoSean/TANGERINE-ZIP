@@ -19,7 +19,7 @@ internal static class ContextMenuRegistrationService
     private const string PackageResourceName = "TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix";
     private const string CertificateResourceName = "TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.cer";
     private const string SettingsPath = @"Software\TangerineZip\ContextMenu";
-    private const string MinimumPackageVersion = "2.1.0.0";
+    private const string MinimumPackageVersion = "2.2.0.0";
     private const string LegacyCertificateThumbprint = "080D2C60C6B53BD797A97DC3032FD40A17560095";
     private const uint ShcneAssocChanged = 0x08000000;
     private const uint ShcnfIdList = 0;
@@ -40,6 +40,8 @@ internal static class ContextMenuRegistrationService
         return X509CertificateLoader.LoadCertificate(copy.ToArray());
     }
 
+    // The registry remembers the selected radio option for the next launch.
+    // A missing or unrecognized value preserves the original grouped default.
     internal static ContextMenuPresentation GetSavedMenuMode() =>
         ReadSetting("MenuMode") == "direct" ? ContextMenuPresentation.Direct : ContextMenuPresentation.Grouped;
 
@@ -64,6 +66,9 @@ internal static class ContextMenuRegistrationService
             packageExisted = await IsPackageInstalledAsync(token);
             if (packageExisted || HasSavedSettings() || HasLegacyMenus())
             {
+                // An old package and a new package may have different publisher
+                // identities. Detect by package name, then remove its own LocalState
+                // files and certificate ownership before installing this build.
                 Report(progress, 10, "ContextProgressReplacingExisting");
                 await RemoveExistingForCreateAsync(executablePath, packageExisted, progress, token);
                 packageExisted = false;
@@ -75,7 +80,7 @@ internal static class ContextMenuRegistrationService
             string packagePath = Path.Combine(temporaryDirectory, "TangerineZipContextMenu.msix");
 
             Report(progress, 28, "ContextProgressTrustingCertificate");
-            certificateOwnershipAdded = await EnsureCertificateAsync(executablePath, ownerSid, token);
+            certificateOwnershipAdded = await EnsureCertificateAsync(executablePath, ownerSid, progress, token);
 
             Report(progress, 46, "ContextProgressInstallingPackage");
             await InstallPackageAsync(packagePath, token);
@@ -95,6 +100,8 @@ internal static class ContextMenuRegistrationService
                 settings.SetValue("ExecutablePath", Path.GetFullPath(executablePath), RegistryValueKind.String);
                 settings.SetValue("CertificateOwnerSid", HasCurrentCertificateOwnership(ownerSid) ? ownerSid : string.Empty, RegistryValueKind.String);
                 settings.SetValue("CertificateThumbprint", installedCertificate.Thumbprint, RegistryValueKind.String);
+                // The registry restores the user's radio selection next time. Explorer
+                // itself reads TZIP-mode.txt in the package's LocalState directory.
                 settings.SetValue("MenuMode", menuMode == ContextMenuPresentation.Direct ? "direct" : "grouped", RegistryValueKind.String);
             }
             NotifyShell();
@@ -149,7 +156,8 @@ internal static class ContextMenuRegistrationService
         return false;
     }
 
-    // CreateAsync already holds OperationGate. Never call the public DeleteAsync from here.
+    // CreateAsync already holds OperationGate. Clean the previous installation here
+    // instead of calling DeleteAsync, which would wait on the same semaphore forever.
     private static async Task RemoveExistingForCreateAsync(string executablePath, bool packageExisted,
         IProgress<ContextMenuProgress> progress, CancellationToken token)
     {
@@ -173,7 +181,8 @@ internal static class ContextMenuRegistrationService
         {
             Report(progress, 16, "ContextProgressRemovingCertificate");
             string thumbprint = ReadSetting("CertificateThumbprint") ?? LegacyCertificateThumbprint;
-            await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch, ownerSid, token, thumbprint);
+            await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch,
+                ownerSid, token, thumbprint, progress, 16);
         }
         Registry.CurrentUser.DeleteSubKeyTree(SettingsPath, throwOnMissingSubKey: false);
         NotifyShell();
@@ -214,7 +223,8 @@ internal static class ContextMenuRegistrationService
             {
                 Report(progress, 78, "ContextProgressRemovingCertificate");
                 string thumbprint = ReadSetting("CertificateThumbprint") ?? LegacyCertificateThumbprint;
-                try { await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch, ownerSid, token, thumbprint); certificateRemoved = true; }
+                try { await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch,
+                    ownerSid, token, thumbprint, progress, 78); certificateRemoved = true; }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception exception) { failures.Add(exception); }
             }
@@ -242,7 +252,8 @@ internal static class ContextMenuRegistrationService
         }
     }
 
-    private static async Task<bool> EnsureCertificateAsync(string executablePath, string ownerSid, CancellationToken token)
+    private static async Task<bool> EnsureCertificateAsync(string executablePath, string ownerSid,
+        IProgress<ContextMenuProgress> progress, CancellationToken token)
     {
         using X509Certificate2 certificate = LoadEmbeddedCertificate();
         using X509Store store = new(StoreName.TrustedPeople, StoreLocation.LocalMachine);
@@ -255,7 +266,8 @@ internal static class ContextMenuRegistrationService
             alreadyOwned = owners.Contains(ownerSid, StringComparer.OrdinalIgnoreCase);
         }
         if (trusted && alreadyOwned) return false;
-        int exitCode = await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.InstallSwitch, ownerSid, token);
+        int exitCode = await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.InstallSwitch,
+            ownerSid, token, progress: progress, progressPercentage: 28);
         return exitCode == 0 && !alreadyOwned;
     }
 
@@ -287,7 +299,8 @@ internal static class ContextMenuRegistrationService
         }
         if (certificateOwnershipAdded)
         {
-            try { await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch, ownerSid, CancellationToken.None); }
+            try { await RunElevatedHelperAsync(executablePath, ContextMenuCertificateHelper.RemoveSwitch,
+                ownerSid, CancellationToken.None, progress: progress); }
             catch (Exception exception) { failures.Add(exception); }
         }
         if (failures.Count > 0)
@@ -321,6 +334,9 @@ internal static class ContextMenuRegistrationService
         }
 
         string fullExecutablePath = Path.GetFullPath(executablePath);
+        // The JSON titles are the visible Explorer actions in both layouts. They
+        // contain only localized verbs; the parent product name exists solely in
+        // grouped mode, inside the native Explorer command implementation.
         object[] definitions =
         [
             CreateCommand(LanguageManager.Get("ContextExtractMenu"), LanguageManager.Get("ContextExtractSingleMenu"), 10, fullExecutablePath, "--context-extract", allowMultiple: true),
@@ -467,10 +483,20 @@ internal static class ContextMenuRegistrationService
     }
 
     private static async Task<int> RunElevatedHelperAsync(string executablePath, string action, string ownerSid,
-        CancellationToken token, string? certificateThumbprint = null)
+        CancellationToken token, string? certificateThumbprint = null,
+        IProgress<ContextMenuProgress>? progress = null, int progressPercentage = 0)
     {
         try
         {
+            if (progress is not null)
+            {
+                // Display our localized UAC instruction before ShellExecute("runas")
+                // transfers focus to Windows. Windows owns the actual UAC wording;
+                // yielding here lets WPF paint our status before the OS dialog opens.
+                progress.Report(new ContextMenuProgress(progressPercentage, "ContextProgressAwaitingUac"));
+                await Task.Yield();
+            }
+            token.ThrowIfCancellationRequested();
             ProcessStartInfo startInfo = new(executablePath) { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden };
             startInfo.ArgumentList.Add(action);
             startInfo.ArgumentList.Add(ownerSid);

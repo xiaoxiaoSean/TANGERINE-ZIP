@@ -1,4 +1,4 @@
-# Tangerine ZIP 开发文档
+# TANGERINE ZIP 开发文档
 
 密码压缩、解压、加密封装与安全清理的详细设计见 [`PASSWORD_ARCHIVES.md`](PASSWORD_ARCHIVES.md)。
 
@@ -139,13 +139,13 @@ MessageBox.Show(
 
 ### Windows 11 一级右键菜单
 
-Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。项目采用开源项目 [ikas-mc/ContextMenuForWindows11](https://github.com/ikas-mc/ContextMenuForWindows11) 的 `IExplorerCommand` 原生宿主实现，许可证为 LGPL-3.0。对应源码及许可证保留在 `third_party/ContextMenuForWindows11`，便于替换或重新链接；TZIP 为两种菜单布局分别注册独立 CLSID。MSIX 使用独立包身份 `TangerineZip.ContextMenu`，不会覆盖用户另行安装的 Custom Context Menu。
+Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。项目采用开源项目 [ikas-mc/ContextMenuForWindows11](https://github.com/ikas-mc/ContextMenuForWindows11) 的 `IExplorerCommand` 原生宿主实现，许可证为 LGPL-3.0。对应源码及许可证保留在 `third_party/ContextMenuForWindows11`，便于替换或重新链接；TANGERINE ZIP 为两种菜单布局分别注册独立 CLSID。MSIX 的内部包名为 `TangerineZip.ContextMenu`，不会覆盖用户另行安装的 Custom Context Menu。
 
-主 EXE 内嵌已签名 MSIX、公钥证书及 LGPL-3.0 许可证。建立向导可选“TZIP > 解压／压缩／打开”或一级菜单直接显示三项，默认读取上次选择。每次建立先检测已安装的 MSIX、用户设置与旧式菜单；存在时先删除命令文件、原包、TZIP 所有的旧证书和设置，再按所选布局重新建立。布局写入包的 LocalState `custom_commands/TZIP-mode.txt`，原生扩展据此只显示对应的一组菜单。移除向导会独立尝试清理所有旧菜单路径、命令文件、MSIX、证书所有权和用户设置；一个步骤失败不会阻止其他清理步骤，最终统一显示全部错误。证书辅助程序只接受主程序内嵌证书进行安装；删除旧版证书时按保存的指纹查找，并在 `HKLM\SOFTWARE\TangerineZip\ContextMenuCertificates` 核对 TZIP 所有权及使用者 SID。预先存在或仍由其他用户使用的证书不会被删除。
+主 EXE 内嵌已签名 MSIX、公钥证书及 LGPL-3.0 许可证。建立向导可选“**TANGERINE ZIP > 解压／压缩／打开**”或一级菜单直接显示“**解压／压缩／打开**”。第二种布局没有 TANGERINE ZIP 父菜单，三个命令标题也不带品牌名。默认读取上次选择。每次建立先检测已安装的 MSIX、用户设置与旧式菜单；存在时先删除命令文件、原包、TANGERINE ZIP 所有的旧证书和设置，再按所选布局重新建立。布局写入包的 LocalState `custom_commands/TZIP-mode.txt`，原生扩展据此只显示对应的一组菜单。移除向导会独立尝试清理所有旧菜单路径、命令文件、MSIX、证书所有权和用户设置；一个步骤失败不会阻止其他清理步骤，最终统一显示全部错误。证书辅助程序只接受主程序内嵌证书进行安装；删除旧版证书时按保存的指纹查找，并在 `HKLM\SOFTWARE\TangerineZip\ContextMenuCertificates` 核对 TANGERINE ZIP 所有权及使用者 SID。预先存在或仍由其他用户使用的证书不会被删除。
 
-向导通过 `ContextMenuProgress` 报告确定百分比和逐阶段日志。用户点击“停止工作”并确认风险后会取消令牌、终止正在运行的 PowerShell/提权进程树，并在建立流程中尽力回滚本次新增的包与证书所有权。取消或回滚失败使用 StageCode 显示，不会静默忽略。Win11 上安装失败时不会创建传统菜单作为假成功回退。
+向导通过 `ContextMenuProgress` 报告确定百分比和逐阶段日志。建立和移除窗口都显示本地化提示：“如出现 Windows UAC 提示框，请同意 TANGERINE ZIP 的管理员提权请求。”在真正启动 `runas` 辅助进程前，状态日志再次显示本地化等待提示。用户点击“停止工作”并确认风险后会取消令牌、终止正在运行的 PowerShell/提权进程树，并在建立流程中尽力回滚本次新增的包与证书所有权。取消或回滚失败使用 StageCode 显示，不会静默忽略。Win11 上安装失败时不会创建传统菜单作为假成功回退。
 
-三条命令均由 Explorer 传递一个或多个完整 Unicode 路径：解压与打开仍由 `ContextMenuCommandHandler` 通过 `FileDetector` 判断内容；压缩命令显示现有格式与位置对话框。顶层菜单和命令名称使用执行向导时的 UI 语言，支持 `en-US`、`zh-CN`、`zh-TW`、`zh-HK`、`zh-MO`。当前内嵌包版本为 `2.1.0.0`。
+三条命令均由 Explorer 传递一个或多个完整 Unicode 路径：解压与打开仍由 `ContextMenuCommandHandler` 通过 `FileDetector` 判断内容；压缩命令显示现有格式与位置对话框。产品名固定为全大写 `TANGERINE ZIP`，命令及提示使用执行向导时的 UI 语言，支持 `en-US`、`zh-CN`、`zh-TW`、`zh-HK`、`zh-MO`。当前内嵌包版本为 `2.2.0.0`。
 
 构建原生宿主和签名包：
 
@@ -159,7 +159,7 @@ Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。�
   -PublicCertificatePath ./TANGERINE-ZIP/Embedded/TangerineZipContextMenu.cer
 ```
 
-清单中的 `Publisher` 必须与签名证书 Subject 完全一致。打包脚本签名成功后，用 `PublicCertificatePath` 同步导出相同证书的公开 `.cer`；禁止提交 `.pfx` 或私钥。变更原生源码后，必须先重新生成并签名 MSIX，再发布主程序，否则单文件 EXE 会继续嵌入旧版本。当前包的公开证书指纹为 `47754AC1B3C6B08B98A464E99FBDB0F50E5991B2`；后续重新签名时以实际证书为准。
+清单中的 `Publisher` 必须与签名证书 Subject 完全一致。当前为 `CN=TANGERINE ZIP Development`；旧版主体名称大小写不同，所以包系列标识也会变化，建立向导通过内部包名检测并先移除旧系列。打包脚本签名成功后，用 `PublicCertificatePath` 同步导出相同证书的公开 `.cer`；禁止提交 `.pfx` 或私钥。变更原生源码后，必须先重新生成并签名 MSIX，再发布主程序，否则单文件 EXE 会继续嵌入旧版本。当前包的公开证书指纹为 `940604C134D52273B98494E90107B6DCEA69B50F`；后续重新签名时以实际证书为准。
 
 在仓库根目录执行：
 
