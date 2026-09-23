@@ -62,8 +62,6 @@ public partial class MainWindow : Window
 
     private void ApplyLocalizedText()
     {
-        Title = LanguageManager.Get("ApplicationTitle");
-        aboutMenuItem.Header = LanguageManager.Get("ApplicationTitle");
         operationStatusText.Text = LanguageManager.Get("readytext");
         openArchiveMenuItem.Header = LanguageManager.Get("openText");
         extractMenuItem.Header = LanguageManager.Get("extractText");

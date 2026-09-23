@@ -19,10 +19,6 @@ float4 main(float2 uv : TEXCOORD) : COLOR
     adjacent = max(adjacent, WhitePixel(tex2D(scene, uv - float2(stepSize.x, 0))));
     adjacent = max(adjacent, WhitePixel(tex2D(scene, uv + float2(0, stepSize.y))));
     adjacent = max(adjacent, WhitePixel(tex2D(scene, uv - float2(0, stepSize.y))));
-    adjacent = max(adjacent, WhitePixel(tex2D(scene, uv + stepSize)));
-    adjacent = max(adjacent, WhitePixel(tex2D(scene, uv - stepSize)));
-    adjacent = max(adjacent, WhitePixel(tex2D(scene, uv + float2(stepSize.x, -stepSize.y))));
-    adjacent = max(adjacent, WhitePixel(tex2D(scene, uv + float2(-stepSize.x, stepSize.y))));
 
     float distanceFromCursor = length((uv - cursor) * viewport);
     float influence = saturate((radius - distanceFromCursor) / max(12.0, radius * 0.28));
