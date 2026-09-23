@@ -5,6 +5,7 @@ namespace TANGERINE_ZIP;
 
 internal enum ContextMenuSetupMode { Create, Delete }
 
+// Stage head: CMSPW (ContextMenuSetupWindow)
 internal sealed partial class ContextMenuSetupWindow : Window
 {
     private readonly ContextMenuSetupMode _mode;
@@ -57,7 +58,7 @@ internal sealed partial class ContextMenuSetupWindow : Window
         catch (Exception exception)
         {
             _statusText.Text = LanguageManager.Get("ContextSetupIncomplete");
-            string code = exception is StageException stage ? stage.StageCode : "CTXWZ0001";
+            string code = exception is StageException stage ? stage.StageCode : "CMSPW0001";
             MessageBox.Show(this, MessageTipGenerator.GenerateTip(code, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally

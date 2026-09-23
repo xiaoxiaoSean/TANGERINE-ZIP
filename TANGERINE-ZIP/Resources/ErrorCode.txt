@@ -1,2 +1,2 @@
-﻿Error Code List
-OWFSIES:the number after "OWFSIES" is the "selectedIndex"of the listbox in the OverWrite Form,number"-1"means nothing is selected.
+Error Code List
+OVDWN0001: No overwrite choice was selected in OverwriteDecisionWindow.

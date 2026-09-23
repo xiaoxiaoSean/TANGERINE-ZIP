@@ -1,6 +1,9 @@
 
+using TANGERINE_ZIP.Tools;
+
 namespace TANGERINE_ZIP;
 
+// Stage head: OVDWN (OverwriteDecisionWindow)
 public sealed partial class OverwriteDecisionWindow : Window
 {
     private bool _allOverwrite;
@@ -34,7 +37,8 @@ public sealed partial class OverwriteDecisionWindow : Window
             case 2: _output = -99; _allOverwrite = true; break;
             case 3: _output = -99; _allSkip = true; break;
             default:
-                MessageBox.Show(this, LanguageManager.Get("Suggestion1") + LanguageManager.Get("OverWriteSuggestion1") + LanguageManager.Get("ErrorCode1") + "OWFSIES" + _choicesList.SelectedIndex,
+                string detail = LanguageManager.Get("Suggestion1") + LanguageManager.Get("OverWriteSuggestion1");
+                MessageBox.Show(this, MessageTipGenerator.GenerateTip("OVDWN0001", detail), //OVDWN0001
                     LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
         }

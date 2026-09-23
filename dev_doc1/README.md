@@ -77,13 +77,16 @@ StageCode 固定为 9 个字符：5 字符 `stageHead` + 4 字符 `stageDetail`�
 
 | Stage head | 模块 |
 |---|---|
-| `F0001` | 主窗体和 UI 工作流 |
-| `F0002` | 文件选择窗体 |
+| `MAINW` | MainWindow 主窗口和 UI 工作流 |
+| `FLPKW` | FilePickerWindow 文件选择窗口 |
+| `APWDW` | ArchivePasswordWindow 密码窗口 |
+| `CMSPW` | ContextMenuSetupWindow 右键菜单设置窗口 |
+| `CTOPW` | ContextOperationWindow 右键操作进度窗口 |
+| `OVDWN` | OverwriteDecisionWindow 覆盖选择窗口 |
 | `ARCSV` | 归档服务 |
 | `NESTR` | TAR 嵌套分析与解压 |
 | `RARTL` | 外部 RAR 工具 |
 | `CTXMN` | Win11 右键菜单安装、移除与回滚服务 |
-| `CTXWZ` | 右键菜单设置向导 |
 | `CTXCH` | 提权后的证书所有权辅助程序 |
 
 展示统一调用：
@@ -91,8 +94,8 @@ StageCode 固定为 9 个字符：5 字符 `stageHead` + 4 字符 `stageDetail`�
 ```csharp
 MessageBox.Show(
     MessageTipGenerator.GenerateTip(
-        "F00010006",
-        exception.Message)); //F00010006
+        "MAINW0006",
+        exception.Message)); //MAINW0006
 ```
 
 服务层使用 `StageException` 保留原始异常作为 `InnerException`，UI 优先显示其 StageCode。
@@ -105,7 +108,7 @@ MessageBox.Show(
 - `ArchiveWorker` 使用当前单文件 EXE 的 `--archive-worker` 模式执行归档操作，通过 UTF-8 JSON 管道交换请求、进度、结果和阶段码。无需额外工作程序文件。工作进程继承当前 UI 语言，进度通知限频以减少界面队列积压。
 - 执行期间顶部菜单显示“停止工作”；默认选择“否”。选择“是”后终止整个工作进程树（含 `rar.exe`），等待句柄释放后再恢复菜单。关闭任务中的主窗口也先走风险确认流程，完成停止后可再次关闭。
 - 强制停止无法执行被终止进程的 `finally`，可能留下同目录的随机临时压缩包、系统临时目录中的暂存文件或不完整解压文件。已经覆写的数据不能自动恢复，确认提示明确说明这些后果。不会自动删除或回滚目标解压目录。
-- 新阶段码：`F00010008`（停止确认/请求失败）、`WORKR0001`（工作进程内部失败）、`WORKR0002`（工作进程未正常完成）、`WORKR0003`（停止失败）、`WORKR0004`（启动或管道失败）、`WORKR0005`（异常后的进程清理失败）、`RARTL0006`（RAR 输出与输入冲突）。
+- 新阶段码：`MAINW0008`（停止确认/请求失败）、`WORKR0001`（工作进程内部失败）、`WORKR0002`（工作进程未正常完成）、`WORKR0003`（停止失败）、`WORKR0004`（启动或管道失败）、`WORKR0005`（异常后的进程清理失败）、`RARTL0006`（RAR 输出与输入冲突）。
 
 定向测试另外覆盖工作进程 Unicode 通信、压缩中强制停止，以及存在官方 `rar.exe` 时的 RAR 往返与进度单调性。RAR 测试需要将工具置于测试可执行文件目录。
 

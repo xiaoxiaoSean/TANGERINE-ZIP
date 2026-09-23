@@ -2,6 +2,7 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
+// Stage head: FLPKW (FilePickerWindow)
 public sealed partial class FilePickerWindow : Window
 {
     private string? _currentPath;
@@ -62,7 +63,7 @@ public sealed partial class FilePickerWindow : Window
             _currentPath = path;
         }
         catch (OperationCanceledException) { }
-        catch (Exception exception) { ShowError("F00020001", exception); }
+        catch (Exception exception) { ShowError("FLPKW0001", exception); }
     }
 
     private async Task LoadDrivesAsync()
@@ -80,7 +81,7 @@ public sealed partial class FilePickerWindow : Window
             _currentPath = null;
         }
         catch (OperationCanceledException) { }
-        catch (Exception exception) { ShowError("F00020003", exception); }
+        catch (Exception exception) { ShowError("FLPKW0003", exception); }
     }
 
     private void ConfirmButton_Click(object? sender, RoutedEventArgs e)
@@ -111,7 +112,7 @@ public sealed partial class FilePickerWindow : Window
             if (Directory.Exists(path)) await LoadPathAsync(path);
             else if (File.Exists(path)) ConfirmButton_Click(sender, new RoutedEventArgs());
         }
-        catch (Exception exception) { ShowError("F00020004", exception); }
+        catch (Exception exception) { ShowError("FLPKW0004", exception); }
     }
 
     private async void FilePickerWindow_Loaded(object? sender, RoutedEventArgs e)
@@ -124,7 +125,7 @@ public sealed partial class FilePickerWindow : Window
                 ? _initialPath : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             if (Directory.Exists(initial)) await LoadPathAsync(initial); else await LoadDrivesAsync();
         }
-        catch (Exception exception) { ShowError("F00020005", exception); }
+        catch (Exception exception) { ShowError("FLPKW0005", exception); }
     }
 
     private void ShowError(string code, Exception exception) => MessageBox.Show(this,

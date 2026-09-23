@@ -464,6 +464,9 @@
   <data name="ContextOperationRunning" xml:space="preserve">
     <value>正在處理…</value>
   </data>
+  <data name="ContextExtractionEngineStatus" xml:space="preserve">
+    <value>正在透過 {0} 引擎解壓…</value>
+  </data>
   <data name="ContextOperationCompleted" xml:space="preserve">
     <value>已完成。</value>
   </data>

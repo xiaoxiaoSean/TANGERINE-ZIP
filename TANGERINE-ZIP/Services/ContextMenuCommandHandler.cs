@@ -29,8 +29,11 @@ internal static class ContextMenuCommandHandler
 
     private static void RunExtract(string[] paths)
     {
-        if (paths.Any(path => !ArchiveCapabilities.CanOpen(FileDetector.DetectFileType(path))))
+        FileDetector.FileType[] formats = paths.Select(FileDetector.DetectFileType).ToArray();
+        if (formats.Any(format => !ArchiveCapabilities.CanOpen(format)))
             throw new StageException("CTXCM0004", LanguageManager.Get("ContextAllArchivesRequired")); //CTXCM0004
+        string engineNames = string.Join(", ", formats.Select(GetExtractionEngineName)
+            .Distinct(StringComparer.Ordinal));
         ConcurrentDictionary<string, string?> passwords = new(StringComparer.OrdinalIgnoreCase);
         using SemaphoreSlim conflictPromptLock = new(1, 1);
         bool? overwriteAll = null;
@@ -48,9 +51,21 @@ internal static class ContextMenuCommandHandler
             finally { conflictPromptLock.Release(); }
         }
         ContextOperationWindow window = new(LanguageManager.Get("ContextExtractProgress"),
-            (progress, token) => ExtractManyAsync(paths, passwords, ResolveConflictAsync, progress, token));
+            (progress, token) => ExtractManyAsync(paths, passwords, ResolveConflictAsync, progress, token),
+            engineNames);
         window.ShowDialog();
     }
+
+    // Keep the label aligned with ArchiveService.ExtractAsync and its format-specific decoders.
+    private static string GetExtractionEngineName(FileDetector.FileType format) => format switch
+    {
+        FileDetector.FileType.Iso => "DiscUtils",
+        FileDetector.FileType.Wim => "ManagedWimLib",
+        FileDetector.FileType.GZip => ".NET GZipStream",
+        FileDetector.FileType.Lz4 => "K4os.Compression.LZ4",
+        FileDetector.FileType.Xz => "Joveler.Compression.XZ",
+        _ => "SharpCompress"
+    };
 
     private static void RunCompress(string[] paths)
     {

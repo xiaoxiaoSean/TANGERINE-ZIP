@@ -3,7 +3,7 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
-// Stage head: F0001
+// Stage head: MAINW (MainWindow)
 public partial class MainWindow : Window
 {
     private readonly ArchiveWorkerClient _archiveService = new();
@@ -56,7 +56,7 @@ public partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            ShowException("F00010001", exception); //F00010001
+            ShowException("MAINW0001", exception); //MAINW0001
         }
     }
 
@@ -126,7 +126,7 @@ public partial class MainWindow : Window
                 {
                     FileDetector.FileType type = FileDetector.DetectFileType(archivePath);
                     if (!ArchiveCapabilities.CanOpen(type))
-                        throw new StageException("F00010002", LanguageManager.Get("NotACompressedFile")); //F00010002
+                        throw new StageException("MAINW0002", LanguageManager.Get("NotACompressedFile")); //MAINW0002
                     NestedTarInfo nestedTarInfo = await _archiveService.AnalyzeNestedTarAsync(archivePath, token, password, progress);
                     IReadOnlyList<ArchiveEntryInfo> entries = nestedTarInfo.FlattenAutomatically
                         ? await _archiveService.ListNestedTarAsync(archivePath, nestedTarInfo.TarEntryKeys[0], token, password)
@@ -154,7 +154,7 @@ public partial class MainWindow : Window
             catch (Exception exception)
             {
                 UnloadArchive();
-                ShowException("F00010003", exception); //F00010003
+                ShowException("MAINW0003", exception); //MAINW0003
                 return;
             }
         }
@@ -164,22 +164,22 @@ public partial class MainWindow : Window
     {
         try
         {
-            string executablePath = Environment.ProcessPath ?? throw new StageException("F00010009", LanguageManager.Get("ContextExecutableMissing")); //F00010009
+            string executablePath = Environment.ProcessPath ?? throw new StageException("MAINW0009", LanguageManager.Get("ContextExecutableMissing")); //MAINW0009
             ContextMenuSetupWindow wizard = new(ContextMenuSetupMode.Create, executablePath) { Owner = this };
             wizard.ShowDialog();
         }
-        catch (Exception exception) { ShowException("F00010009", exception); } //F00010009
+        catch (Exception exception) { ShowException("MAINW0009", exception); } //MAINW0009
     }
 
     private void DeleteContextMenu_Click(object? sender, EventArgs e)
     {
         try
         {
-            string executablePath = Environment.ProcessPath ?? throw new StageException("F00010010", LanguageManager.Get("ContextExecutableMissing")); //F00010010
+            string executablePath = Environment.ProcessPath ?? throw new StageException("MAINW0010", LanguageManager.Get("ContextExecutableMissing")); //MAINW0010
             ContextMenuSetupWindow wizard = new(ContextMenuSetupMode.Delete, executablePath) { Owner = this };
             wizard.ShowDialog();
         }
-        catch (Exception exception) { ShowException("F00010010", exception); } //F00010010
+        catch (Exception exception) { ShowException("MAINW0010", exception); } //MAINW0010
     }
 
     private async Task RunOperationAsync(string initialStatus, Func<IProgress<ArchiveProgress>, CancellationToken, Task> operation)
@@ -223,7 +223,7 @@ public partial class MainWindow : Window
             stopWorkMenuItem.IsEnabled = false;
             operationStatusText.Text = LanguageManager.Get("StoppingWork");
         }
-        catch (Exception exception) { ShowException("F00010008", exception); } //F00010008
+        catch (Exception exception) { ShowException("MAINW0008", exception); } //MAINW0008
     }
 
     private async Task ExtractAsync(bool selectedOnly, bool createArchiveFolder)
@@ -251,7 +251,7 @@ public partial class MainWindow : Window
             operationStatusText.Text = LanguageManager.Get("ExtractingCompleted");
         }
         catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
-        catch (Exception exception) { ShowException("F00010004", exception); } //F00010004
+        catch (Exception exception) { ShowException("MAINW0004", exception); } //MAINW0004
     }
 
     private async void CompressFilesMenu_Click(object sender, EventArgs e)
@@ -276,7 +276,7 @@ public partial class MainWindow : Window
             operationStatusText.Text = LanguageManager.Get("CompressionCompleted");
         }
         catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
-        catch (Exception exception) { ShowException("F00010005", exception); } //F00010005
+        catch (Exception exception) { ShowException("MAINW0005", exception); } //MAINW0005
     }
 
     private async void ExtractNestedTarMenuItem_Click(object? sender, EventArgs e)
@@ -314,7 +314,7 @@ public partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            ShowException("F00010007", exception); //F00010007
+            ShowException("MAINW0007", exception); //MAINW0007
         }
     }
 
@@ -388,7 +388,7 @@ public partial class MainWindow : Window
     private void ShowException(string fallbackStageCode, Exception exception)
     {
         string stageCode = exception is StageException stageException ? stageException.StageCode : fallbackStageCode;
-        MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //F00010006
+        MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //MAINW0006
     }
 
     private void AboutMenu_Click(object sender, EventArgs e)

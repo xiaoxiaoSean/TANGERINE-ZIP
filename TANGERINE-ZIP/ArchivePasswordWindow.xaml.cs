@@ -3,6 +3,7 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
+// Stage head: APWDW (ArchivePasswordWindow)
 internal sealed partial class ArchivePasswordWindow : Window
 {
     private readonly bool _creating;
@@ -64,9 +65,9 @@ internal sealed partial class ArchivePasswordWindow : Window
     private void Confirm_Click(object sender, RoutedEventArgs e)
     {
         if (_creating && _enablePassword.IsChecked != true) { PasswordValue = null; DialogResult = true; return; }
-        if (string.IsNullOrEmpty(EnteredPassword)) { Warn("PWDFM0001", "ArchivePasswordRequired"); return; }
-        if (_creating && EnteredPassword.Any(character => character is < ' ' or > '~')) { Warn("PWDFM0003", "PasswordAsciiOnly"); return; }
-        if (_creating && !string.Equals(EnteredPassword, EnteredConfirmation, StringComparison.Ordinal)) { Warn("PWDFM0002", "PasswordMismatch"); return; }
+        if (string.IsNullOrEmpty(EnteredPassword)) { Warn("APWDW0001", "ArchivePasswordRequired"); return; }
+        if (_creating && EnteredPassword.Any(character => character is < ' ' or > '~')) { Warn("APWDW0003", "PasswordAsciiOnly"); return; }
+        if (_creating && !string.Equals(EnteredPassword, EnteredConfirmation, StringComparison.Ordinal)) { Warn("APWDW0002", "PasswordMismatch"); return; }
         PasswordValue = EnteredPassword;
         DialogResult = true;
     }

@@ -13,12 +13,22 @@
     </Window.Resources>
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="0.2*" />
-            <RowDefinition Height="1*" />
-            <RowDefinition Height="0.5*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ProgressBar x:Name="_operationProgressBar" Grid.Row="0" Minimum="0" Maximum="100" />
-        <TextBlock x:Name="_statusText" Grid.Row="1" Text="Operation in progress" Margin="4" />
-        <Button x:Name="_actionButton" Grid.Row="2" Content="Stop" Click="ActionButton_Click" />
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="_operationProgressBar" Grid.Column="0" Minimum="0" Maximum="100"
+                         VerticalAlignment="Center" />
+            <TextBlock x:Name="_progressPercentText" Grid.Column="1" Text="0%" Margin="4" />
+        </Grid>
+        <TextBlock x:Name="_engineText" Grid.Row="1" Margin="4" Visibility="Collapsed" />
+        <TextBlock x:Name="_statusText" Grid.Row="2" Text="Operation in progress" Margin="4" />
+        <Button x:Name="_actionButton" Grid.Row="3" Content="Stop" Click="ActionButton_Click" />
     </Grid>
 </Window>

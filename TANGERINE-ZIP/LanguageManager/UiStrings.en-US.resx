@@ -463,6 +463,9 @@ Stage Code is :
   <data name="ContextOperationRunning" xml:space="preserve">
     <value>Working…</value>
   </data>
+  <data name="ContextExtractionEngineStatus" xml:space="preserve">
+    <value>Extracting with {0} engine(s)…</value>
+  </data>
   <data name="ContextOperationCompleted" xml:space="preserve">
     <value>Completed.</value>
   </data>
