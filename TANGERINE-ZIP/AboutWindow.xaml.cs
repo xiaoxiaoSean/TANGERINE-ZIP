@@ -2,9 +2,12 @@ namespace TANGERINE_ZIP;
 
 public sealed partial class AboutWindow : Window
 {
+    private const double MouseWhiteThickenRadius = 125.0;
+
     public AboutWindow()
     {
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         WpfUi.SizeWindow(this, 0.6, 0.6);
         Title = LanguageManager.Get("ApplicationTitle");

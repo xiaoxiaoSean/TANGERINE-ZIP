@@ -6,13 +6,19 @@ namespace TANGERINE_ZIP;
 // Stage head: APWDW (ArchivePasswordWindow)
 internal sealed partial class ArchivePasswordWindow : Window
 {
+    private const double MouseWhiteThickenRadius = 105.0;
     private readonly bool _creating;
 
-    public ArchivePasswordWindow() => InitializeComponent();
+    public ArchivePasswordWindow()
+    {
+        InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
+    }
 
     public ArchivePasswordWindow(string archiveName, bool creating, string? errorMessage = null, bool passwordSupported = true)
     {
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         _creating = creating;
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         Width = SystemParameters.WorkArea.Width * 0.4;

@@ -4,13 +4,19 @@ namespace TANGERINE_ZIP;
 
 internal sealed partial class OverwriteConflictWindow : Window
 {
+    private const double MouseWhiteThickenRadius = 110.0;
     public ConflictChoice Choice { get; private set; } = ConflictChoice.Cancel;
 
-    public OverwriteConflictWindow() => InitializeComponent();
+    public OverwriteConflictWindow()
+    {
+        InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
+    }
 
     public OverwriteConflictWindow(ArchiveConflict conflict)
     {
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         Title = LanguageManager.Get("ConflictTitle");
         WpfUi.SizeWindow(this, 0.6, 0.38);

@@ -6,6 +6,7 @@ namespace TANGERINE_ZIP;
 // Stage head: CTOPW (ContextOperationWindow)
 internal sealed partial class ContextOperationWindow : Window
 {
+    private const double MouseWhiteThickenRadius = 110.0;
     private readonly Func<IProgress<ArchiveProgress>, CancellationToken, Task> _operation;
     private readonly string? _extractionEngineNames;
     private readonly CancellationTokenSource _cancellation = new();
@@ -14,6 +15,7 @@ internal sealed partial class ContextOperationWindow : Window
     public ContextOperationWindow()
     {
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         _operation = (_, _) => Task.CompletedTask;
     }
 
@@ -23,6 +25,7 @@ internal sealed partial class ContextOperationWindow : Window
         _operation = operation;
         _extractionEngineNames = extractionEngineNames;
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         Title = title;
         WpfUi.SizeWindow(this, 0.5, 0.25);

@@ -6,6 +6,7 @@ namespace TANGERINE_ZIP;
 // Stage head: OVDWN (OverwriteDecisionWindow)
 public sealed partial class OverwriteDecisionWindow : Window
 {
+    private const double MouseWhiteThickenRadius = 115.0;
     private bool _allOverwrite;
     private bool _allSkip;
     private int _output = -1;
@@ -13,6 +14,7 @@ public sealed partial class OverwriteDecisionWindow : Window
     public OverwriteDecisionWindow()
     {
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         WpfUi.SizeWindow(this, 0.6, 0.55);
         Title = LanguageManager.Get("OverWriteOrNot");

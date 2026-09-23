@@ -5,6 +5,7 @@ namespace TANGERINE_ZIP;
 // Stage head: FLPKW (FilePickerWindow)
 public sealed partial class FilePickerWindow : Window
 {
+    private const double MouseWhiteThickenRadius = 135.0;
     private string? _currentPath;
     private string? _initialPath;
     private CancellationTokenSource? _loadCancellation;
@@ -15,6 +16,7 @@ public sealed partial class FilePickerWindow : Window
     public FilePickerWindow()
     {
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         WpfUi.SizeWindow(this, 0.7, 0.7);
         Title = LanguageManager.Get("FilePickerWindowTitle");

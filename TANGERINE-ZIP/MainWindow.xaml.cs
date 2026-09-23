@@ -6,6 +6,7 @@ namespace TANGERINE_ZIP;
 // Stage head: MAINW (MainWindow)
 public partial class MainWindow : Window
 {
+    private const double MouseWhiteThickenRadius = 140.0;
     private readonly ArchiveWorkerClient _archiveService = new();
     private readonly OpenFileDialog _sourceFilesDialog = new();
     private readonly OpenFileDialog archiveOpenDialog = new();
@@ -25,6 +26,7 @@ public partial class MainWindow : Window
     public MainWindow(string? startupArchivePath)
     {
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemFonts.MessageFontSize;
         // Scale from the work area and keep the startup window's long-to-short ratio at sqrt(2):1.
         double initialHeight = SystemParameters.WorkArea.Height * 0.43;

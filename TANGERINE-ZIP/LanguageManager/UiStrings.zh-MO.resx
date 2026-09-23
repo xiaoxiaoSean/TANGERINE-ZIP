@@ -154,7 +154,7 @@
     <value>映像檔</value>
   </data>
   <data name="ArchiveHeaderText" xml:space="preserve">
-    <value>TANGERINE ZIP</value>
+    <value>TZIP</value>
   </data>
   <data name="NoOpenedFile" xml:space="preserve">
     <value>尚未開啟檔案</value>

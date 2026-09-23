@@ -43,6 +43,7 @@
 
 	<ItemGroup>
 		<Resource Include="Resources\Kiro.png;Resources\TZIP.png" />
+		<Resource Include="Shaders\MouseWhiteThicken.ps" />
 		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.msix" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix" />
 		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.cer" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.cer" />
 		<EmbeddedResource Include="..\third_party\ContextMenuForWindows11\LICENSE" LogicalName="TANGERINE_ZIP.ContextMenu.LGPL-3.0.txt" />

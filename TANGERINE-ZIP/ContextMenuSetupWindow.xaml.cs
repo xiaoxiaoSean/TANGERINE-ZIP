@@ -8,18 +8,24 @@ internal enum ContextMenuSetupMode { Create, Delete }
 // Stage head: CMSPW (ContextMenuSetupWindow)
 internal sealed partial class ContextMenuSetupWindow : Window
 {
+    private const double MouseWhiteThickenRadius = 130.0;
     private readonly ContextMenuSetupMode _mode;
     private readonly string _executablePath = string.Empty;
     private CancellationTokenSource? _cancellation;
     private bool _isBusy;
 
-    public ContextMenuSetupWindow() => InitializeComponent();
+    public ContextMenuSetupWindow()
+    {
+        InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
+    }
 
     internal ContextMenuSetupWindow(ContextMenuSetupMode mode, string executablePath)
     {
         _mode = mode;
         _executablePath = executablePath;
         InitializeComponent();
+        MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemParameters.WorkArea.Height * 0.018;
         WpfUi.SizeWindow(this, 0.65, 0.65);
         Title = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateTitle" : "ContextWizardDeleteTitle");
