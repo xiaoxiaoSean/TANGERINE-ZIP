@@ -1,26 +1,35 @@
-// Expand only bright, nearly neutral pixels close to the mouse pointer.
-// Dark backgrounds and colored status indicators keep their original color.
+// Increase the stroke width of near-white pixels without drawing shifted copies.
+// The sampling distance becomes zero at the edge of the pointer's radius.
 sampler2D scene : register(s0);
 float2 cursor : register(c0);
 float2 viewport : register(c1);
 float radius : register(c2);
 
-float3 WhitePixel(float4 sampleColor)
+float WhiteCoverage(float4 sampleColor)
 {
     float low = min(sampleColor.r, min(sampleColor.g, sampleColor.b));
-    return sampleColor.rgb * step(0.72, low);
+    // Requiring all three channels to be bright also rejects orange accents.
+    return saturate((low - 0.38) * 1.75);
 }
 
 float4 main(float2 uv : TEXCOORD) : COLOR
 {
     float4 original = tex2D(scene, uv);
-    float2 stepSize = 1.35 / viewport;
-    float3 adjacent = WhitePixel(tex2D(scene, uv + float2(stepSize.x, 0)));
-    adjacent = max(adjacent, WhitePixel(tex2D(scene, uv - float2(stepSize.x, 0))));
-    adjacent = max(adjacent, WhitePixel(tex2D(scene, uv + float2(0, stepSize.y))));
-    adjacent = max(adjacent, WhitePixel(tex2D(scene, uv - float2(0, stepSize.y))));
-
     float distanceFromCursor = length((uv - cursor) * viewport);
-    float influence = saturate((radius - distanceFromCursor) / max(12.0, radius * 0.28));
-    return float4(lerp(original.rgb, max(original.rgb, adjacent), influence), original.a);
+    float proximity = saturate(1.0 - distanceFromCursor / radius);
+
+    // At most one device-independent pixel is added at the center. A sub-pixel
+    // offset and linear texture sampling keep the new stroke connected to it.
+    float2 strokeOffset = (0.95 * proximity) / viewport;
+    float sourceCoverage = WhiteCoverage(original);
+    float expandedCoverage = WhiteCoverage(tex2D(scene, uv + float2(strokeOffset.x, 0)));
+    expandedCoverage = max(expandedCoverage, WhiteCoverage(tex2D(scene, uv - float2(strokeOffset.x, 0))));
+    expandedCoverage = max(expandedCoverage, WhiteCoverage(tex2D(scene, uv + float2(0, strokeOffset.y))));
+    expandedCoverage = max(expandedCoverage, WhiteCoverage(tex2D(scene, uv - float2(0, strokeOffset.y))));
+
+    // Add only coverage that was absent in the original pixel. Copying the
+    // neighboring RGB values created a visible second image in the old shader.
+    float addedCoverage = max(0.0, expandedCoverage - sourceCoverage);
+    float3 thickened = original.rgb + (1.0 - original.rgb) * addedCoverage;
+    return float4(thickened, original.a);
 }

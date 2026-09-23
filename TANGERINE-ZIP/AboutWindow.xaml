@@ -22,8 +22,7 @@
         <Image Grid.Row="0" Grid.Column="0" Source="Resources/Kiro.png" Stretch="Uniform" />
         <Image Grid.Row="0" Grid.Column="1" Source="Resources/TZIP.png" Stretch="Uniform" />
         <TextBox x:Name="informationText" Grid.Row="1" Grid.Column="0" Margin="8"
-                 IsReadOnly="True" TextWrapping="Wrap"  VerticalScrollBarVisibility="Auto"
-                 Text="TZIP v1.1.0&#10;founder:xiaoxiaoSean&#10;thanks all contributor&#10;thanks the author and all contributors  of rar&#10;thanks the author and all contributors of all nuget packages&#10;&#10;v1.1.0-1.0.0changelog:&#10;new:compression password&#10;new:first-layer right button menu for win11&#10;new:quick window auto-close&#10;fix:cannot be extracted normally via right button menu" />
+                 IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
         <Button x:Name="closeButton" Grid.Row="1" Grid.Column="1" Content="Close" Click="Close_Click" />
     </Grid>
 </Window>
