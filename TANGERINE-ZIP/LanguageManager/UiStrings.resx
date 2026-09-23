@@ -432,13 +432,13 @@ Stage Code is :</value>
     <value>The TANGERINE ZIP context menu was removed for the current user.</value>
   </data>
   <data name="ContextExtractMenu" xml:space="preserve">
-    <value>Extract</value>
+    <value>Extract this file to the current folder with TZIP</value>
   </data>
   <data name="ContextCompressMenu" xml:space="preserve">
-    <value>Compress</value>
+    <value>Compress with TZIP...</value>
   </data>
   <data name="ContextOpenMenu" xml:space="preserve">
-    <value>Open</value>
+    <value>Open with TZIP</value>
   </data>
   <data name="ContextNoFiles" xml:space="preserve">
     <value>No existing files were supplied.</value>
@@ -486,16 +486,10 @@ Stage Code is :</value>
     <value>Remove Windows 11 context menu</value>
   </data>
   <data name="ContextWizardCreateDescription" xml:space="preserve">
-    <value>Choose a Windows 11 first-level context-menu layout. An existing setup is removed before the new one is created. If TANGERINE-ZIP.exe is moved, create the menu again.</value>
+    <value>This wizard creates one TANGERINE ZIP submenu in the primary Windows 11 context menu. Existing setup is removed first. If TANGERINE-ZIP.exe is moved, create the menu again.</value>
   </data>
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
     <value>This wizard removes both the Windows 11 extension and any TANGERINE ZIP legacy context-menu entries left by older versions.</value>
-  </data>
-  <data name="ContextMenuGroupedMode" xml:space="preserve">
-    <value>Windows 11 first-level menu: TANGERINE ZIP &gt; Extract / Compress / Open</value>
-  </data>
-  <data name="ContextMenuDirectMode" xml:space="preserve">
-    <value>Windows 11 first-level menu: Extract / Compress / Open (no parent menu)</value>
   </data>
   <data name="ContextUacConsentHint" xml:space="preserve">
     <value>If Windows shows a UAC prompt, approve TANGERINE ZIP's administrator elevation request.</value>
@@ -591,10 +585,10 @@ Stage Code is :</value>
     <value>The operation was force stopped. Review any earlier error message before retrying.</value>
   </data>
   <data name="ContextExtractSingleMenu" xml:space="preserve">
-    <value>Extract</value>
+    <value>Extract this file to the current folder with TZIP</value>
   </data>
   <data name="ContextOpenSingleMenu" xml:space="preserve">
-    <value>Open</value>
+    <value>Open with TZIP</value>
   </data>
   <data name="CreatePasswordTitle" xml:space="preserve">
     <value>Archive password</value>

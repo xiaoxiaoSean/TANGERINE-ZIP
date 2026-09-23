@@ -25,12 +25,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 CoCreatableClass(CustomExplorerCommand);
 CoCreatableClassWrlCreatorMapInclude(CustomExplorerCommand);
-CoCreatableClass(DirectExtractExplorerCommand);
-CoCreatableClassWrlCreatorMapInclude(DirectExtractExplorerCommand);
-CoCreatableClass(DirectCompressExplorerCommand);
-CoCreatableClassWrlCreatorMapInclude(DirectCompressExplorerCommand);
-CoCreatableClass(DirectOpenExplorerCommand);
-CoCreatableClassWrlCreatorMapInclude(DirectOpenExplorerCommand);
 
 STDAPI DllCanUnloadNow()
 {

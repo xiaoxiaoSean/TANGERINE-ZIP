@@ -24,15 +24,9 @@ internal sealed partial class ContextMenuSetupWindow : Window
         WpfUi.SizeWindow(this, 0.65, 0.65);
         Title = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateTitle" : "ContextWizardDeleteTitle");
         descriptionText.Text = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateDescription" : "ContextWizardDeleteDescription");
-        menuModeOptions.Visibility = mode == ContextMenuSetupMode.Create ? Visibility.Visible : Visibility.Collapsed;
-        groupedModeOption.Content = LanguageManager.Get("ContextMenuGroupedMode");
-        directModeOption.Content = LanguageManager.Get("ContextMenuDirectMode");
         // Both creation and removal may request elevation when the package certificate
         // needs to be added to or removed from the machine trust store.
         uacConsentHintText.Text = LanguageManager.Get("ContextUacConsentHint");
-        // Persisted layout is a UI preference only. The native extension reads its
-        // own mode file when Explorer asks which menu entries should be visible.
-        directModeOption.IsChecked = ContextMenuRegistrationService.GetSavedMenuMode() == ContextMenuPresentation.Direct;
         _startButton.Content = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardStartCreate" : "ContextWizardStartDelete");
         _cancelButton.Content = LanguageManager.Get("Cancel");
     }
@@ -50,11 +44,9 @@ internal sealed partial class ContextMenuSetupWindow : Window
         {
             Progress<ContextMenuProgress> progress = new(UpdateProgress);
             if (_mode == ContextMenuSetupMode.Create)
-                // Read the selected layout at Start, so a user can change the radio
-                // selection freely until the installation actually begins.
-                await ContextMenuRegistrationService.CreateAsync(_executablePath,
-                    directModeOption.IsChecked == true ? ContextMenuPresentation.Direct : ContextMenuPresentation.Grouped,
-                    progress, _cancellation.Token);
+                // Explorer now exposes one fixed parent submenu. There is no
+                // presentation choice to persist or pass to the installer.
+                await ContextMenuRegistrationService.CreateAsync(_executablePath, progress, _cancellation.Token);
             else
                 await ContextMenuRegistrationService.DeleteAsync(_executablePath, progress, _cancellation.Token);
             string key = _mode == ContextMenuSetupMode.Create ? "ContextMenuModernCreated" : "ContextMenuDeleted";

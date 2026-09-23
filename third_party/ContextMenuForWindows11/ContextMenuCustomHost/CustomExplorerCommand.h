@@ -19,41 +19,6 @@ public:
 	void ReadCommands(IShellItemArray* selection, bool multipleFiles, bool isDirectory, bool isBackground, bool isDesktop, const std::wstring& currentPath);
 	HRESULT FindLocationFromSite(IShellItem** location) const noexcept;
 
-protected:
-	explicit CustomExplorerCommand(int directCommandIndex);
-
 private:
 	std::vector<ComPtr<CustomSubExplorerCommand>> m_commands;
-	int m_directCommandIndex{ -1 };
-
-};
-
-class __declspec(uuid("B131D00A-8FA9-4C89-A354-3EA513D21FF3"))
-DirectExtractExplorerCommand final : public CustomExplorerCommand {
-public:
-	DirectExtractExplorerCommand() : CustomExplorerCommand(10) {}
-	IFACEMETHODIMP GetCanonicalName(_Out_ GUID* guidCommandName) override {
-		*guidCommandName = __uuidof(DirectExtractExplorerCommand);
-		return S_OK;
-	}
-};
-
-class __declspec(uuid("216A28CB-0C5B-47BD-A1AB-74A97A9449AE"))
-DirectCompressExplorerCommand final : public CustomExplorerCommand {
-public:
-	DirectCompressExplorerCommand() : CustomExplorerCommand(20) {}
-	IFACEMETHODIMP GetCanonicalName(_Out_ GUID* guidCommandName) override {
-		*guidCommandName = __uuidof(DirectCompressExplorerCommand);
-		return S_OK;
-	}
-};
-
-class __declspec(uuid("2A0B4E21-F23C-434E-A106-19791265A2B2"))
-DirectOpenExplorerCommand final : public CustomExplorerCommand {
-public:
-	DirectOpenExplorerCommand() : CustomExplorerCommand(30) {}
-	IFACEMETHODIMP GetCanonicalName(_Out_ GUID* guidCommandName) override {
-		*guidCommandName = __uuidof(DirectOpenExplorerCommand);
-		return S_OK;
-	}
 };

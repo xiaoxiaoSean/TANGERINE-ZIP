@@ -7,7 +7,7 @@
          xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
          IgnorableNamespaces="uap uap10 com desktop4 desktop5 rescap">
-  <Identity Name="TangerineZip.ContextMenu" Publisher="CN=TANGERINE ZIP Development" Version="2.2.0.0" ProcessorArchitecture="x64" />
+  <Identity Name="TangerineZip.ContextMenu" Publisher="CN=TANGERINE ZIP Development" Version="2.3.0.0" ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>TANGERINE ZIP context menu</DisplayName>
     <PublisherDisplayName>TANGERINE ZIP</PublisherDisplayName>
@@ -27,21 +27,15 @@
           <com:ComServer>
             <com:SurrogateServer DisplayName="TANGERINE ZIP shell commands">
               <com:Class Id="FFCE1E90-8F9C-4F49-A9B6-C35A69B30AE9" Path="TangerineZipContextMenuHost.dll" ThreadingModel="STA" />
-              <com:Class Id="B131D00A-8FA9-4C89-A354-3EA513D21FF3" Path="TangerineZipContextMenuHost.dll" ThreadingModel="STA" />
-              <com:Class Id="216A28CB-0C5B-47BD-A1AB-74A97A9449AE" Path="TangerineZipContextMenuHost.dll" ThreadingModel="STA" />
-              <com:Class Id="2A0B4E21-F23C-434E-A106-19791265A2B2" Path="TangerineZipContextMenuHost.dll" ThreadingModel="STA" />
             </com:SurrogateServer>
           </com:ComServer>
         </com:Extension>
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
           <desktop4:FileExplorerContextMenus>
             <desktop5:ItemType Type="*">
-              <!-- The extension registers every entry once. GetState reads the
-                   selected layout and hides either the parent or the direct trio. -->
+              <!-- Explorer registers one parent entry. The three localized
+                   actions are enumerated as its child commands at runtime. -->
               <desktop5:Verb Id="TzipArchiveOperations" Clsid="FFCE1E90-8F9C-4F49-A9B6-C35A69B30AE9" />
-              <desktop5:Verb Id="TzipExtract" Clsid="B131D00A-8FA9-4C89-A354-3EA513D21FF3" />
-              <desktop5:Verb Id="TzipCompress" Clsid="216A28CB-0C5B-47BD-A1AB-74A97A9449AE" />
-              <desktop5:Verb Id="TzipOpen" Clsid="2A0B4E21-F23C-434E-A106-19791265A2B2" />
             </desktop5:ItemType>
           </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>

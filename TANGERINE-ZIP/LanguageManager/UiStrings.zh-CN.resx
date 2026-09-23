@@ -434,13 +434,13 @@
     <value>已移除当前用户的 TANGERINE ZIP 右键菜单。</value>
   </data>
   <data name="ContextExtractMenu" xml:space="preserve">
-    <value>解压</value>
+    <value>用TZIP将此文件解压到当前文件夹</value>
   </data>
   <data name="ContextCompressMenu" xml:space="preserve">
-    <value>压缩</value>
+    <value>用TZIP压缩...</value>
   </data>
   <data name="ContextOpenMenu" xml:space="preserve">
-    <value>打开</value>
+    <value>用TZIP打开</value>
   </data>
   <data name="ContextNoFiles" xml:space="preserve">
     <value>未提供存在的文件。</value>
@@ -488,16 +488,10 @@
     <value>移除 Windows 11 右键菜单</value>
   </data>
   <data name="ContextWizardCreateDescription" xml:space="preserve">
-    <value>请选择 Windows 11 一级右键菜单布局。已有设置会先移除再建立；如果移动 TANGERINE-ZIP.exe，请重新建立菜单。</value>
+    <value>此向导会在 Windows 11 一级右键菜单中建立 TANGERINE ZIP 子菜单，其中包含解压、压缩和打开。已有设置会先移除再建立；如果移动 TANGERINE-ZIP.exe，请重新建立菜单。</value>
   </data>
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
     <value>此向导会移除 Windows 11 扩展，并清理旧版本 TANGERINE ZIP 遗留的传统右键菜单项。</value>
-  </data>
-  <data name="ContextMenuGroupedMode" xml:space="preserve">
-    <value>Win11 一级菜单：TANGERINE ZIP &gt; 解压 / 压缩 / 打开</value>
-  </data>
-  <data name="ContextMenuDirectMode" xml:space="preserve">
-    <value>Win11 一级菜单：解压 / 压缩 / 打开（无上级菜单）</value>
   </data>
   <data name="ContextUacConsentHint" xml:space="preserve">
     <value>如出现 Windows UAC 提示框，请同意 TANGERINE ZIP 的管理员提权请求。</value>
@@ -593,10 +587,10 @@
     <value>操作已被强制停止。重试前请查看此前显示的错误信息。</value>
   </data>
   <data name="ContextExtractSingleMenu" xml:space="preserve">
-    <value>解压</value>
+    <value>用TZIP将此文件解压到当前文件夹</value>
   </data>
   <data name="ContextOpenSingleMenu" xml:space="preserve">
-    <value>打开</value>
+    <value>用TZIP打开</value>
   </data>
   <data name="CreatePasswordTitle" xml:space="preserve">
     <value>压缩包密码</value>

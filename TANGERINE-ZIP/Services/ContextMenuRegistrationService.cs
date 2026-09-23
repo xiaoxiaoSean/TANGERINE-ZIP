@@ -10,7 +10,6 @@ using System.Text.Json;
 namespace TANGERINE_ZIP.Services;
 
 internal sealed record ContextMenuProgress(int Percentage, string ResourceKey, string? Detail = null);
-internal enum ContextMenuPresentation { Grouped, Direct }
 
 // Stage head: CTXMN
 internal static class ContextMenuRegistrationService
@@ -19,7 +18,7 @@ internal static class ContextMenuRegistrationService
     private const string PackageResourceName = "TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix";
     private const string CertificateResourceName = "TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.cer";
     private const string SettingsPath = @"Software\TangerineZip\ContextMenu";
-    private const string MinimumPackageVersion = "2.2.0.0";
+    private const string MinimumPackageVersion = "2.3.0.0";
     private const string LegacyCertificateThumbprint = "080D2C60C6B53BD797A97DC3032FD40A17560095";
     private const uint ShcneAssocChanged = 0x08000000;
     private const uint ShcnfIdList = 0;
@@ -40,12 +39,7 @@ internal static class ContextMenuRegistrationService
         return X509CertificateLoader.LoadCertificate(copy.ToArray());
     }
 
-    // The registry remembers the selected radio option for the next launch.
-    // A missing or unrecognized value preserves the original grouped default.
-    internal static ContextMenuPresentation GetSavedMenuMode() =>
-        ReadSetting("MenuMode") == "direct" ? ContextMenuPresentation.Direct : ContextMenuPresentation.Grouped;
-
-    internal static async Task CreateAsync(string executablePath, ContextMenuPresentation menuMode,
+    internal static async Task CreateAsync(string executablePath,
         IProgress<ContextMenuProgress> progress, CancellationToken token)
     {
         await OperationGate.WaitAsync(token);
@@ -88,10 +82,10 @@ internal static class ContextMenuRegistrationService
             installedPackageFamilyName = packageFamilyName;
 
             Report(progress, 72, "ContextProgressWritingCommands");
-            await WriteCommandFilesAsync(packageFamilyName, executablePath, menuMode, token);
+            await WriteCommandFilesAsync(packageFamilyName, executablePath, token);
 
             Report(progress, 90, "ContextProgressVerifying");
-            await VerifyInstallationAsync(packageFamilyName, menuMode, token);
+            await VerifyInstallationAsync(packageFamilyName, token);
             using X509Certificate2 installedCertificate = LoadEmbeddedCertificate();
             using (RegistryKey settings = Registry.CurrentUser.CreateSubKey(SettingsPath, writable: true)
                 ?? throw new InvalidOperationException())
@@ -100,9 +94,6 @@ internal static class ContextMenuRegistrationService
                 settings.SetValue("ExecutablePath", Path.GetFullPath(executablePath), RegistryValueKind.String);
                 settings.SetValue("CertificateOwnerSid", HasCurrentCertificateOwnership(ownerSid) ? ownerSid : string.Empty, RegistryValueKind.String);
                 settings.SetValue("CertificateThumbprint", installedCertificate.Thumbprint, RegistryValueKind.String);
-                // The registry restores the user's radio selection next time. Explorer
-                // itself reads TZIP-mode.txt in the package's LocalState directory.
-                settings.SetValue("MenuMode", menuMode == ContextMenuPresentation.Direct ? "direct" : "grouped", RegistryValueKind.String);
             }
             NotifyShell();
             Report(progress, 100, "ContextProgressCompleted");
@@ -323,7 +314,7 @@ internal static class ContextMenuRegistrationService
         ?? throw new StageException(stageCode, LanguageManager.Get("ContextWizardEmbeddedMissing")); //CTXMN0005
 
     private static async Task WriteCommandFilesAsync(string packageFamilyName, string executablePath,
-        ContextMenuPresentation menuMode, CancellationToken token)
+        CancellationToken token)
     {
         string menuDirectory = GetCommandDirectory(packageFamilyName);
         Directory.CreateDirectory(menuDirectory);
@@ -334,9 +325,8 @@ internal static class ContextMenuRegistrationService
         }
 
         string fullExecutablePath = Path.GetFullPath(executablePath);
-        // The JSON titles are the visible Explorer actions in both layouts. They
-        // contain only localized verbs; the parent product name exists solely in
-        // grouped mode, inside the native Explorer command implementation.
+        // The three JSON titles are the localized child items under the fixed
+        // TANGERINE ZIP parent. Use the same title for single and multi-selection.
         object[] definitions =
         [
             CreateCommand(LanguageManager.Get("ContextExtractMenu"), LanguageManager.Get("ContextExtractSingleMenu"), 10, fullExecutablePath, "--context-extract", allowMultiple: true),
@@ -352,10 +342,6 @@ internal static class ContextMenuRegistrationService
             await File.WriteAllTextAsync(temporaryPath, json, new UTF8Encoding(false), token);
             File.Move(temporaryPath, destinationPath, overwrite: true);
         }
-        string modePath = Path.Combine(menuDirectory, "TZIP-mode.txt");
-        await File.WriteAllTextAsync(modePath + ".tmp",
-            menuMode == ContextMenuPresentation.Direct ? "direct" : "grouped", new UTF8Encoding(false), token);
-        File.Move(modePath + ".tmp", modePath, overwrite: true);
     }
 
     private static object CreateCommand(string title, string titleSingle, int index, string executablePath, string action, bool allowMultiple) => new
@@ -379,16 +365,12 @@ internal static class ContextMenuRegistrationService
         workingDirectory = "{parent}"
     };
 
-    private static async Task VerifyInstallationAsync(string packageFamilyName,
-        ContextMenuPresentation menuMode, CancellationToken token)
+    private static async Task VerifyInstallationAsync(string packageFamilyName, CancellationToken token)
     {
         if (!await IsCurrentPackageInstalledAsync(token))
             throw new StageException("CTXMN0007", LanguageManager.Get("ContextRegistrationMismatch")); //CTXMN0007
         string commandDirectory = GetCommandDirectory(packageFamilyName);
         if (Directory.EnumerateFiles(commandDirectory, "TZIP-*.json").Count() != 3)
-            throw new StageException("CTXMN0008", LanguageManager.Get("ContextRegistrationMismatch")); //CTXMN0008
-        string savedMode = await File.ReadAllTextAsync(Path.Combine(commandDirectory, "TZIP-mode.txt"), token);
-        if (savedMode != (menuMode == ContextMenuPresentation.Direct ? "direct" : "grouped"))
             throw new StageException("CTXMN0008", LanguageManager.Get("ContextRegistrationMismatch")); //CTXMN0008
     }
 
