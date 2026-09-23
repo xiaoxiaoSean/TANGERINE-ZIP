@@ -690,4 +690,31 @@
   <data name="MouseEffectInvalidRadius" xml:space="preserve">
     <value>滑鼠效果半徑必須是大於零的有限數值。</value>
   </data>
+  <data name="SettingsBasicTab" xml:space="preserve">
+    <value>基本</value>
+  </data>
+  <data name="SettingsMouseEffect" xml:space="preserve">
+    <value>滑鼠效果</value>
+  </data>
+  <data name="SettingsMouseEffectDescription" xml:space="preserve">
+    <value>滑鼠靠近時令淺色筆畫變粗。更改會即時套用至所有已開啟的視窗。</value>
+  </data>
+  <data name="SettingsMouseEffectOn" xml:space="preserve">
+    <value>已開啟</value>
+  </data>
+  <data name="SettingsMouseEffectOff" xml:space="preserve">
+    <value>已關閉</value>
+  </data>
+  <data name="MouseEffectReadFailed" xml:space="preserve">
+    <value>無法讀取滑鼠效果設定：{0}</value>
+  </data>
+  <data name="MouseEffectSaveFailed" xml:space="preserve">
+    <value>無法儲存滑鼠效果設定：{0}</value>
+  </data>
+  <data name="MouseEffectSaveMismatch" xml:space="preserve">
+    <value>儲存後的滑鼠效果設定與標記檔案不一致。</value>
+  </data>
+  <data name="MouseEffectMarkerIsDirectory" xml:space="preserve">
+    <value>NO_MOUSE_EFFECT 是資料夾而非檔案。更改此設定前，請重新命名或移除該資料夾。</value>
+  </data>
 </root>

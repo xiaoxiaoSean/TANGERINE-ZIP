@@ -36,7 +36,7 @@ internal static class MouseWhiteThickening
     private static void AttachCore(Window window, FrameworkElement content, double radius)
     {
         MouseWhiteThickenEffect effect = new() { Radius = radius };
-        content.Effect = effect;
+        content.Effect = MouseEffectSettings.IsEnabled ? effect : null;
 
         void UpdateViewport(object? sender, SizeChangedEventArgs args)
         {
@@ -44,9 +44,8 @@ internal static class MouseWhiteThickening
             effect.Viewport = new Point(Math.Max(content.ActualWidth, 1), Math.Max(content.ActualHeight, 1));
         }
 
-        void UpdatePointer(object? sender, MouseEventArgs args)
+        void UpdateCursor(Point position)
         {
-            Point position = args.GetPosition(content);
             double width = content.ActualWidth;
             double height = content.ActualHeight;
             effect.Cursor = width > 0 && height > 0 &&
@@ -55,19 +54,46 @@ internal static class MouseWhiteThickening
                 : new Point(-100, -100);
         }
 
+        void UpdatePointer(object? sender, MouseEventArgs args)
+        {
+            if (MouseEffectSettings.IsEnabled) UpdateCursor(args.GetPosition(content));
+        }
+
         void ClearPointer(object? sender, EventArgs args) => effect.Cursor = new Point(-100, -100);
+
+        void ApplySetting(bool enabled)
+        {
+            // Each open window owns one effect instance. The shared setting
+            // switches that instance on or off without rebuilding its content.
+            try
+            {
+                content.Effect = enabled ? effect : null;
+                // A click in Settings does not generate a mouse move in other
+                // windows. Update the current position when enabling so the
+                // visual state changes immediately, including in this window.
+                if (enabled && content.IsMouseOver) UpdateCursor(Mouse.GetPosition(content));
+                else effect.Cursor = new Point(-100, -100);
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(window, MessageTipGenerator.GenerateTip("MWFXT0004", exception.Message),
+                    LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //MWFXT0004
+            }
+        }
 
         content.SizeChanged += UpdateViewport;
         MouseEventHandler pointerHandler = UpdatePointer;
         window.AddHandler(UIElement.PreviewMouseMoveEvent, pointerHandler, true);
         window.MouseLeave += ClearPointer;
         window.Deactivated += ClearPointer;
+        MouseEffectSettings.Changed += ApplySetting;
         window.Closed += (_, _) =>
         {
             content.SizeChanged -= UpdateViewport;
             window.RemoveHandler(UIElement.PreviewMouseMoveEvent, pointerHandler);
             window.MouseLeave -= ClearPointer;
             window.Deactivated -= ClearPointer;
+            MouseEffectSettings.Changed -= ApplySetting;
             content.Effect = null;
         };
         effect.Viewport = new Point(Math.Max(content.ActualWidth, 1), Math.Max(content.ActualHeight, 1));

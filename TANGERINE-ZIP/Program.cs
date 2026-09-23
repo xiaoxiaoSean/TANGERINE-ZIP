@@ -20,6 +20,22 @@ namespace TANGERINE_ZIP
                 return;
             }
             var application = new System.Windows.Application();
+            try
+            {
+                // Read the marker before creating any WPF window. A present
+                // NO_MOUSE_EFFECT file means the effect is OFF.
+                Services.MouseEffectSettings.Initialize();
+            }
+            catch (Exception exception)
+            {
+                Services.MouseEffectSettings.UseDisabledFallback();
+                string stageCode = exception is Services.StageException stageException
+                    ? stageException.StageCode : "PROGM0001";
+                System.Windows.MessageBox.Show(
+                    Tools.MessageTipGenerator.GenerateTip(stageCode, exception.Message),
+                    LanguageManager.Get("ErrorTitle"),
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error); //PROGM0001
+            }
             if (args.Length >= 2 && args[0].StartsWith("--context-", StringComparison.Ordinal))
             {
                 Services.ContextMenuCommandHandler.Run(args[0], args[1..]);

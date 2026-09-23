@@ -1,0 +1,103 @@
+<Window x:Class="TANGERINE_ZIP.SettingsWindow" x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="" Icon="Resources/TZIP.png" WindowStartupLocation="CenterOwner"
+        Width="720" Height="430" MinWidth="560" MinHeight="340"
+        Background="Black" Foreground="WhiteSmoke" FontFamily="Microsoft YaHei UI">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="SettingsTabStyle" TargetType="TabItem">
+                <Setter Property="Foreground" Value="WhiteSmoke" />
+                <Setter Property="Background" Value="#161616" />
+                <Setter Property="Margin" Value="0,0,0,6" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <Border x:Name="tabBorder" Background="{TemplateBinding Background}"
+                                    BorderBrush="#484848" BorderThickness="1" Padding="16,12">
+                                <ContentPresenter ContentSource="Header" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="tabBorder" Property="Background" Value="#303030" />
+                                    <Setter TargetName="tabBorder" Property="BorderBrush" Value="#B0B0B0" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="MouseEffectToggleStyle" TargetType="ToggleButton">
+                <Setter Property="Foreground" Value="WhiteSmoke" />
+                <Setter Property="Background" Value="#333333" />
+                <Setter Property="MinWidth" Value="106" />
+                <Setter Property="MinHeight" Value="40" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="toggleBorder" Background="{TemplateBinding Background}"
+                                    BorderBrush="#888888" BorderThickness="1" CornerRadius="10" Padding="18,8">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="toggleBorder" Property="Background" Value="#145538" />
+                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="#8BCBAB" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="toggleBorder" Property="Opacity" Value="0.85" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="toggleBorder" Property="Opacity" Value="0.55" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="16">
+        <TabControl TabStripPlacement="Left" Background="Black" BorderThickness="0"
+                    ItemContainerStyle="{StaticResource SettingsTabStyle}">
+            <TabControl.Template>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="165" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#111111" Padding="8" BorderBrush="#444444" BorderThickness="1">
+                            <TabPanel IsItemsHost="True" />
+                        </Border>
+                        <Border Grid.Column="1" Margin="12,0,0,0" Background="#161616"
+                                BorderBrush="#444444" BorderThickness="1">
+                            <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </TabControl.Template>
+            <TabItem x:Name="basicTab" IsSelected="True">
+                <StackPanel Margin="24">
+                    <TextBlock x:Name="basicHeadingText" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,24" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,18,0">
+                            <TextBlock x:Name="mouseEffectLabel" FontSize="16" FontWeight="SemiBold" />
+                            <TextBlock x:Name="mouseEffectDescription" Margin="0,8,0,0" Foreground="#BDBDBD" />
+                        </StackPanel>
+                        <ToggleButton x:Name="mouseEffectToggle" Grid.Column="1"
+                                      Style="{StaticResource MouseEffectToggleStyle}"
+                                      VerticalAlignment="Center" Click="MouseEffectToggle_Click" />
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

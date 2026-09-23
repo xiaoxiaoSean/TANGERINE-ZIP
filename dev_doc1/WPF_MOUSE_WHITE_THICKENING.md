@@ -2,7 +2,7 @@
 
 ## 范围与行为
 
-项目定义的 8 个 WPF `Window` 均在 `InitializeComponent()` 后调用 `MouseWhiteThickening.Attach`。每个窗口代码类中的第一个字段为 `MouseWhiteThickenRadius`，单位是设备无关像素（DIP）；直接修改该字段即可单独调整该窗口的作用半径。
+项目定义的 9 个 WPF `Window`（包括设置窗口）均在 `InitializeComponent()` 后调用 `MouseWhiteThickening.Attach`。每个窗口代码类中的第一个字段为 `MouseWhiteThickenRadius`，单位是设备无关像素（DIP）；直接修改该字段即可单独调整该窗口的作用半径。设置页可即时关闭或开启效果，持久化规则见 [SETTINGS_MOUSE_EFFECT.md](SETTINGS_MOUSE_EFFECT.md)。
 
 效果在鼠标中心附近对近白色、浅灰色笔画增加最多约 0.95 DIP 的宽度；新增宽度随着与鼠标中心的距离连续减小，在作用半径边缘降为零。深色背景和橙色状态指示不会被扩张。它只改变窗口内容的渲染结果，不改变控件的布局、文字数据或命中测试，也不影响 Windows 自带的文件选择对话框与系统标题栏。
 

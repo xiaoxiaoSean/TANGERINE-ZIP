@@ -384,7 +384,18 @@ public partial class MainWindow : Window
     private async void ExtractAllToFolderMenu_Click(object sender, EventArgs e) => await ExtractAsync(false, true);
     private async void ExtractSelectedHereMenu_Click(object sender, EventArgs e) => await ExtractAsync(true, false);
     private async void ExtractSelectedToFolderMenu_Click(object sender, EventArgs e) => await ExtractAsync(true, true);
-    private void SettingsMenu_Click(object sender, EventArgs e) => ShowInformation("Unavailble1");
+    private void SettingsMenu_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            SettingsWindow settingsWindow = new() { Owner = this };
+            settingsWindow.ShowDialog();
+        }
+        catch (Exception exception)
+        {
+            ShowException("MAINW0011", exception); //MAINW0011
+        }
+    }
     private void ShowInformation(string resourceKey) => MessageBox.Show(this, LanguageManager.Get(resourceKey), LanguageManager.Get("ApplicationTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
 
     private void ShowException(string fallbackStageCode, Exception exception)

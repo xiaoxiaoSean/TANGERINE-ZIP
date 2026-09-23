@@ -687,4 +687,31 @@ Existing file: {1}</value>
   <data name="MouseEffectInvalidRadius" xml:space="preserve">
     <value>The mouse-effect radius must be a positive finite number.</value>
   </data>
+  <data name="SettingsBasicTab" xml:space="preserve">
+    <value>Basic</value>
+  </data>
+  <data name="SettingsMouseEffect" xml:space="preserve">
+    <value>Mouse effect</value>
+  </data>
+  <data name="SettingsMouseEffectDescription" xml:space="preserve">
+    <value>Thicken light-colored strokes near the pointer. Changes take effect in all open windows immediately.</value>
+  </data>
+  <data name="SettingsMouseEffectOn" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="SettingsMouseEffectOff" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="MouseEffectReadFailed" xml:space="preserve">
+    <value>Cannot read the mouse-effect setting: {0}</value>
+  </data>
+  <data name="MouseEffectSaveFailed" xml:space="preserve">
+    <value>Cannot save the mouse-effect setting: {0}</value>
+  </data>
+  <data name="MouseEffectSaveMismatch" xml:space="preserve">
+    <value>The saved mouse-effect setting does not match the marker file.</value>
+  </data>
+  <data name="MouseEffectMarkerIsDirectory" xml:space="preserve">
+    <value>NO_MOUSE_EFFECT is a folder rather than a file. Rename or remove that folder before changing this setting.</value>
+  </data>
 </root>
