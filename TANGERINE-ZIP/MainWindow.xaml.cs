@@ -41,7 +41,7 @@ public partial class MainWindow : Window
         };
     }
 
-    private void MainWindow_Loaded(object sender, EventArgs e)
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         try
         {
@@ -394,8 +394,4 @@ public partial class MainWindow : Window
         aboutWindow.ShowDialog();
     }
 
-    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
-    {
-
-    }
 }

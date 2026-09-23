@@ -34,7 +34,7 @@ internal static class UiProbe
                 }
                 var main = new MainWindow();
                 typeof(MainWindow).GetMethod("MainWindow_Loaded", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-                    .Invoke(main, [main, EventArgs.Empty]);
+                    .Invoke(main, [main, new RoutedEventArgs()]);
                 var windows = new (string Name, Window Window)[]
                 {
                     ("main", main),
