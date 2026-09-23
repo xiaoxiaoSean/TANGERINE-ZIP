@@ -25,8 +25,8 @@ public partial class MainWindow : Window
     public MainWindow(string? startupArchivePath)
     {
         InitializeComponent();
-        FontSize = SystemParameters.WorkArea.Height * 0.018;
-        menuBar.FontSize = FontSize;
+        FontSize = SystemFonts.MessageFontSize;
+        WpfUi.SizeWindow(this, 0.38, 0.38);
         _startupArchivePath = startupArchivePath;
         _sourceFilesDialog.Multiselect = true;
         _sourceFilesDialog.CheckFileExists = true;

@@ -1,7 +1,7 @@
 <Window x:Class="TANGERINE_ZIP.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="TZIP" Icon="Resources/TZIP.png" WindowState="Maximized" WindowStartupLocation="CenterOwner"
+        Title="TZIP" Icon="Resources/TZIP.png" WindowState="Normal" WindowStartupLocation="CenterOwner"
         Background="Black" Foreground="WhiteSmoke" FontFamily="Microsoft YaHei UI">
     <Window.Resources>
         <ResourceDictionary>

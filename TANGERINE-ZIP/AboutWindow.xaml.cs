@@ -6,6 +6,7 @@ public sealed partial class AboutWindow : Window
     {
         InitializeComponent();
         FontSize = SystemParameters.WorkArea.Height * 0.018;
+        WpfUi.SizeWindow(this, 0.6, 0.6);
         Title = LanguageManager.Get("ApplicationTitle");
         closeButton.Content = LanguageManager.Get("Close");
     }
