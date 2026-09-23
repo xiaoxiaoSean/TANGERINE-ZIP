@@ -40,22 +40,30 @@
             </MenuItem>
         </Menu>
         <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="47*"/>
+                <ColumnDefinition Width="93*"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+            <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Grid.ColumnSpan="2">
                 <TextBlock x:Name="archiveHeaderText" Text="TZIP" Margin="8" />
             </Border>
-            <ListBox x:Name="archiveEntriesList" Grid.Row="1" SelectionMode="Extended" MouseDoubleClick="ArchiveEntriesList_MouseDoubleClick" />
+            <ListBox x:Name="archiveEntriesList" SelectionMode="Extended" MouseDoubleClick="ArchiveEntriesList_MouseDoubleClick" Grid.ColumnSpan="2" Margin="0,33,0,0" Grid.RowSpan="2" />
         </Grid>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="5*" />
+                <ColumnDefinition Width="16*" />
+                <ColumnDefinition Width="53*"/>
+                <ColumnDefinition Width="24*" />
+                <ColumnDefinition Width="12*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="313*"/>
             </Grid.ColumnDefinitions>
-            <ProgressBar x:Name="operationProgressBar" Grid.Column="0" Minimum="0" Maximum="100" />
-            <TextBlock x:Name="operationStatusText" Grid.Column="1" Text="Ready" Margin="4" />
+            <ProgressBar x:Name="operationProgressBar" Grid.Column="0" Minimum="0" Maximum="100" Grid.ColumnSpan="2" Margin="4,4,4,4" />
+            <TextBlock x:Name="operationStatusText" Grid.Column="2" Text="Ready" Margin="4,0,4,0" Grid.ColumnSpan="4" />
         </Grid>
     </Grid>
 </Window>
