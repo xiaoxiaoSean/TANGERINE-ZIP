@@ -9,6 +9,9 @@ public partial class Form1 : Window
     private readonly ArchiveWorkerClient _archiveService = new();
     private readonly RarToolService _rarToolService = new();
     private readonly OpenFileDialog _compressionSourceDialog = new();
+    private readonly OpenFileDialog mainOpenFileDialog = new();
+    private readonly SaveFileDialog mainSaveFileDialog = new();
+    private readonly OpenFolderDialog mainFolderBrowserDialog = new();
     private readonly List<ArchiveEntryInfo> _archiveEntries = [];
     private readonly MenuItem _extractNestedTarMenuItem;
     private readonly MenuItem _stopWorkMenuItem;
@@ -23,9 +26,14 @@ public partial class Form1 : Window
     private string _archiveCurrentDirectory = string.Empty;
     private bool _isBusy;
 
-    public Form1(string? startupArchivePath = null)
+    public Form1() : this(null) { }
+
+    public Form1(string? startupArchivePath)
     {
         InitializeComponent();
+        Icon = WpfUi.WindowIcon(typeof(Form1));
+        FontSize = SystemParameters.WorkArea.Height * 0.018;
+        mainMenu.FontSize = FontSize;
         _startupArchivePath = startupArchivePath;
         _compressionSourceDialog.Multiselect = true;
         _compressionSourceDialog.CheckFileExists = true;

@@ -1,59 +1,38 @@
 using TANGERINE_ZIP.Services;
 using TANGERINE_ZIP.Tools;
-using System.Windows.Controls.Primitives;
 
 namespace TANGERINE_ZIP;
 
-internal sealed class ArchivePasswordForm : Window
+internal sealed partial class ArchivePasswordForm : Window
 {
     private readonly bool _creating;
-    private readonly CheckBox _enablePassword = new();
-    private readonly PasswordBox _password = new();
-    private readonly PasswordBox _confirmation = new();
-    private readonly TextBox _visiblePassword = new();
-    private readonly TextBox _visibleConfirmation = new();
-    private readonly CheckBox _showPassword = new();
+
+    public ArchivePasswordForm() => InitializeComponent();
 
     public ArchivePasswordForm(string archiveName, bool creating, string? errorMessage = null, bool passwordSupported = true)
     {
+        InitializeComponent();
         _creating = creating;
-        WpfUi.Style(this);
-        Title = LanguageManager.Get(creating ? "CreatePasswordTitle" : "EnterPasswordTitle");
-        SizeToContent = SizeToContent.Height;
+        FontSize = SystemParameters.WorkArea.Height * 0.018;
         Width = SystemParameters.WorkArea.Width * 0.4;
-        ShowInTaskbar = false;
-        var fields = new StackPanel { Margin = new Thickness(18) };
-        fields.Children.Add(WpfUi.Text(string.Format(LanguageManager.Get(creating && !passwordSupported
-            ? "PasswordFormatUnsupportedDescription" : creating ? "CreatePasswordDescription" : "EnterPasswordDescription"), archiveName)));
+        Title = LanguageManager.Get(creating ? "CreatePasswordTitle" : "EnterPasswordTitle");
+        descriptionText.Text = string.Format(LanguageManager.Get(creating && !passwordSupported
+            ? "PasswordFormatUnsupportedDescription" : creating ? "CreatePasswordDescription" : "EnterPasswordDescription"), archiveName);
         _enablePassword.Content = LanguageManager.Get("EnableArchivePassword");
         _enablePassword.IsChecked = passwordSupported;
         _enablePassword.IsEnabled = passwordSupported;
-        _enablePassword.Foreground = WpfUi.Foreground;
-        if (creating) fields.Children.Add(_enablePassword);
-        fields.Children.Add(WpfUi.Text(LanguageManager.Get("PasswordLabel")));
-        fields.Children.Add(PasswordField(_password, _visiblePassword));
-        if (creating)
-        {
-            fields.Children.Add(WpfUi.Text(LanguageManager.Get("ConfirmPasswordLabel")));
-            fields.Children.Add(PasswordField(_confirmation, _visibleConfirmation));
-        }
+        _enablePassword.Visibility = creating ? Visibility.Visible : Visibility.Collapsed;
+        passwordLabel.Text = LanguageManager.Get("PasswordLabel");
+        confirmationLabel.Text = LanguageManager.Get("ConfirmPasswordLabel");
+        confirmationFields.Visibility = creating ? Visibility.Visible : Visibility.Collapsed;
         _showPassword.Content = LanguageManager.Get("ShowPassword");
-        _showPassword.Foreground = WpfUi.Foreground;
-        _showPassword.Margin = new Thickness(4, 10, 4, 4);
-        fields.Children.Add(_showPassword);
+        confirmButton.Content = LanguageManager.Get("Confirm");
+        cancelButton.Content = LanguageManager.Get("Cancel");
         if (!string.IsNullOrWhiteSpace(errorMessage))
-            fields.Children.Add(new TextBlock { Text = errorMessage, Foreground = WpfUi.ErrorForeground, TextWrapping = TextWrapping.Wrap });
-        var buttons = new UniformGrid { Columns = 2, Margin = new Thickness(0, 12, 0, 0) };
-        var confirm = WpfUi.Button(LanguageManager.Get("Confirm"));
-        var cancel = WpfUi.Button(LanguageManager.Get("Cancel"));
-        confirm.IsDefault = true;
-        cancel.IsCancel = true;
-        confirm.Click += Confirm_Click;
-        cancel.Click += (_, _) => { DialogResult = false; Close(); };
-        buttons.Children.Add(confirm);
-        buttons.Children.Add(cancel);
-        fields.Children.Add(buttons);
-        Content = fields;
+        {
+            errorText.Text = errorMessage;
+            errorText.Visibility = Visibility.Visible;
+        }
         _enablePassword.Checked += (_, _) => UpdateEnabledState();
         _enablePassword.Unchecked += (_, _) => UpdateEnabledState();
         _showPassword.Checked += (_, _) => ShowPasswords(true);
@@ -62,16 +41,7 @@ internal sealed class ArchivePasswordForm : Window
         UpdateEnabledState();
     }
 
-    private static Grid PasswordField(PasswordBox hidden, TextBox visible)
-    {
-        var grid = new Grid { Margin = new Thickness(4) };
-        hidden.Background = visible.Background = WpfUi.Surface;
-        hidden.Foreground = visible.Foreground = WpfUi.Foreground;
-        visible.Visibility = Visibility.Collapsed;
-        grid.Children.Add(hidden);
-        grid.Children.Add(visible);
-        return grid;
-    }
+    private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
 
     private void ShowPasswords(bool show)
     {
@@ -91,7 +61,7 @@ internal sealed class ArchivePasswordForm : Window
         _password.IsEnabled = _visiblePassword.IsEnabled = _confirmation.IsEnabled = _visibleConfirmation.IsEnabled = _showPassword.IsEnabled = enabled;
     }
 
-    private void Confirm_Click(object? sender, RoutedEventArgs e)
+    private void Confirm_Click(object sender, RoutedEventArgs e)
     {
         if (_creating && _enablePassword.IsChecked != true) { PasswordValue = null; DialogResult = true; return; }
         if (string.IsNullOrEmpty(EnteredPassword)) { Warn("PWDFM0001", "ArchivePasswordRequired"); return; }

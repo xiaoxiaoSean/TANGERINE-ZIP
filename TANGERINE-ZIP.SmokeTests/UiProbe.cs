@@ -16,6 +16,19 @@ internal static class UiProbe
             {
                 _ = new Application();
                 Directory.CreateDirectory(outputDirectory);
+                foreach (Type windowType in new[]
+                {
+                    typeof(Form1), typeof(ArchivePasswordForm), typeof(ContextMenuSetupWizardForm),
+                    typeof(ContextOperationForm), typeof(OverwriteConflictForm), typeof(FreeFilePickerForm),
+                    typeof(OverWriteOrNotForm), typeof(TZIPForm)
+                })
+                {
+                    var constructor = windowType.GetConstructor(Type.EmptyTypes)
+                        ?? throw new InvalidOperationException($"{windowType.Name}: no parameterless design constructor");
+                    if (constructor.Invoke(null) is not Window preview || preview.Content is null)
+                        throw new InvalidOperationException($"{windowType.Name}: XAML content unavailable");
+                    Console.WriteLine($"PASS XAML designer constructor: {windowType.Name}");
+                }
                 var main = new Form1();
                 typeof(Form1).GetMethod("Form1_Load", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(main, [main, EventArgs.Empty]);

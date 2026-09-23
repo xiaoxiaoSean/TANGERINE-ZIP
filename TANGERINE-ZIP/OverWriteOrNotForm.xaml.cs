@@ -1,41 +1,30 @@
-using TANGERINE_ZIP.Resources;
 
 namespace TANGERINE_ZIP;
 
-public sealed class OverWriteOrNotForm : Window
+public sealed partial class OverWriteOrNotForm : Window
 {
-    private readonly ListBox _choices = WpfUi.List();
     private bool _allOverwrite;
     private bool _allSkip;
     private int _output = -1;
 
     public OverWriteOrNotForm()
     {
-        WpfUi.Style(this);
+        InitializeComponent();
+        FontSize = SystemParameters.WorkArea.Height * 0.018;
         Icon = WpfUi.WindowIcon(typeof(OverWriteOrNotForm));
         WpfUi.SizeWindow(this, 0.6, 0.55);
         Title = LanguageManager.Get("OverWriteOrNot");
-        var root = WpfUi.Grid(2, 3);
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        WpfUi.Add(root, new ScrollViewer
-        {
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = WpfUi.Text(LanguageManager.Get("OverWriteText"))
-        }, 0);
-        WpfUi.Add(root, WpfUi.Logo(TZIPResource.TZIP), 0, 1);
+        descriptionText.Text = LanguageManager.Get("OverWriteText");
         foreach (string key in new[] { "OverWrite1", "OverWrite2", "OverWrite3", "OverWrite4" })
             _choices.Items.Add(LanguageManager.Get(key));
-        WpfUi.Add(root, _choices, 1);
-        var execute = WpfUi.Button(LanguageManager.Get("Execute"));
-        execute.Click += (_, _) => Execute();
-        WpfUi.Add(root, execute, 1, 1);
-        Content = root;
+        executeButton.Content = LanguageManager.Get("Execute");
     }
 
     public void SyncBool(ref bool allOverWrite) => allOverWrite = _allOverwrite;
     public void SyncBool2(ref bool allSkip) => allSkip = _allSkip;
     public void GetResult(ref int input) => input = _output;
+
+    private void Execute_Click(object sender, RoutedEventArgs e) => Execute();
 
     private void Execute()
     {

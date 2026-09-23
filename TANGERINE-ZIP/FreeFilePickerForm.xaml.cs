@@ -1,40 +1,24 @@
 using TANGERINE_ZIP.Tools;
-using TANGERINE_ZIP.Resources;
 
 namespace TANGERINE_ZIP;
 
-public sealed class FreeFilePickerForm : Window
+public sealed partial class FreeFilePickerForm : Window
 {
     private string? _currentPath;
     private string? _initialPath;
     private CancellationTokenSource? _loadCancellation;
     private readonly Dictionary<string, string> _displayPaths = new(StringComparer.CurrentCultureIgnoreCase);
-    private readonly ListBox _fileListBox = WpfUi.List(true);
-    private readonly TextBox _tip = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, Background = WpfUi.Surface, Foreground = WpfUi.Foreground };
-    private readonly Button _confirm = WpfUi.Button(string.Empty);
 
     public IReadOnlyList<string> SelectedFiles { get; private set; } = [];
 
     public FreeFilePickerForm()
     {
-        WpfUi.Style(this);
+        InitializeComponent();
+        FontSize = SystemParameters.WorkArea.Height * 0.018;
         Icon = WpfUi.WindowIcon(typeof(FreeFilePickerForm));
         WpfUi.SizeWindow(this, 0.7, 0.7);
         Title = LanguageManager.Get("FreeFilePickerFormTitle");
-        var root = WpfUi.Grid(1.5, 6.5, 1);
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5, GridUnitType.Star) });
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        WpfUi.Add(root, _tip, 0);
-        WpfUi.Add(root, WpfUi.Logo(TZIPResource.TZIP), 0, 1);
-        WpfUi.Add(root, _fileListBox, 1);
-        System.Windows.Controls.Grid.SetColumnSpan(_fileListBox, 2);
         _confirm.Content = LanguageManager.Get("Confirm");
-        WpfUi.Add(root, _confirm, 2);
-        System.Windows.Controls.Grid.SetColumnSpan(_confirm, 2);
-        Content = root;
-        _fileListBox.MouseDoubleClick += FileListBox_DoubleClick;
-        _confirm.Click += ConfirmButton_Click;
-        Loaded += FreeFilePickerForm_Load;
         Closed += (_, _) => { _loadCancellation?.Cancel(); _loadCancellation?.Dispose(); };
     }
 
@@ -133,6 +117,7 @@ public sealed class FreeFilePickerForm : Window
 
     private async void FreeFilePickerForm_Load(object? sender, RoutedEventArgs e)
     {
+        if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this)) return;
         try
         {
             await Task.Yield();

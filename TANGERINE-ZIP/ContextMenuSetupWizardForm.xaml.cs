@@ -5,42 +5,26 @@ namespace TANGERINE_ZIP;
 
 internal enum ContextMenuSetupMode { Create, Delete }
 
-internal sealed class ContextMenuSetupWizardForm : Window
+internal sealed partial class ContextMenuSetupWizardForm : Window
 {
     private readonly ContextMenuSetupMode _mode;
-    private readonly string _executablePath;
-    private readonly TextBlock _statusLabel = WpfUi.Text(string.Empty);
-    private readonly ProgressBar _progressBar = WpfUi.Progress();
-    private readonly ListBox _progressLog = WpfUi.List();
-    private readonly Button _startButton;
-    private readonly Button _cancelButton;
+    private readonly string _executablePath = string.Empty;
     private CancellationTokenSource? _cancellation;
     private bool _isBusy;
+
+    public ContextMenuSetupWizardForm() => InitializeComponent();
 
     internal ContextMenuSetupWizardForm(ContextMenuSetupMode mode, string executablePath)
     {
         _mode = mode;
         _executablePath = executablePath;
-        WpfUi.Style(this);
+        InitializeComponent();
+        FontSize = SystemParameters.WorkArea.Height * 0.018;
         WpfUi.SizeWindow(this, 0.65, 0.65);
         Title = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateTitle" : "ContextWizardDeleteTitle");
-        ShowInTaskbar = false;
-        var root = WpfUi.Grid(1.5, 1, 0.4, 5.6, 1.5);
-        root.Margin = new Thickness(18);
-        WpfUi.Add(root, WpfUi.Text(LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateDescription" : "ContextWizardDeleteDescription")), 0);
-        WpfUi.Add(root, _statusLabel, 1);
-        WpfUi.Add(root, _progressBar, 2);
-        WpfUi.Add(root, _progressLog, 3);
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        _startButton = WpfUi.Button(LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardStartCreate" : "ContextWizardStartDelete"));
-        _cancelButton = WpfUi.Button(LanguageManager.Get("Cancel"));
-        buttons.Children.Add(_startButton);
-        buttons.Children.Add(_cancelButton);
-        WpfUi.Add(root, buttons, 4);
-        Content = root;
-        _startButton.Click += StartButton_Click;
-        _cancelButton.Click += CancelButton_Click;
-        Closing += ContextMenuSetupWizardForm_Closing;
+        descriptionLabel.Text = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardCreateDescription" : "ContextWizardDeleteDescription");
+        _startButton.Content = LanguageManager.Get(mode == ContextMenuSetupMode.Create ? "ContextWizardStartCreate" : "ContextWizardStartDelete");
+        _cancelButton.Content = LanguageManager.Get("Cancel");
     }
 
     private async void StartButton_Click(object? sender, RoutedEventArgs e)

@@ -1,0 +1,54 @@
+<Window x:Class="TANGERINE_ZIP.Form1"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TZIP" WindowState="Normal" WindowStartupLocation="CenterScreen"
+        Background="Black" Foreground="WhiteSmoke" FontFamily="Microsoft YaHei UI"
+        Loaded="Form1_Load">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="0.75*" />
+            <RowDefinition Height="8.5*" />
+            <RowDefinition Height="0.75*" />
+        </Grid.RowDefinitions>
+        <Menu x:Name="mainMenu" Grid.Row="0" Background="Black" Foreground="WhiteSmoke">
+            <MenuItem x:Name="TZIPToolStripMenuItem" Header="TZIP" Click="TZIPToolStripMenuItem_Click" />
+            <MenuItem x:Name="OpenToolStripMenuItem" Header="Open" Click="OpenToolStripMenuItem_Click" />
+            <MenuItem x:Name="extractToolStripMenuItem" Header="Extract">
+                <MenuItem x:Name="extractDirectlyALLToolStripMenuItem" Header="Extract all" Click="extractDirectlyALLToolStripMenuItem_Click" />
+                <MenuItem x:Name="extractToFolderALLToolStripMenuItem" Header="Extract all to folder" Click="extractToFolderALLToolStripMenuItem_Click" />
+                <MenuItem x:Name="extractDirectlySELECTEDToolStripMenuItem" Header="Extract selected" Click="extractDirectlySELECTEDToolStripMenuItem_Click" />
+                <MenuItem x:Name="extractToAFolderSELECTEDToolStripMenuItem" Header="Extract selected to folder" Click="extractToAFolderSELECTEDToolStripMenuItem_Click" />
+            </MenuItem>
+            <MenuItem x:Name="compressToolStripMenuItem" Header="Compress">
+                <MenuItem x:Name="compressSelectFileToolStripMenuItem" Header="Select files" Click="compressSelectFileToolStripMenuItem_Click" />
+            </MenuItem>
+            <MenuItem x:Name="SettingsToolStripMenuItem" Header="Settings" Click="SettingsToolStripMenuItem_Click" />
+            <MenuItem x:Name="uninstallFileToolStripMenuItem" Header="Unload" Click="uninstallFileToolStripMenuItem_Click" />
+        </Menu>
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                <TextBlock x:Name="mainTab" Text="TZIP" Margin="8" />
+            </Border>
+            <ListBox x:Name="fileBox" Grid.Row="1" SelectionMode="Extended" MouseDoubleClick="fileBox_DoubleClick" />
+        </Grid>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="5*" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="statusProgressBar" Grid.Column="0" Minimum="0" Maximum="100" />
+            <TextBlock x:Name="statusLabel" Grid.Column="1" Text="Ready" Margin="4" />
+        </Grid>
+    </Grid>
+</Window>

@@ -3,36 +3,31 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP;
 
-internal sealed class ContextOperationForm : Window
+internal sealed partial class ContextOperationForm : Window
 {
     private readonly Func<IProgress<ArchiveProgress>, CancellationToken, Task> _operation;
     private readonly CancellationTokenSource _cancellation = new();
-    private readonly ProgressBar _progressBar = WpfUi.Progress();
-    private readonly TextBlock _statusLabel = WpfUi.Text(string.Empty);
-    private readonly Button _actionButton = WpfUi.Button(string.Empty);
     private bool _completed;
+
+    public ContextOperationForm()
+    {
+        InitializeComponent();
+        _operation = (_, _) => Task.CompletedTask;
+    }
 
     public ContextOperationForm(string title, Func<IProgress<ArchiveProgress>, CancellationToken, Task> operation)
     {
         _operation = operation;
-        WpfUi.Style(this);
+        InitializeComponent();
+        FontSize = SystemParameters.WorkArea.Height * 0.018;
         Title = title;
-        WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WpfUi.SizeWindow(this, 0.5, 0.25);
-        var root = WpfUi.Grid(0.2, 1, 0.5);
-        root.Margin = new Thickness(16);
-        WpfUi.Add(root, _progressBar, 0);
-        WpfUi.Add(root, _statusLabel, 1);
-        WpfUi.Add(root, _actionButton, 2);
-        Content = root;
-        _actionButton.Click += ActionButton_Click;
-        Loaded += ContextOperationForm_Shown;
-        Closing += ContextOperationForm_Closing;
         Closed += (_, _) => _cancellation.Dispose();
     }
 
     private async void ContextOperationForm_Shown(object? sender, RoutedEventArgs e)
     {
+        if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this)) return;
         _actionButton.Content = LanguageManager.Get("StopWork");
         _statusLabel.Text = LanguageManager.Get("ContextOperationRunning");
         Progress<ArchiveProgress> progress = new(item =>
