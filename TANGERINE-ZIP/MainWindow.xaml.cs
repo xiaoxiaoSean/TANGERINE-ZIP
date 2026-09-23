@@ -26,7 +26,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         FontSize = SystemFonts.MessageFontSize;
-        WpfUi.SizeWindow(this, 0.38, 0.38);
+        // Scale from the work area and keep the startup window's long-to-short ratio at sqrt(2):1.
+        double initialHeight = SystemParameters.WorkArea.Height * 0.43;
+        Height = initialHeight;
+        Width = initialHeight * Math.Sqrt(2);
         _startupArchivePath = startupArchivePath;
         _sourceFilesDialog.Multiselect = true;
         _sourceFilesDialog.CheckFileExists = true;

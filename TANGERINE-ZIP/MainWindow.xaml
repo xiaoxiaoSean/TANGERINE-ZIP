@@ -13,11 +13,16 @@
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="0.75*" />
-            <RowDefinition Height="8.5*" />
-            <RowDefinition Height="0.75*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Menu x:Name="menuBar" Grid.Row="0" Background="Black" Foreground="WhiteSmoke">
+            <Menu.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </Menu.ItemsPanel>
             <MenuItem x:Name="aboutMenuItem" Header="TZIP" Click="AboutMenu_Click" />
             <MenuItem x:Name="openArchiveMenuItem" Header="Open" Click="OpenArchiveMenu_Click" />
             <MenuItem x:Name="extractMenuItem" Header="Extract">
