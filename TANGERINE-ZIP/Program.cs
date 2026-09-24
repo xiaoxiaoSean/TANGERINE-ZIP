@@ -96,6 +96,11 @@ namespace TANGERINE_ZIP
                     return;
                 }
             }
+            if (!InitializeAppearance())
+            {
+                Environment.ExitCode = 1;
+                return;
+            }
             if (isContextCommand)
             {
                 try { Services.ContextMenuCommandHandler.Run(args[0], args[1..]); }
@@ -104,6 +109,77 @@ namespace TANGERINE_ZIP
             }
             application.Run(new MainWindow());
         }
+
+        private static bool InitializeAppearance()
+        {
+            while (true)
+            {
+                try
+                {
+                    Services.AppearanceSettings.Initialize();
+                    return true;
+                }
+                catch (Services.InvalidColorConfigurationException invalid)
+                {
+                    string prompt = string.Format(LanguageManager.Get("SettingsColorInvalidPrompt"), invalid.FileName);
+                    string message = Tools.MessageTipGenerator.GenerateTip(invalid.StageCode, prompt); //COLRS0001-COLRS0004
+                    if (System.Windows.MessageBox.Show(message, LanguageManager.Get("SettingsColorInvalidTitle"),
+                        System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning,
+                        System.Windows.MessageBoxResult.No) != System.Windows.MessageBoxResult.Yes)
+                        return false;
+                    try { Services.AppearanceSettings.DeleteInvalidConfiguration(invalid); }
+                    catch (Exception exception)
+                    {
+                        ShowStartupError("PROGM0004", exception); //PROGM0004
+                        return false;
+                    }
+                }
+                catch (Services.ColorContrastException contrast)
+                {
+                    int accentIndex = contrast.AccentIndex;
+                    string accentName = LanguageManager.Get(accentIndex == 0
+                        ? "SettingsTextAccent" : "SettingsProgressAccent");
+                    string backgroundName = LanguageManager.Get(accentIndex == 0
+                        ? "SettingsWindowBackground" : "SettingsProgressBackground");
+                    string prompt = string.Format(LanguageManager.Get("SettingsColorStartupContrast"),
+                        accentName, backgroundName);
+                    string message = Tools.MessageTipGenerator.GenerateTip(contrast.StageCode, prompt); //COLRS0009/COLRS0010
+                    if (System.Windows.MessageBox.Show(message, LanguageManager.Get("SettingsColorInvalidTitle"),
+                        System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning,
+                        System.Windows.MessageBoxResult.No) != System.Windows.MessageBoxResult.Yes)
+                        return false;
+                    try
+                    {
+                        using System.Windows.Forms.ColorDialog picker = new()
+                        {
+                            Color = ToDrawingColor(Services.AppearanceSettings.GetColor(accentIndex)),
+                            FullOpen = true
+                        };
+                        if (picker.ShowDialog() != System.Windows.Forms.DialogResult.OK) return false;
+                        Services.AppearanceSettings.SetColorAtStartup(accentIndex,
+                            System.Windows.Media.Color.FromRgb(picker.Color.R, picker.Color.G, picker.Color.B));
+                    }
+                    catch (Services.ColorContrastException)
+                    {
+                        // The chosen color is still too close. Nothing was
+                        // saved; show the same recovery choice again.
+                    }
+                    catch (Exception exception)
+                    {
+                        ShowStartupError("PROGM0005", exception); //PROGM0005
+                        return false;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ShowStartupError("PROGM0006", exception); //PROGM0006
+                    return false;
+                }
+            }
+        }
+
+        private static System.Drawing.Color ToDrawingColor(System.Windows.Media.Color color) =>
+            System.Drawing.Color.FromArgb(color.R, color.G, color.B);
 
         private static void ShowStartupError(string fallbackStageCode, Exception exception)
         {

@@ -2,27 +2,27 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="" Icon="Resources/TZIP.png" WindowStartupLocation="CenterOwner"
-        Background="Black" Foreground="WhiteSmoke" FontFamily="Microsoft YaHei UI">
+        Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}" FontFamily="Microsoft YaHei UI">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Theme.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <Style x:Key="SettingsTabStyle" TargetType="TabItem">
-                <Setter Property="Foreground" Value="WhiteSmoke" />
-                <Setter Property="Background" Value="#161616" />
+                <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
                 <Setter Property="Margin" Value="0,0,0,6" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
                             <Border x:Name="tabBorder" Background="{TemplateBinding Background}"
-                                    BorderBrush="#484848" BorderThickness="1" Padding="16,12">
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16,12">
                                 <ContentPresenter ContentSource="Header" />
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="tabBorder" Property="Background" Value="#303030" />
-                                    <Setter TargetName="tabBorder" Property="BorderBrush" Value="#B0B0B0" />
+                                    <Setter TargetName="tabBorder" Property="Background" Value="{DynamicResource ButtonBrush}" />
+                                    <Setter TargetName="tabBorder" Property="BorderBrush" Value="{DynamicResource ForegroundBrush}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -30,19 +30,19 @@
                 </Setter>
             </Style>
             <Style x:Key="MouseEffectToggleStyle" TargetType="ToggleButton">
-                <Setter Property="Foreground" Value="WhiteSmoke" />
-                <Setter Property="Background" Value="#333333" />
+                <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
+                <Setter Property="Background" Value="{DynamicResource ButtonBrush}" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ToggleButton">
                             <Border x:Name="toggleBorder" Background="{TemplateBinding Background}"
-                                    BorderBrush="#888888" BorderThickness="1" CornerRadius="10" Padding="18,8">
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="18,8">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="toggleBorder" Property="Background" Value="#145538" />
-                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="#8BCBAB" />
+                                    <Setter TargetName="toggleBorder" Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                                    <Setter TargetName="toggleBorder" Property="BorderBrush" Value="{DynamicResource ForegroundBrush}" />
                                 </Trigger>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter TargetName="toggleBorder" Property="Opacity" Value="0.85" />
@@ -58,7 +58,7 @@
         </ResourceDictionary>
     </Window.Resources>
     <Grid Margin="16">
-        <TabControl TabStripPlacement="Left" Background="Black" BorderThickness="0"
+        <TabControl TabStripPlacement="Left" Background="{DynamicResource BackgroundBrush}" BorderThickness="0"
                     ItemContainerStyle="{StaticResource SettingsTabStyle}">
             <TabControl.Template>
                 <ControlTemplate TargetType="TabControl">
@@ -67,11 +67,11 @@
                             <ColumnDefinition Width="2*" />
                             <ColumnDefinition Width="7*" />
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="#111111" Padding="8" BorderBrush="#444444" BorderThickness="1">
+                        <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" Padding="8" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                             <TabPanel IsItemsHost="True" />
                         </Border>
-                        <Border Grid.Column="1" Margin="12,0,0,0" Background="#161616"
-                                BorderBrush="#444444" BorderThickness="1">
+                        <Border Grid.Column="1" Margin="12,0,0,0" Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                             <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" />
                         </Border>
                     </Grid>
@@ -88,7 +88,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,18,0">
                                 <TextBlock x:Name="mouseEffectLabel" FontWeight="SemiBold" />
-                                <TextBlock x:Name="mouseEffectDescription" Margin="0,8,0,0" Foreground="#BDBDBD" />
+                                <TextBlock x:Name="mouseEffectDescription" Margin="0,8,0,0" />
                             </StackPanel>
                             <ToggleButton x:Name="mouseEffectToggle" Grid.Column="1"
                                           Style="{StaticResource MouseEffectToggleStyle}"
@@ -96,7 +96,7 @@
                         </Grid>
                         <Separator Margin="0,24,0,16" />
                         <TextBlock x:Name="radiusLabel" FontWeight="SemiBold" />
-                        <TextBlock x:Name="radiusDescription" Margin="0,6,0,8" Foreground="#BDBDBD" />
+                        <TextBlock x:Name="radiusDescription" Margin="0,6,0,8" />
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -108,7 +108,7 @@
                         </Grid>
                         <Separator Margin="0,24,0,16" />
                         <TextBlock x:Name="thicknessLabel" FontWeight="SemiBold" />
-                        <TextBlock x:Name="thicknessDescription" Margin="0,6,0,8" Foreground="#BDBDBD" />
+                        <TextBlock x:Name="thicknessDescription" Margin="0,6,0,8" />
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -117,6 +117,39 @@
                             <Slider x:Name="thicknessSlider" Grid.Column="0" VerticalAlignment="Center"
                                     ValueChanged="ThicknessSlider_ValueChanged" />
                             <TextBlock x:Name="thicknessValueText" Grid.Column="1" Margin="12,0,0,0" />
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem x:Name="appearanceTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24">
+                        <TextBlock x:Name="appearanceHeadingText" FontWeight="SemiBold" Margin="0,0,0,12" />
+                        <TextBlock x:Name="appearanceDescriptionText" Margin="0,0,0,20" />
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock x:Name="textAccentLabel" Grid.Column="0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="textAccentValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
+                            <Button x:Name="textAccentButton" Grid.Column="2" Tag="0" Click="SelectColor_Click" />
+                        </Grid>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock x:Name="windowBackgroundLabel" Grid.Column="0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="windowBackgroundValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
+                            <Button x:Name="windowBackgroundButton" Grid.Column="2" Tag="1" Click="SelectColor_Click" />
+                        </Grid>
+                        <Separator Margin="0,0,0,16" />
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock x:Name="progressAccentLabel" Grid.Column="0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="progressAccentValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
+                            <Button x:Name="progressAccentButton" Grid.Column="2" Tag="2" Click="SelectColor_Click" />
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock x:Name="progressBackgroundLabel" Grid.Column="0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="progressBackgroundValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
+                            <Button x:Name="progressBackgroundButton" Grid.Column="2" Tag="3" Click="SelectColor_Click" />
                         </Grid>
                     </StackPanel>
                 </ScrollViewer>

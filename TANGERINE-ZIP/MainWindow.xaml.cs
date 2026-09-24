@@ -95,8 +95,14 @@ public partial class MainWindow : Window
         {
             foreach (string item in archiveEntriesList.Items.OfType<string>())
                 if (archiveEntriesList.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
-                    container.Foreground = IsDirectoryEntry(item)
-                        ? WpfUi.DirectoryForeground : WpfUi.Foreground;
+                {
+                    // Keep entries on the shared text brush even after a live
+                    // appearance change. Weight distinguishes directories
+                    // without risking an unreadable hard-coded highlight.
+                    container.SetResourceReference(Control.ForegroundProperty, "ForegroundBrush");
+                    container.FontWeight = IsDirectoryEntry(item)
+                        ? FontWeights.SemiBold : FontWeights.Normal;
+                }
         };
     }
 

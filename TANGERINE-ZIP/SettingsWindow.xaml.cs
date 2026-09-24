@@ -13,6 +13,7 @@ internal sealed partial class SettingsWindow : Window
     private bool _updatingSliders;
     private bool _radiusSaveRunning;
     private bool _thicknessSaveRunning;
+    private bool _colorSaveRunning;
 
     internal SettingsWindow()
     {
@@ -24,6 +25,16 @@ internal sealed partial class SettingsWindow : Window
         Title = LanguageManager.Get("settingsText");
         basicTab.Header = LanguageManager.Get("SettingsBasicTab");
         basicHeadingText.Text = LanguageManager.Get("SettingsBasicTab");
+        appearanceTab.Header = LanguageManager.Get("SettingsAppearanceTab");
+        appearanceHeadingText.Text = LanguageManager.Get("SettingsAppearanceTab");
+        appearanceDescriptionText.Text = LanguageManager.Get("SettingsAppearanceDescription");
+        textAccentLabel.Text = LanguageManager.Get("SettingsTextAccent");
+        windowBackgroundLabel.Text = LanguageManager.Get("SettingsWindowBackground");
+        progressAccentLabel.Text = LanguageManager.Get("SettingsProgressAccent");
+        progressBackgroundLabel.Text = LanguageManager.Get("SettingsProgressBackground");
+        textAccentButton.Content = windowBackgroundButton.Content =
+            progressAccentButton.Content = progressBackgroundButton.Content =
+            LanguageManager.Get("SettingsChooseColor");
         mouseEffectLabel.Text = LanguageManager.Get("SettingsMouseEffect");
         mouseEffectDescription.Text = LanguageManager.Get("SettingsMouseEffectDescription");
         radiusLabel.Text = LanguageManager.Get("SettingsMouseRadius");
@@ -39,13 +50,76 @@ internal sealed partial class SettingsWindow : Window
         _pageReady = true;
         MouseEffectSettings.Changed += OnMouseEffectChanged;
         MouseEffectSettings.ParametersChanged += OnParametersChanged;
+        AppearanceSettings.Changed += RefreshColors;
         Closed += (_, _) =>
         {
             MouseEffectSettings.Changed -= OnMouseEffectChanged;
             MouseEffectSettings.ParametersChanged -= OnParametersChanged;
+            AppearanceSettings.Changed -= RefreshColors;
         };
         RefreshToggle();
         RefreshParameterText();
+        RefreshColors();
+    }
+
+    private void RefreshColors()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(RefreshColors);
+            return;
+        }
+        textAccentValue.Text = AppearanceSettings.Format(AppearanceSettings.GetColor(0));
+        windowBackgroundValue.Text = AppearanceSettings.Format(AppearanceSettings.GetColor(1));
+        progressAccentValue.Text = AppearanceSettings.Format(AppearanceSettings.GetColor(2));
+        progressBackgroundValue.Text = AppearanceSettings.Format(AppearanceSettings.GetColor(3));
+    }
+
+    private async void SelectColor_Click(object sender, RoutedEventArgs e)
+    {
+        if (_colorSaveRunning) return;
+        _colorSaveRunning = true;
+        try
+        {
+            if (sender is not Button button ||
+                !int.TryParse(button.Tag?.ToString(), NumberStyles.None,
+                    CultureInfo.InvariantCulture, out int index) || index is < 0 or > 3)
+                throw new StageException("SETWN0004", LanguageManager.Get("SettingsColorInvalidSelection")); //SETWN0004
+
+            System.Windows.Media.Color current = AppearanceSettings.GetColor(index);
+            using System.Windows.Forms.ColorDialog picker = new()
+            {
+                Color = System.Drawing.Color.FromArgb(current.R, current.G, current.B),
+                FullOpen = true
+            };
+            if (picker.ShowDialog(new ColorDialogOwner(new System.Windows.Interop.WindowInteropHelper(this).Handle))
+                != System.Windows.Forms.DialogResult.OK) return;
+
+            System.Windows.Media.Color chosen = System.Windows.Media.Color.FromRgb(
+                picker.Color.R, picker.Color.G, picker.Color.B);
+            await AppearanceSettings.SetColorAsync(index, chosen);
+        }
+        catch (ColorContrastException exception)
+        {
+            MessageBox.Show(this,
+                MessageTipGenerator.GenerateTip(exception.StageCode, exception.Message),
+                LanguageManager.Get("SettingsColorInvalidTitle"),
+                MessageBoxButton.OK, MessageBoxImage.Warning); //COLRS0008
+        }
+        catch (Exception exception)
+        {
+            ShowSettingError("SETWN0005", exception); //SETWN0005
+        }
+        finally
+        {
+            _colorSaveRunning = false;
+            RefreshColors();
+        }
+    }
+
+    private sealed class ColorDialogOwner(IntPtr handle) : System.Windows.Forms.IWin32Window
+    {
+        public IntPtr Handle { get; } = handle;
     }
 
     private void OnMouseEffectChanged(bool enabled)

@@ -797,4 +797,21 @@
   <data name="PreviewReady" xml:space="preserve"><value>預覽已就緒。</value></data>
   <data name="ExtractWouldOverwriteArchive" xml:space="preserve"><value>解壓會覆蓋目前正在讀取的壓縮檔，工作已停止。</value></data>
   <data name="VersionUnavailable" xml:space="preserve"><value>無法讀取程式版本號。</value></data>
+  <data name="SettingsAppearanceTab" xml:space="preserve"><value>外觀</value></data>
+  <data name="SettingsAppearanceDescription" xml:space="preserve"><value>分別選擇文字與視窗背景顏色，以及進度條與進度背景顏色。過於相近的顏色會被拒絕；儲存成功後即時套用到所有視窗。</value></data>
+  <data name="SettingsTextAccent" xml:space="preserve"><value>文字強調色（預設：純白）</value></data>
+  <data name="SettingsWindowBackground" xml:space="preserve"><value>視窗背景色（預設：純黑）</value></data>
+  <data name="SettingsProgressAccent" xml:space="preserve"><value>進度強調色（預設：橙色）</value></data>
+  <data name="SettingsProgressBackground" xml:space="preserve"><value>進度背景色（預設：純白）</value></data>
+  <data name="SettingsChooseColor" xml:space="preserve"><value>選擇顏色…</value></data>
+  <data name="SettingsColorsTooSimilar" xml:space="preserve"><value>這兩種顏色過於相近，設定沒有更改。請重新選擇對比更明顯的顏色。</value></data>
+  <data name="SettingsColorUnexpectedFile" xml:space="preserve"><value>無法識別無效的顏色設定檔名稱。</value></data>
+  <data name="SettingsColorDeleteFailed" xml:space="preserve"><value>無法刪除 {0}：{1}</value></data>
+  <data name="SettingsColorInvalidSelection" xml:space="preserve"><value>所選的顏色設定無效。</value></data>
+  <data name="SettingsColorCreateFailed" xml:space="preserve"><value>無法建立 {0}：{1}</value></data>
+  <data name="SettingsColorReadFailed" xml:space="preserve"><value>無法讀取 {0}：{1}</value></data>
+  <data name="SettingsColorSaveFailed" xml:space="preserve"><value>無法儲存 {0}：{1}</value></data>
+  <data name="SettingsColorInvalidPrompt" xml:space="preserve"><value>{0} 的顏色資料無效。是否刪除此檔案並按預設值重新建立？刪除後無法還原。如不修正此檔案，程式便無法繼續執行。</value></data>
+  <data name="SettingsColorInvalidTitle" xml:space="preserve"><value>顏色設定需要處理</value></data>
+  <data name="SettingsColorStartupContrast" xml:space="preserve"><value>{0}與{1}過於相近。現在重新選擇{0}嗎？如拒絕或取消，程式不會更改顏色並會關閉。</value></data>
 </root>

@@ -794,4 +794,21 @@ Existing file: {1}</value>
   <data name="PreviewReady" xml:space="preserve"><value>Preview ready.</value></data>
   <data name="ExtractWouldOverwriteArchive" xml:space="preserve"><value>Extraction would overwrite the archive currently being read, so this operation was stopped.</value></data>
   <data name="VersionUnavailable" xml:space="preserve"><value>The application version could not be read.</value></data>
+  <data name="SettingsAppearanceTab" xml:space="preserve"><value>Appearance</value></data>
+  <data name="SettingsAppearanceDescription" xml:space="preserve"><value>Choose text and window colors, then choose progress-bar colors. Similar colors are rejected so the result remains visible. Changes apply immediately to every window.</value></data>
+  <data name="SettingsTextAccent" xml:space="preserve"><value>Text accent color (default: white)</value></data>
+  <data name="SettingsWindowBackground" xml:space="preserve"><value>Window background color (default: black)</value></data>
+  <data name="SettingsProgressAccent" xml:space="preserve"><value>Progress accent color (default: orange)</value></data>
+  <data name="SettingsProgressBackground" xml:space="preserve"><value>Progress background color (default: white)</value></data>
+  <data name="SettingsChooseColor" xml:space="preserve"><value>Choose color…</value></data>
+  <data name="SettingsColorsTooSimilar" xml:space="preserve"><value>These two colors are too similar. Nothing was changed. Choose colors with clearer contrast.</value></data>
+  <data name="SettingsColorUnexpectedFile" xml:space="preserve"><value>The invalid color configuration file name is not recognized.</value></data>
+  <data name="SettingsColorDeleteFailed" xml:space="preserve"><value>Could not delete {0}: {1}</value></data>
+  <data name="SettingsColorInvalidSelection" xml:space="preserve"><value>The selected color setting is invalid.</value></data>
+  <data name="SettingsColorCreateFailed" xml:space="preserve"><value>Could not create {0}: {1}</value></data>
+  <data name="SettingsColorReadFailed" xml:space="preserve"><value>Could not read {0}: {1}</value></data>
+  <data name="SettingsColorSaveFailed" xml:space="preserve"><value>Could not save {0}: {1}</value></data>
+  <data name="SettingsColorInvalidPrompt" xml:space="preserve"><value>The color in {0} is invalid. Delete this file and recreate its default? Deletion cannot be undone. The program cannot continue unless the invalid file is corrected.</value></data>
+  <data name="SettingsColorInvalidTitle" xml:space="preserve"><value>Color settings need attention</value></data>
+  <data name="SettingsColorStartupContrast" xml:space="preserve"><value>{0} and {1} are too similar. Choose a new {0} now? If you decline or cancel, the program will close without changing the colors.</value></data>
 </root>

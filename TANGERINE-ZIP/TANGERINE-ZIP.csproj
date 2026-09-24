@@ -8,6 +8,7 @@
 
 		<Nullable>enable</Nullable>
 		<UseWPF>true</UseWPF>
+		<UseWindowsForms>true</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<!-- Change this single value for the application version shown in About and Windows file properties. -->
 		<Version>1.1.0.0</Version>
@@ -15,7 +16,9 @@
 		<FileVersion>$(Version)</FileVersion>
 		<InformationalVersion>$(Version)</InformationalVersion>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-
+		<AssemblyTitle>TANGERINE ZIP Main Program</AssemblyTitle>
+		<Product>TANGERINE ZIP</Product>
+		<Copyright>None</Copyright>
 		<UserSecretsId>655049f4-4e69-449c-824a-293a9573c864</UserSecretsId>
 
 		<!-- 默认资源语言 -->
@@ -45,6 +48,12 @@
 		<SatelliteResourceLanguages>en-US;zh-CN;zh-TW;zh-HK;zh-MO</SatelliteResourceLanguages>
 
 	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Keep WPF type names unambiguous while using the WinForms color picker explicitly. -->
+		<Using Remove="System.Drawing" />
+		<Using Remove="System.Windows.Forms" />
+	</ItemGroup>
 
 
 	<ItemGroup>

@@ -796,4 +796,21 @@
   <data name="PreviewReady" xml:space="preserve"><value>预览已就绪。</value></data>
   <data name="ExtractWouldOverwriteArchive" xml:space="preserve"><value>解压会覆盖当前正在读取的压缩包，任务已停止。</value></data>
   <data name="VersionUnavailable" xml:space="preserve"><value>无法读取程序版本号。</value></data>
+  <data name="SettingsAppearanceTab" xml:space="preserve"><value>外观</value></data>
+  <data name="SettingsAppearanceDescription" xml:space="preserve"><value>分别选择文字与窗口背景颜色，以及进度条与进度背景颜色。过于相近的颜色会被拒绝；保存成功后立即应用到所有窗口。</value></data>
+  <data name="SettingsTextAccent" xml:space="preserve"><value>文字强调色（默认：纯白）</value></data>
+  <data name="SettingsWindowBackground" xml:space="preserve"><value>窗口背景色（默认：纯黑）</value></data>
+  <data name="SettingsProgressAccent" xml:space="preserve"><value>进度强调色（默认：橙色）</value></data>
+  <data name="SettingsProgressBackground" xml:space="preserve"><value>进度背景色（默认：纯白）</value></data>
+  <data name="SettingsChooseColor" xml:space="preserve"><value>选择颜色…</value></data>
+  <data name="SettingsColorsTooSimilar" xml:space="preserve"><value>这两种颜色过于相近，没有修改任何设置。请重新选择对比更明显的颜色。</value></data>
+  <data name="SettingsColorUnexpectedFile" xml:space="preserve"><value>无法识别出错的颜色配置文件名。</value></data>
+  <data name="SettingsColorDeleteFailed" xml:space="preserve"><value>无法删除 {0}：{1}</value></data>
+  <data name="SettingsColorInvalidSelection" xml:space="preserve"><value>选择的颜色设置无效。</value></data>
+  <data name="SettingsColorCreateFailed" xml:space="preserve"><value>无法创建 {0}：{1}</value></data>
+  <data name="SettingsColorReadFailed" xml:space="preserve"><value>无法读取 {0}：{1}</value></data>
+  <data name="SettingsColorSaveFailed" xml:space="preserve"><value>无法保存 {0}：{1}</value></data>
+  <data name="SettingsColorInvalidPrompt" xml:space="preserve"><value>{0} 中的颜色数据无效。是否删除此文件并按默认值重新创建？删除后无法恢复。不修正该文件，程序就无法继续运行。</value></data>
+  <data name="SettingsColorInvalidTitle" xml:space="preserve"><value>颜色设置需要处理</value></data>
+  <data name="SettingsColorStartupContrast" xml:space="preserve"><value>{0}与{1}过于相近。现在重新选择{0}吗？如果拒绝或取消，程序将不修改颜色并退出。</value></data>
 </root>

@@ -8,9 +8,6 @@ namespace TANGERINE_ZIP;
 
 internal static class WpfUi
 {
-    public static readonly Brush Foreground = Brushes.WhiteSmoke;
-    public static readonly Brush DirectoryForeground = Brushes.LightGoldenrodYellow;
-
     public static void SizeWindow(Window window, double widthShare, double heightShare)
     {
         Rect area = SystemParameters.WorkArea;
