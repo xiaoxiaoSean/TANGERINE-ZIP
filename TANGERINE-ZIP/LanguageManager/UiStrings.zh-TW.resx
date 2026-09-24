@@ -796,4 +796,6 @@
   <data name="PreviewUnsupportedType" xml:space="preserve"><value>只能預覽文字和支援的圖片內容。</value></data>
   <data name="PreviewReady" xml:space="preserve"><value>預覽已就緒。</value></data>
   <data name="ExtractWouldOverwriteArchive" xml:space="preserve"><value>解壓將覆蓋目前正在讀取的壓縮檔，工作已停止。</value></data>
+  <data name="VersionUnavailable" xml:space="preserve"><value>無法讀取程式版本號。</value></data>
+  <data name="AboutDetails" xml:space="preserve"><value>TZIP v{0}&#10;創辦人：xiaoxiaoSean&#10;感謝所有貢獻者、RAR 的作者及貢獻者，以及所有 NuGet 套件的作者及貢獻者。&#10;&#10;更新內容：&#10;新增壓縮密碼功能。&#10;新增 Windows 11 第一層右鍵選單。&#10;快速進度視窗在成功後自動關閉。&#10;修正透過右鍵選單解壓縮的問題。</value></data>
 </root>

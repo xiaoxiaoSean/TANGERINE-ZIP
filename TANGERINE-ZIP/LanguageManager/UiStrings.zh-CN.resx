@@ -795,4 +795,6 @@
   <data name="PreviewUnsupportedType" xml:space="preserve"><value>只能预览文字和受支持的图片内容。</value></data>
   <data name="PreviewReady" xml:space="preserve"><value>预览已就绪。</value></data>
   <data name="ExtractWouldOverwriteArchive" xml:space="preserve"><value>解压会覆盖当前正在读取的压缩包，任务已停止。</value></data>
+  <data name="VersionUnavailable" xml:space="preserve"><value>无法读取程序版本号。</value></data>
+  <data name="AboutDetails" xml:space="preserve"><value>TZIP v{0}&#10;创始人：xiaoxiaoSean&#10;感谢所有贡献者、RAR 的作者及贡献者，以及所有 NuGet 软件包的作者及贡献者。&#10;&#10;更新内容：&#10;新增压缩密码功能。&#10;新增 Windows 11 一级右键菜单。&#10;快速进度窗口在成功后自动关闭。&#10;修复通过右键菜单解压的问题。</value></data>
 </root>

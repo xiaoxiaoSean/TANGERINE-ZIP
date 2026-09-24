@@ -480,8 +480,15 @@ public partial class MainWindow : Window
 
     private void AboutMenu_Click(object sender, EventArgs e)
     {
-        AboutWindow aboutWindow = new() { Owner = this };
-        aboutWindow.ShowDialog();
+        try
+        {
+            AboutWindow aboutWindow = new() { Owner = this };
+            aboutWindow.ShowDialog();
+        }
+        catch (Exception exception)
+        {
+            ShowException("MAINW0019", exception); //MAINW0019
+        }
     }
 
 }

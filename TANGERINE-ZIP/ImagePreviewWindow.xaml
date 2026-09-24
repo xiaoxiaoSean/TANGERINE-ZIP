@@ -22,10 +22,17 @@
             <Button x:Name="rotateRightButton" Click="RotateRight_Click" />
             <Button x:Name="saveAsButton" Click="SaveAs_Click" />
         </WrapPanel>
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Visible"
-                      VerticalScrollBarVisibility="Visible" Background="#161616">
+        <ScrollViewer x:Name="imageScrollViewer" Grid.Row="1"
+                      HorizontalScrollBarVisibility="Visible"
+                      VerticalScrollBarVisibility="Visible" Background="#161616"
+                      PreviewMouseWheel="ImageScrollViewer_PreviewMouseWheel"
+                      SizeChanged="ImageScrollViewer_SizeChanged">
             <Image x:Name="previewImage" Stretch="None" HorizontalAlignment="Center"
-                   VerticalAlignment="Center" />
+                   VerticalAlignment="Center" Cursor="Hand"
+                   MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown"
+                   MouseMove="PreviewImage_MouseMove"
+                   MouseLeftButtonUp="PreviewImage_MouseLeftButtonUp"
+                   LostMouseCapture="PreviewImage_LostMouseCapture" />
         </ScrollViewer>
     </Grid>
 </Window>
