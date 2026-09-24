@@ -180,6 +180,8 @@ dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -p:ENA
 
 ## 7. 维护注意事项
 
+压缩包内文字/图片预览与“解压到压缩文件所在文件夹”的设计、内存限制、例外格式及阶段码见 [PREVIEW_20260924.md](PREVIEW_20260924.md)。
+
 2026-09-24 压缩确认无输出修复：`ArchivePasswordWindow` 曾在 ZIP、7Z、RAR 上默认勾选“启用密码保护”，普通压缩在未输入密码时被挡在校验窗口，后台任务根本不会开始。现在密码默认关闭，只有用户主动勾选并输入匹配的密码才走加密压缩。主窗口将选源文件、选输出位置、密码窗口均包进带 `MAINW0005` 阶段码的异常处理；主窗口及右键菜单的压缩任务在显示成功前，还检查用户选择的确切输出路径是否真的存在，缺失时分别显示 `MAINW0012` / `CTXCM0006`，而不是假报成功。针对单文件程序的普通 ZIP 与带密码 ZIP 后台创建已做短时验证；这不等于对桌面交互的全面测试。
 
 右键入口另有独立的生命周期故障：`Program.Main` 创建 WPF `Application` 后，直接用多个 `ShowDialog` 顺序展示右键操作界面，却没有调用 `Application.Run`。默认 `OnLastWindowClose` 会在密码窗口关闭时隐式关闭应用，导致后续 `ContextOperationWindow` 不出现，表现为确认后没有压缩结果。右键命令现改为 `OnExplicitShutdown`，在完整的右键流程返回后才显式 `Shutdown`；正常主窗口仍使用原先的最后窗口关闭规则。更新二进制后必须从该新版 EXE 再次运行右键菜单建立向导，因为菜单注册保存了 EXE 的绝对路径。

@@ -772,4 +772,25 @@ Existing file: {1}</value>
   <data name="ContextMenuBothCreated" xml:space="preserve"><value>The Windows 11 primary menu and three Show more options commands were created. Reopen File Explorer if they do not appear immediately.</value></data>
   <data name="ContextMenuClassicOnlyCreated" xml:space="preserve"><value>The three classic context-menu commands were created. The Windows 11 primary extension was skipped because the classic menu is active or Windows 10 is in use.</value></data>
   <data name="CompressionOutputMissing" xml:space="preserve"><value>Compression reported success, but no archive was found at: {0}</value></data>
+  <data name="PreviewSelectedEntry" xml:space="preserve"><value>Preview selected file</value></data>
+  <data name="ExtractToArchiveLocation" xml:space="preserve"><value>Extract to archive's folder</value></data>
+  <data name="ExtractArchiveLocationMissing" xml:space="preserve"><value>The archive's folder could not be determined.</value></data>
+  <data name="PreviewEntryMissing" xml:space="preserve"><value>The selected file could not be found in the archive.</value></data>
+  <data name="PreviewMemoryLimitExceeded" xml:space="preserve"><value>This file exceeds the preview limit of half the currently available physical memory.</value></data>
+  <data name="PreviewWimMemoryUnsupported" xml:space="preserve"><value>In-memory preview is unavailable for WIM entries. Extract the file normally to open it.</value></data>
+  <data name="PreviewNoMemory" xml:space="preserve"><value>There is not enough available physical memory to preview this file.</value></data>
+  <data name="PreviewWindowTitle" xml:space="preserve"><value>Preview — {0}</value></data>
+  <data name="PreviewSelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="PreviewCopy" xml:space="preserve"><value>Copy</value></data>
+  <data name="PreviewZoomIn" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="PreviewZoomOut" xml:space="preserve"><value>Zoom out</value></data>
+  <data name="PreviewSaveAs" xml:space="preserve"><value>Save as…</value></data>
+  <data name="PreviewSaveFilter" xml:space="preserve"><value>All files|*.*</value></data>
+  <data name="PreviewCannotOverwriteArchive" xml:space="preserve"><value>The preview cannot be saved over its source archive.</value></data>
+  <data name="PreviewRotateLeft" xml:space="preserve"><value>Rotate left</value></data>
+  <data name="PreviewRotateRight" xml:space="preserve"><value>Rotate right</value></data>
+  <data name="PreviewLoading" xml:space="preserve"><value>Loading preview</value></data>
+  <data name="PreviewUnsupportedType" xml:space="preserve"><value>Only text and supported image content can be previewed.</value></data>
+  <data name="PreviewReady" xml:space="preserve"><value>Preview ready.</value></data>
+  <data name="ExtractWouldOverwriteArchive" xml:space="preserve"><value>Extraction would overwrite the archive currently being read, so this operation was stopped.</value></data>
 </root>

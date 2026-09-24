@@ -1,0 +1,31 @@
+<Window x:Class="TANGERINE_ZIP.ImagePreviewWindow" x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStartupLocation="CenterOwner" Background="Black" Foreground="WhiteSmoke"
+        FontFamily="Microsoft YaHei UI">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <WrapPanel Grid.Row="0">
+            <Button x:Name="zoomInButton" Click="ZoomIn_Click" />
+            <Button x:Name="zoomOutButton" Click="ZoomOut_Click" />
+            <Button x:Name="rotateLeftButton" Click="RotateLeft_Click" />
+            <Button x:Name="rotateRightButton" Click="RotateRight_Click" />
+            <Button x:Name="saveAsButton" Click="SaveAs_Click" />
+        </WrapPanel>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Visible"
+                      VerticalScrollBarVisibility="Visible" Background="#161616">
+            <Image x:Name="previewImage" Stretch="None" HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+        </ScrollViewer>
+    </Grid>
+</Window>

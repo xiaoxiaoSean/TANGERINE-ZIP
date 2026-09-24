@@ -775,4 +775,25 @@
   <data name="ContextMenuBothCreated" xml:space="preserve"><value>已建立 Windows 11 第一層選單及「顯示更多選項」中的三個項目。若未立即顯示，請重新開啟檔案總管。</value></data>
   <data name="ContextMenuClassicOnlyCreated" xml:space="preserve"><value>已建立三個傳統右鍵選單項目。由於目前使用傳統選單或 Windows 10，已略過 Windows 11 第一層選單擴充功能。</value></data>
   <data name="CompressionOutputMissing" xml:space="preserve"><value>壓縮工作已回報成功，但在指定位置找不到壓縮檔：{0}</value></data>
+  <data name="PreviewSelectedEntry" xml:space="preserve"><value>預覽選取的檔案</value></data>
+  <data name="ExtractToArchiveLocation" xml:space="preserve"><value>解壓到壓縮檔所在資料夾</value></data>
+  <data name="ExtractArchiveLocationMissing" xml:space="preserve"><value>無法判定壓縮檔所在資料夾。</value></data>
+  <data name="PreviewEntryMissing" xml:space="preserve"><value>在壓縮檔中找不到選取的檔案。</value></data>
+  <data name="PreviewMemoryLimitExceeded" xml:space="preserve"><value>此檔案超過目前可用實體記憶體一半的預覽上限。</value></data>
+  <data name="PreviewWimMemoryUnsupported" xml:space="preserve"><value>WIM 項目目前不支援純記憶體預覽。請先正常解壓再開啟。</value></data>
+  <data name="PreviewNoMemory" xml:space="preserve"><value>目前可用實體記憶體不足，無法預覽此檔案。</value></data>
+  <data name="PreviewWindowTitle" xml:space="preserve"><value>預覽 — {0}</value></data>
+  <data name="PreviewSelectAll" xml:space="preserve"><value>全選</value></data>
+  <data name="PreviewCopy" xml:space="preserve"><value>複製</value></data>
+  <data name="PreviewZoomIn" xml:space="preserve"><value>放大</value></data>
+  <data name="PreviewZoomOut" xml:space="preserve"><value>縮小</value></data>
+  <data name="PreviewSaveAs" xml:space="preserve"><value>另存新檔…</value></data>
+  <data name="PreviewSaveFilter" xml:space="preserve"><value>所有檔案|*.*</value></data>
+  <data name="PreviewCannotOverwriteArchive" xml:space="preserve"><value>無法將預覽檔案存回並覆蓋來源壓縮檔。</value></data>
+  <data name="PreviewRotateLeft" xml:space="preserve"><value>向左旋轉</value></data>
+  <data name="PreviewRotateRight" xml:space="preserve"><value>向右旋轉</value></data>
+  <data name="PreviewLoading" xml:space="preserve"><value>正在載入預覽</value></data>
+  <data name="PreviewUnsupportedType" xml:space="preserve"><value>只能預覽文字和支援的圖片內容。</value></data>
+  <data name="PreviewReady" xml:space="preserve"><value>預覽已就緒。</value></data>
+  <data name="ExtractWouldOverwriteArchive" xml:space="preserve"><value>解壓將覆蓋目前正在讀取的壓縮檔，工作已停止。</value></data>
 </root>

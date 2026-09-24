@@ -66,6 +66,7 @@ public partial class MainWindow : Window
     {
         operationStatusText.Text = LanguageManager.Get("readytext");
         openArchiveMenuItem.Header = LanguageManager.Get("openText");
+        previewEntryMenuItem.Header = LanguageManager.Get("PreviewSelectedEntry");
         extractMenuItem.Header = LanguageManager.Get("extractText");
         compressMenuItem.Header = LanguageManager.Get("compressText");
         settingsMenuItem.Header = LanguageManager.Get("settingsText");
@@ -73,6 +74,7 @@ public partial class MainWindow : Window
         archiveHeaderText.Text = LanguageManager.Get("ArchiveHeaderText");
         extractAllHereMenuItem.Header = LanguageManager.Get("extractDirectlyALLText");
         extractAllToFolderMenuItem.Header = LanguageManager.Get("extractToFolderALLText");
+        extractToArchiveLocationMenuItem.Header = LanguageManager.Get("ExtractToArchiveLocation");
         extractSelectedHereMenuItem.Header = LanguageManager.Get("extractDirectlySELECTEDText");
         extractSelectedToFolderMenuItem.Header = LanguageManager.Get("extractToAFolderSELECTEDText");
         compressFilesMenuItem.Header = LanguageManager.Get("SelectFilesToCompress");
@@ -93,7 +95,7 @@ public partial class MainWindow : Window
         {
             foreach (string item in archiveEntriesList.Items.OfType<string>())
                 if (archiveEntriesList.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
-                    container.Foreground = FindEntry(item)?.IsDirectory == true
+                    container.Foreground = IsDirectoryEntry(item)
                         ? WpfUi.DirectoryForeground : WpfUi.Foreground;
         };
     }
@@ -228,27 +230,44 @@ public partial class MainWindow : Window
         catch (Exception exception) { ShowException("MAINW0008", exception); } //MAINW0008
     }
 
-    private async Task ExtractAsync(bool selectedOnly, bool createArchiveFolder)
+    private async Task ExtractAsync(bool selectedOnly, bool createArchiveFolder, bool useArchiveDirectory = false)
     {
-        if (string.IsNullOrEmpty(_archivePath) || !File.Exists(_archivePath)) { ShowInformation("NoOpenedFile"); return; }
-        IReadOnlyCollection<string>? selectedEntries = null;
-        if (selectedOnly)
-        {
-            selectedEntries = GetSelectedArchiveEntries();
-            if (selectedEntries.Count == 0) { ShowInformation("NoSelectedEntries"); return; }
-        }
-        destinationFolderDialog.Title = LanguageManager.Get("SelectExtractFolderText");
-        if (destinationFolderDialog.ShowDialog(this) != true) return;
-        string destination = destinationFolderDialog.FolderName;
-        if (createArchiveFolder) destination = Path.Combine(destination, Path.GetFileNameWithoutExtension(_archivePath));
         try
         {
+            if (string.IsNullOrEmpty(_archivePath) || !File.Exists(_archivePath)) { ShowInformation("NoOpenedFile"); return; }
+            IReadOnlyCollection<string>? selectedEntries = null;
+            if (selectedOnly)
+            {
+                selectedEntries = GetSelectedArchiveEntries();
+                if (selectedEntries.Count == 0) { ShowInformation("NoSelectedEntries"); return; }
+            }
+            string destination;
+            if (useArchiveDirectory)
+            {
+                // Direct extraction targets the archive's parent itself; the
+                // existing "to folder" command still creates a named subfolder.
+                destination = Path.GetDirectoryName(Path.GetFullPath(_archivePath))
+                    ?? throw new StageException("MAINW0014", LanguageManager.Get("ExtractArchiveLocationMissing")); //MAINW0014
+            }
+            else
+            {
+                destinationFolderDialog.Title = LanguageManager.Get("SelectExtractFolderText");
+                if (destinationFolderDialog.ShowDialog(this) != true) return;
+                destination = destinationFolderDialog.FolderName;
+            }
+            if (createArchiveFolder) destination = Path.Combine(destination, Path.GetFileNameWithoutExtension(_archivePath));
+            Task<ConflictChoice> ResolveConflictAsync(ArchiveConflict conflict, CancellationToken _)
+            {
+                if (Path.GetFullPath(conflict.TargetPath).Equals(Path.GetFullPath(_archivePath), StringComparison.OrdinalIgnoreCase))
+                    throw new StageException("MAINW0018", LanguageManager.Get("ExtractWouldOverwriteArchive")); //MAINW0018
+                return Task.FromResult(OverwriteConflictWindow.Ask(this, conflict));
+            }
             await RunOperationAsync(LanguageManager.Get("ExtractingText"), (progress, token) =>
                 _nestedTarInfo.FlattenAutomatically
                     ? _archiveService.ExtractNestedTarsAsync(_archivePath, _nestedTarInfo.TarEntryKeys, destination, selectedEntries, false, OverwritePolicy.Ask, progress, token, _archivePassword,
-                        (conflict, _) => Task.FromResult(OverwriteConflictWindow.Ask(this, conflict)))
+                        ResolveConflictAsync)
                     : _archiveService.ExtractAsync(_archivePath, destination, selectedEntries, OverwritePolicy.Ask, progress, token, _archivePassword,
-                        (conflict, _) => Task.FromResult(OverwriteConflictWindow.Ask(this, conflict))));
+                        ResolveConflictAsync));
             operationProgressBar.Value = 100;
             operationStatusText.Text = LanguageManager.Get("ExtractingCompleted");
         }
@@ -343,27 +362,76 @@ public partial class MainWindow : Window
         RefreshCurrentDirectoryStatus();
     }
 
-    private ArchiveEntryInfo? FindEntry(string displayName)
+    private bool IsDirectoryEntry(string displayName)
     {
         string candidate = _archiveCurrentDirectory + displayName;
-        return _archiveEntries.FirstOrDefault(entry => entry.Key.TrimEnd('/').Equals(candidate, StringComparison.OrdinalIgnoreCase) || entry.Key.StartsWith(candidate.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase));
+        string prefix = candidate.TrimEnd('/') + "/";
+        // ZIP/TAR archives may omit explicit directory entries. An entry
+        // beneath this prefix still makes the displayed item a folder.
+        return _archiveEntries.Any(entry =>
+            entry.IsDirectory && entry.Key.TrimEnd('/').Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+            entry.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
     private List<string> GetSelectedArchiveEntries() => archiveEntriesList.SelectedItems.Cast<object>()
         .Select(item => item.ToString() ?? string.Empty)
         .Where(item => !string.IsNullOrEmpty(item) && item != LanguageManager.Get("goToParentDirectoryText"))
-        .Select(item => FindEntry(item)?.IsDirectory == true ? (_archiveCurrentDirectory + item).TrimEnd('/') + "/" : _archiveCurrentDirectory + item)
+        .Select(item => IsDirectoryEntry(item) ? (_archiveCurrentDirectory + item).TrimEnd('/') + "/" : _archiveCurrentDirectory + item)
         .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
-    private void ArchiveEntriesList_MouseDoubleClick(object? sender, EventArgs e)
+    private async void ArchiveEntriesList_MouseDoubleClick(object? sender, EventArgs e)
     {
         string selected = archiveEntriesList.SelectedItem?.ToString() ?? string.Empty;
+        if (string.IsNullOrEmpty(selected)) return;
         if (selected == LanguageManager.Get("goToParentDirectoryText")) { GoToParentDirectory(); return; }
-        if (FindEntry(selected)?.IsDirectory == true)
+        if (IsDirectoryEntry(selected))
         {
             _archiveCurrentDirectory = (_archiveCurrentDirectory + selected).TrimEnd('/') + "/";
             RefreshArchiveEntriesList();
+            return;
         }
+        await PreviewSelectedEntryAsync();
+    }
+
+    private async void PreviewEntryMenuItem_Click(object sender, RoutedEventArgs e) => await PreviewSelectedEntryAsync();
+
+    private async Task PreviewSelectedEntryAsync()
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            if (string.IsNullOrWhiteSpace(_archivePath)) { ShowInformation("NoOpenedFile"); return; }
+            string selected = archiveEntriesList.SelectedItem?.ToString() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(selected) || selected == LanguageManager.Get("goToParentDirectoryText"))
+            { ShowInformation("NoSelectedEntries"); return; }
+            string key = _archiveCurrentDirectory + selected;
+            ArchiveEntryInfo entry = _archiveEntries.FirstOrDefault(item => !item.IsDirectory &&
+                item.Key.TrimEnd('/').Equals(key, StringComparison.OrdinalIgnoreCase))
+                ?? throw new StageException("MAINW0013", LanguageManager.Get("PreviewEntryMissing")); //MAINW0013
+            long memoryLimit = PreviewMemoryBudget.GetLimit();
+            PreviewPayload? payload = null;
+            await RunOperationAsync(LanguageManager.Get("PreviewLoading"), async (progress, token) =>
+                payload = await new ArchiveService().ReadPreviewEntryAsync(_archivePath, entry.Key, entry.Size,
+                    _nestedTarInfo, memoryLimit, progress, token, _archivePassword));
+            if (payload is null)
+                throw new StageException("MAINW0015", LanguageManager.Get("PreviewEntryMissing")); //MAINW0015
+            using MemoryStream detectionStream = new(payload.Buffer, 0, payload.Length, writable: false);
+            FileDetector.FileType contentType = FileDetector.DetectFileType(detectionStream);
+            Window preview;
+            if (contentType is FileDetector.FileType.Png or FileDetector.FileType.Jpeg or
+                FileDetector.FileType.Gif or FileDetector.FileType.Bmp or FileDetector.FileType.Tiff or
+                FileDetector.FileType.WebP or FileDetector.FileType.Ico)
+                preview = new ImagePreviewWindow(payload, _archivePath, memoryLimit);
+            else if (FileDetector.TryDecodeText(payload.Buffer.AsSpan(0, payload.Length), out string text))
+                preview = new TextPreviewWindow(payload, text, _archivePath);
+            else
+                throw new StageException("MAINW0016", LanguageManager.Get("PreviewUnsupportedType")); //MAINW0016
+            operationStatusText.Text = LanguageManager.Get("PreviewReady");
+            preview.Owner = this;
+            preview.ShowDialog();
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0017", exception); } //MAINW0017
     }
 
     private void GoToParentDirectory()
@@ -375,8 +443,8 @@ public partial class MainWindow : Window
     }
 
     private void RefreshCurrentDirectoryStatus() => operationStatusText.Text = string.Format(LanguageManager.Get("CurrentDirectoryFormat"), string.IsNullOrEmpty(_archiveCurrentDirectory) ? LanguageManager.Get("Root") : _archiveCurrentDirectory);
-    private void SetArchiveControls(bool loaded) { unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar ? Visibility.Visible : Visibility.Collapsed; }
-    private void SetMenuEnabled(bool enabled) { openArchiveMenuItem.IsEnabled = enabled; extractMenuItem.IsEnabled = enabled; compressMenuItem.IsEnabled = enabled; unloadArchiveMenuItem.IsEnabled = enabled; extractNestedTarMenuItem.IsEnabled = enabled; contextMenuItem.IsEnabled = enabled; }
+    private void SetArchiveControls(bool loaded) { unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; previewEntryMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar ? Visibility.Visible : Visibility.Collapsed; }
+    private void SetMenuEnabled(bool enabled) { openArchiveMenuItem.IsEnabled = enabled; previewEntryMenuItem.IsEnabled = enabled; extractMenuItem.IsEnabled = enabled; compressMenuItem.IsEnabled = enabled; unloadArchiveMenuItem.IsEnabled = enabled; extractNestedTarMenuItem.IsEnabled = enabled; contextMenuItem.IsEnabled = enabled; }
 
     private void UnloadArchive()
     {
@@ -387,6 +455,7 @@ public partial class MainWindow : Window
     private void UnloadArchiveMenu_Click(object sender, EventArgs e) => UnloadArchive();
     private async void ExtractAllHereMenu_Click(object sender, EventArgs e) => await ExtractAsync(false, false);
     private async void ExtractAllToFolderMenu_Click(object sender, EventArgs e) => await ExtractAsync(false, true);
+    private async void ExtractToArchiveLocationMenu_Click(object sender, EventArgs e) => await ExtractAsync(false, false, true);
     private async void ExtractSelectedHereMenu_Click(object sender, EventArgs e) => await ExtractAsync(true, false);
     private async void ExtractSelectedToFolderMenu_Click(object sender, EventArgs e) => await ExtractAsync(true, true);
     private void SettingsMenu_Click(object sender, EventArgs e)

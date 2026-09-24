@@ -1,10 +1,14 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+using System.Runtime.InteropServices;
 
 namespace TANGERINE_ZIP.Tools
 {
     internal class FileDetector
     {
+        [DllImport("kernel32.dll")]
+        private static extern uint GetACP();
         public enum FileType
         {
             Unknown = 0,
@@ -371,6 +375,68 @@ namespace TANGERINE_ZIP.Tools
 
 
             return FileType.Unknown;
+        }
+
+        // TXT and Markdown have no reliable magic bytes. Treat them as text
+        // only after decoding their content; never infer previewability from
+        // a file extension, which can be misleading inside an archive.
+        public static bool TryDecodeText(ReadOnlySpan<byte> bytes, out string text)
+        {
+            text = string.Empty;
+            try
+            {
+                Encoding encoding;
+                int preamble = 0;
+                if (bytes.Length >= 4 && bytes[0] == 0xFF && bytes[1] == 0xFE && bytes[2] == 0 && bytes[3] == 0)
+                {
+                    encoding = new UTF32Encoding(false, true, true);
+                    preamble = 4;
+                }
+                else if (bytes.Length >= 4 && bytes[0] == 0 && bytes[1] == 0 && bytes[2] == 0xFE && bytes[3] == 0xFF)
+                {
+                    encoding = new UTF32Encoding(true, true, true);
+                    preamble = 4;
+                }
+                else if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+                {
+                    encoding = new UTF8Encoding(false, true);
+                    preamble = 3;
+                }
+                else if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+                {
+                    encoding = new UnicodeEncoding(false, true, true);
+                    preamble = 2;
+                }
+                else if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+                {
+                    encoding = new UnicodeEncoding(true, true, true);
+                    preamble = 2;
+                }
+                else if (bytes.Length >= 4 && bytes[1] == 0 && bytes[3] == 0)
+                    encoding = new UnicodeEncoding(false, false, true);
+                else if (bytes.Length >= 4 && bytes[0] == 0 && bytes[2] == 0)
+                    encoding = new UnicodeEncoding(true, false, true);
+                else
+                    encoding = new UTF8Encoding(false, true);
+
+                text = encoding.GetString(bytes[preamble..]);
+            }
+            catch (DecoderFallbackException)
+            {
+                try
+                {
+                    // For legacy TXT/Markdown without a BOM, use the current
+                    // Windows ANSI code page only after strict UTF-8 failed.
+                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                    Encoding local = Encoding.GetEncoding(checked((int)GetACP()),
+                        EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
+                    text = local.GetString(bytes);
+                }
+                catch (DecoderFallbackException) { return false; }
+                catch (ArgumentException) { return false; }
+                catch (NotSupportedException) { return false; }
+            }
+            return !text.Any(character => char.IsControl(character) && character is not ('\r' or '\n' or '\t' or '\f'));
         }
 
         public static FileType GetTypeFromCreateFilterIndex(int filterIndex)

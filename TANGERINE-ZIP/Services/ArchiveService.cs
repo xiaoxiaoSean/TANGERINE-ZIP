@@ -11,6 +11,7 @@ using SharpCompress.Compressors.ZStandard;
 using SharpCompress.Readers;
 using SharpCompress.Writers;
 using System.IO.Compression;
+using System.Formats.Tar;
 using System.Text;
 using TANGERINE_ZIP.Tools;
 
@@ -262,6 +263,129 @@ internal sealed class ArchiveService
         {
             throw new StageException("ARCSV0002", exception.Message, exception); //ARCSV0002
         }
+    }
+
+    // Preview never writes extracted content to disk. The caller obtains the
+    // current physical-memory budget before this method allocates its buffer.
+    public Task<PreviewPayload> ReadPreviewEntryAsync(string archivePath, string entryKey,
+        long declaredSize, NestedTarInfo nestedTarInfo, long memoryLimit,
+        IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken, string? password = null)
+    {
+        return Task.Run(() =>
+        {
+            try
+            {
+                FileDetector.FileType type = FileDetector.DetectFileType(archivePath);
+                // Raw-stream listing reports the compressed input length, not
+                // the future decoded length. Enforce the actual decoded count
+                // while copying instead of rejecting based on that estimate.
+                if ((!ArchiveCapabilities.IsSingleFileStream(type) || nestedTarInfo.FlattenAutomatically) &&
+                    (declaredSize > memoryLimit || declaredSize > Array.MaxLength))
+                    throw new StageException("PRVWS0002", LanguageManager.Get("PreviewMemoryLimitExceeded")); //PRVWS0002
+                if (type == FileDetector.FileType.Wim)
+                    throw new StageException("PRVWS0004", LanguageManager.Get("PreviewWimMemoryUnsupported")); //PRVWS0004
+                if (nestedTarInfo.FlattenAutomatically)
+                {
+                    if (ArchiveCapabilities.IsSingleFileStream(type))
+                    {
+                        using FileStream compressed = File.OpenRead(archivePath);
+                        InlineProgress<ArchiveProgress> sourceProgress = new(item =>
+                            progress?.Report(item with { Percentage = Math.Min(item.Percentage, 99) }));
+                        using ProgressStream monitored = new(compressed, compressed.Length, entryKey, sourceProgress);
+                        using Stream decoded = CreateDecoder(monitored, type);
+                        PreviewPayload payload = ReadTarPreviewEntry(decoded, entryKey, declaredSize, memoryLimit, null, cancellationToken);
+                        progress?.Report(new ArchiveProgress(100, entryKey));
+                        return payload;
+                    }
+                    using IArchive outer = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password));
+                    IArchiveEntry tarEntry = outer.Entries.FirstOrDefault(entry => !entry.IsDirectory &&
+                        NormalizeEntry(entry.Key ?? string.Empty).Equals(nestedTarInfo.TarEntryKeys[0], StringComparison.OrdinalIgnoreCase))
+                        ?? throw new StageException("PRVWS0001", LanguageManager.Get("PreviewEntryMissing")); //PRVWS0001
+                    using Stream tarStream = tarEntry.OpenEntryStream();
+                    return ReadTarPreviewEntry(tarStream, entryKey, declaredSize, memoryLimit, progress, cancellationToken);
+                }
+                if (type == FileDetector.FileType.Iso)
+                {
+                    using FileStream isoStream = File.OpenRead(archivePath);
+                    using CDReader iso = new(isoStream, true);
+                    string file = iso.GetFiles("", "*", SearchOption.AllDirectories).FirstOrDefault(path =>
+                        NormalizeEntry(path).Equals(NormalizeEntry(entryKey), StringComparison.OrdinalIgnoreCase))
+                        ?? throw new StageException("PRVWS0001", LanguageManager.Get("PreviewEntryMissing")); //PRVWS0001
+                    using Stream input = iso.OpenFile(file, FileMode.Open);
+                    return CopyPreviewToMemory(input, entryKey, iso.GetFileLength(file), memoryLimit, progress, cancellationToken);
+                }
+                if (ArchiveCapabilities.IsSingleFileStream(type))
+                {
+                    using FileStream compressed = File.OpenRead(archivePath);
+                    InlineProgress<ArchiveProgress> sourceProgress = new(item =>
+                        progress?.Report(item with { Percentage = Math.Min(item.Percentage, 99) }));
+                    using ProgressStream monitored = new(compressed, compressed.Length, entryKey, sourceProgress);
+                    using Stream decoded = CreateDecoder(monitored, type);
+                    PreviewPayload payload = CopyPreviewToMemory(decoded, entryKey, 0, memoryLimit, null, cancellationToken);
+                    progress?.Report(new ArchiveProgress(100, entryKey));
+                    return payload;
+                }
+                using IArchive archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password));
+                IArchiveEntry selected = archive.Entries.FirstOrDefault(entry => !entry.IsDirectory &&
+                    NormalizeEntry(entry.Key ?? string.Empty).Equals(NormalizeEntry(entryKey), StringComparison.OrdinalIgnoreCase))
+                    ?? throw new StageException("PRVWS0001", LanguageManager.Get("PreviewEntryMissing")); //PRVWS0001
+                if (selected.IsEncrypted && string.IsNullOrEmpty(password))
+                    throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
+                using Stream selectedStream = selected.OpenEntryStream();
+                return CopyPreviewToMemory(selectedStream, entryKey, selected.Size, memoryLimit, progress, cancellationToken);
+            }
+            catch (StageException) { throw; }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception exception) when (IsPasswordFailure(exception)) { throw CreatePasswordException(password, exception); }
+            catch (Exception exception) { throw new StageException("PRVWS0003", exception.Message, exception); } //PRVWS0003
+        }, cancellationToken);
+    }
+
+    private static PreviewPayload ReadTarPreviewEntry(Stream tarStream, string entryKey, long declaredSize,
+        long memoryLimit, IProgress<ArchiveProgress>? progress, CancellationToken token)
+    {
+        using TarReader reader = new(tarStream, leaveOpen: true);
+        TarEntry? entry;
+        while ((entry = reader.GetNextEntry()) is not null)
+        {
+            token.ThrowIfCancellationRequested();
+            if (!NormalizeEntry(entry.Name).Equals(NormalizeEntry(entryKey), StringComparison.OrdinalIgnoreCase)) continue;
+            if (entry.DataStream is null)
+                throw new StageException("PRVWS0001", LanguageManager.Get("PreviewEntryMissing")); //PRVWS0001
+            return CopyPreviewToMemory(entry.DataStream, entryKey, entry.Length > 0 ? entry.Length : declaredSize,
+                memoryLimit, progress, token);
+        }
+        throw new StageException("PRVWS0001", LanguageManager.Get("PreviewEntryMissing")); //PRVWS0001
+    }
+
+    private static PreviewPayload CopyPreviewToMemory(Stream input, string entryKey, long expectedSize,
+        long memoryLimit, IProgress<ArchiveProgress>? progress, CancellationToken token)
+    {
+        if (expectedSize > memoryLimit || expectedSize > Array.MaxLength)
+            throw new StageException("PRVWS0002", LanguageManager.Get("PreviewMemoryLimitExceeded")); //PRVWS0002
+        int capacity = expectedSize > 0 ? checked((int)expectedSize) : (int)Math.Min(memoryLimit, 64 * 1024);
+        using MemoryStream output = new(capacity);
+        byte[] transfer = new byte[128 * 1024];
+        int read;
+        while ((read = input.Read(transfer, 0, transfer.Length)) > 0)
+        {
+            token.ThrowIfCancellationRequested();
+            long required = output.Length + read;
+            if (required > memoryLimit || required > Array.MaxLength)
+                throw new StageException("PRVWS0002", LanguageManager.Get("PreviewMemoryLimitExceeded")); //PRVWS0002
+            if (required > output.Capacity)
+            {
+                // MemoryStream's implicit doubling can exceed the preview
+                // budget even when the written byte count is still below it.
+                long planned = Math.Max(required, (long)output.Capacity * 2);
+                output.Capacity = checked((int)Math.Min(planned, Math.Min(memoryLimit, Array.MaxLength)));
+            }
+            output.Write(transfer, 0, read);
+            int percent = expectedSize > 0 ? (int)Math.Clamp(output.Length * 100 / expectedSize, 0, 99) : 0;
+            progress?.Report(new ArchiveProgress(percent, entryKey));
+        }
+        progress?.Report(new ArchiveProgress(100, entryKey));
+        return new PreviewPayload(entryKey, output.GetBuffer(), checked((int)output.Length));
     }
 
     public async Task CreateAsync(

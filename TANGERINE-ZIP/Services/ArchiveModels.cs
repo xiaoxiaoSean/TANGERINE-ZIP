@@ -6,6 +6,9 @@ internal sealed record ArchiveEntryInfo(string Key, bool IsDirectory, long Size)
 
 internal sealed record ArchiveProgress(int Percentage, string EntryKey);
 
+// Buffer may have spare capacity; Length is the exact decompressed byte count.
+internal sealed record PreviewPayload(string EntryKey, byte[] Buffer, int Length);
+
 internal sealed record NestedTarInfo(IReadOnlyList<string> TarEntryKeys, bool FlattenAutomatically)
 {
     public bool HasNestedTar => TarEntryKeys.Count > 0;

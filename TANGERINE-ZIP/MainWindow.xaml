@@ -25,9 +25,11 @@
             </Menu.ItemsPanel>
             <MenuItem x:Name="aboutMenuItem" Header="关于TZIP" Click="AboutMenu_Click" />
             <MenuItem x:Name="openArchiveMenuItem" Header="Open" Click="OpenArchiveMenu_Click" />
+            <MenuItem x:Name="previewEntryMenuItem" Header="Preview" Visibility="Collapsed" Click="PreviewEntryMenuItem_Click" />
             <MenuItem x:Name="extractMenuItem" Header="Extract">
                 <MenuItem x:Name="extractAllHereMenuItem" Header="Extract all" Click="ExtractAllHereMenu_Click" />
                 <MenuItem x:Name="extractAllToFolderMenuItem" Header="Extract all to folder" Click="ExtractAllToFolderMenu_Click" />
+                <MenuItem x:Name="extractToArchiveLocationMenuItem" Header="Extract beside archive" Click="ExtractToArchiveLocationMenu_Click" />
                 <MenuItem x:Name="extractSelectedHereMenuItem" Header="Extract selected" Click="ExtractSelectedHereMenu_Click" />
                 <MenuItem x:Name="extractSelectedToFolderMenuItem" Header="Extract selected to folder" Click="ExtractSelectedToFolderMenu_Click" />
                 <Separator />
