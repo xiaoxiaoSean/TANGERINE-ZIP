@@ -258,22 +258,27 @@ public partial class MainWindow : Window
 
     private async void CompressFilesMenu_Click(object sender, EventArgs e)
     {
-        if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
-        _sourceFilesDialog.FileName = string.Empty;
-        if (_sourceFilesDialog.ShowDialog(this) != true) return;
-        string[] sourcePaths = _sourceFilesDialog.FileNames;
-        if (sourcePaths.Length == 0) return;
-        archiveSaveDialog.Title = LanguageManager.Get("SelectOutputArchive");
-        archiveSaveDialog.Filter = LanguageManager.Get("CreateArchiveFilter");
-        archiveSaveDialog.AddExtension = true;
-        archiveSaveDialog.OverwritePrompt = true;
-        if (archiveSaveDialog.ShowDialog(this) != true) return;
-        FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(archiveSaveDialog.FilterIndex);
-        if (!ArchivePasswordWindow.TryGetCreationPassword(this, Path.GetFileName(archiveSaveDialog.FileName), type, out string? password)) return;
         try
         {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            _sourceFilesDialog.FileName = string.Empty;
+            if (_sourceFilesDialog.ShowDialog(this) != true) return;
+            string[] sourcePaths = _sourceFilesDialog.FileNames;
+            if (sourcePaths.Length == 0) return;
+            archiveSaveDialog.Title = LanguageManager.Get("SelectOutputArchive");
+            archiveSaveDialog.Filter = LanguageManager.Get("CreateArchiveFilter");
+            archiveSaveDialog.AddExtension = true;
+            archiveSaveDialog.OverwritePrompt = true;
+            if (archiveSaveDialog.ShowDialog(this) != true) return;
+            string outputPath = archiveSaveDialog.FileName;
+            FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(archiveSaveDialog.FilterIndex);
+            if (!ArchivePasswordWindow.TryGetCreationPassword(this, Path.GetFileName(outputPath), type, out string? password)) return;
             await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) =>
-                _archiveService.CreateAsync(sourcePaths, archiveSaveDialog.FileName, type, progress, token, password));
+                _archiveService.CreateAsync(sourcePaths, outputPath, type, progress, token, password));
+            // Never display completion when the worker returned success but the
+            // expected archive is missing from the exact path chosen by the user.
+            if (!File.Exists(outputPath))
+                throw new StageException("MAINW0012", string.Format(LanguageManager.Get("CompressionOutputMissing"), outputPath)); //MAINW0012
             operationProgressBar.Value = 100;
             operationStatusText.Text = LanguageManager.Get("CompressionCompleted");
         }

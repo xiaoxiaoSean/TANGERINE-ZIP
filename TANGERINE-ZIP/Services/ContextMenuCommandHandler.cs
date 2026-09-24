@@ -78,10 +78,15 @@ internal static class ContextMenuCommandHandler
             InitialDirectory = Path.GetDirectoryName(paths[0])
         };
         if (dialog.ShowDialog() != true) return;
+        string outputPath = dialog.FileName;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(dialog.FilterIndex);
-        if (!ArchivePasswordWindow.TryGetCreationPassword(null, Path.GetFileName(dialog.FileName), type, out string? password)) return;
-        ContextOperationWindow window = new(LanguageManager.Get("ContextCompressProgress"), (progress, token) =>
-            new ArchiveWorkerClient().CreateAsync(paths, dialog.FileName, type, progress, token, password));
+        if (!ArchivePasswordWindow.TryGetCreationPassword(null, Path.GetFileName(outputPath), type, out string? password)) return;
+        ContextOperationWindow window = new(LanguageManager.Get("ContextCompressProgress"), async (progress, token) =>
+        {
+            await new ArchiveWorkerClient().CreateAsync(paths, outputPath, type, progress, token, password);
+            if (!File.Exists(outputPath))
+                throw new StageException("CTXCM0006", string.Format(LanguageManager.Get("CompressionOutputMissing"), outputPath)); //CTXCM0006
+        });
         window.ShowDialog();
     }
 

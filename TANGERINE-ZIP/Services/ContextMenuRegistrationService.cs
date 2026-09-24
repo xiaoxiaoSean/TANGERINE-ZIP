@@ -10,6 +10,7 @@ using System.Text.Json;
 namespace TANGERINE_ZIP.Services;
 
 internal sealed record ContextMenuProgress(int Percentage, string ResourceKey, string? Detail = null);
+internal enum ContextMenuCreationResult { ModernAndClassic, ClassicOnly }
 
 // Stage head: CTXMN
 internal static class ContextMenuRegistrationService
@@ -18,6 +19,7 @@ internal static class ContextMenuRegistrationService
     private const string PackageResourceName = "TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix";
     private const string CertificateResourceName = "TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.cer";
     private const string SettingsPath = @"Software\TangerineZip\ContextMenu";
+    private const string ClassicOverridePath = @"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32";
     private const string MinimumPackageVersion = "2.3.0.0";
     private const string LegacyCertificateThumbprint = "080D2C60C6B53BD797A97DC3032FD40A17560095";
     private const uint ShcneAssocChanged = 0x08000000;
@@ -39,23 +41,53 @@ internal static class ContextMenuRegistrationService
         return X509CertificateLoader.LoadCertificate(copy.ToArray());
     }
 
-    internal static async Task CreateAsync(string executablePath,
+    internal static async Task<ContextMenuCreationResult> CreateAsync(string executablePath,
         IProgress<ContextMenuProgress> progress, CancellationToken token)
     {
         await OperationGate.WaitAsync(token);
         string? temporaryDirectory = null;
         bool packageExisted = false;
+        bool packageInstallStarted = false;
+        bool classicWriteStarted = false;
         bool certificateOwnershipAdded = false;
         string? installedPackageFamilyName = null;
-        string ownerSid = GetCurrentUserSid();
+        string ownerSid = string.Empty;
         try
         {
             Report(progress, 3, "ContextProgressValidating");
             token.ThrowIfCancellationRequested();
-            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+            if (!OperatingSystem.IsWindowsVersionAtLeast(10))
                 throw new StageException("CTXMN0001", LanguageManager.Get("ContextWindows11Required")); //CTXMN0001
             if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
                 throw new StageException("CTXMN0002", LanguageManager.Get("ContextExecutableMissing")); //CTXMN0002
+
+            // The CLSID override makes Explorer show the classic menu as its
+            // primary menu. Installing the packaged Win11 extension is neither
+            // needed nor visible there. The same classic-only path supports
+            // Windows 10 without requiring an MSIX deployment or UAC.
+            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000) || IsClassicMenuForced())
+            {
+                Report(progress, 18, "ContextProgressRemovingLegacy");
+                await Task.Run(RemoveLegacyMenus, token);
+                token.ThrowIfCancellationRequested();
+                Report(progress, 60, "ContextProgressWritingLegacy");
+                classicWriteStarted = true;
+                await Task.Run(() => WriteLegacyMenus(executablePath), token);
+                token.ThrowIfCancellationRequested();
+                Report(progress, 88, "ContextProgressVerifyingLegacy");
+                await Task.Run(() => VerifyLegacyMenus(executablePath), token);
+                using (RegistryKey settings = Registry.CurrentUser.CreateSubKey(SettingsPath, writable: true)
+                    ?? throw new StageException("CTXMN0020", LanguageManager.Get("ContextLegacyRegistrationFailed"))) //CTXMN0020
+                {
+                    settings.SetValue("ExecutablePath", Path.GetFullPath(executablePath), RegistryValueKind.String);
+                    settings.SetValue("ClassicOnly", 1, RegistryValueKind.DWord);
+                }
+                NotifyShell();
+                Report(progress, 100, "ContextProgressClassicCompleted");
+                return ContextMenuCreationResult.ClassicOnly;
+            }
+
+            ownerSid = GetCurrentUserSid();
 
             packageExisted = await IsPackageInstalledAsync(token);
             if (packageExisted || HasSavedSettings() || HasLegacyMenus())
@@ -77,6 +109,7 @@ internal static class ContextMenuRegistrationService
             certificateOwnershipAdded = await EnsureCertificateAsync(executablePath, ownerSid, progress, token);
 
             Report(progress, 46, "ContextProgressInstallingPackage");
+            packageInstallStarted = true;
             await InstallPackageAsync(packagePath, token);
             string packageFamilyName = await GetPackageFamilyNameAsync(token);
             installedPackageFamilyName = packageFamilyName;
@@ -94,23 +127,31 @@ internal static class ContextMenuRegistrationService
                 settings.SetValue("ExecutablePath", Path.GetFullPath(executablePath), RegistryValueKind.String);
                 settings.SetValue("CertificateOwnerSid", HasCurrentCertificateOwnership(ownerSid) ? ownerSid : string.Empty, RegistryValueKind.String);
                 settings.SetValue("CertificateThumbprint", installedCertificate.Thumbprint, RegistryValueKind.String);
+                settings.SetValue("ClassicOnly", 0, RegistryValueKind.DWord);
             }
+            Report(progress, 94, "ContextProgressWritingLegacy");
+            classicWriteStarted = true;
+            await Task.Run(() => WriteLegacyMenus(executablePath), token);
+            token.ThrowIfCancellationRequested();
+            Report(progress, 97, "ContextProgressVerifyingLegacy");
+            await Task.Run(() => VerifyLegacyMenus(executablePath), token);
             NotifyShell();
             Report(progress, 100, "ContextProgressCompleted");
+            return ContextMenuCreationResult.ModernAndClassic;
         }
         catch (OperationCanceledException)
         {
-            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, installedPackageFamilyName, progress);
+            await RollBackCreateAsync(executablePath, ownerSid, packageInstallStarted, classicWriteStarted, certificateOwnershipAdded, installedPackageFamilyName, progress);
             throw;
         }
         catch (StageException)
         {
-            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, installedPackageFamilyName, progress);
+            await RollBackCreateAsync(executablePath, ownerSid, packageInstallStarted, classicWriteStarted, certificateOwnershipAdded, installedPackageFamilyName, progress);
             throw;
         }
         catch (Exception exception)
         {
-            await RollBackCreateAsync(executablePath, ownerSid, packageExisted, certificateOwnershipAdded, installedPackageFamilyName, progress);
+            await RollBackCreateAsync(executablePath, ownerSid, packageInstallStarted, classicWriteStarted, certificateOwnershipAdded, installedPackageFamilyName, progress);
             throw new StageException("CTXMN0003", exception.Message, exception); //CTXMN0003
         }
         finally
@@ -271,11 +312,18 @@ internal static class ContextMenuRegistrationService
             && owners.Contains(ownerSid, StringComparer.OrdinalIgnoreCase);
     }
 
-    private static async Task RollBackCreateAsync(string executablePath, string ownerSid, bool packageExisted,
-        bool certificateOwnershipAdded, string? installedPackageFamilyName, IProgress<ContextMenuProgress> progress)
+    private static async Task RollBackCreateAsync(string executablePath, string ownerSid, bool packageInstallStarted,
+        bool classicWriteStarted, bool certificateOwnershipAdded, string? installedPackageFamilyName, IProgress<ContextMenuProgress> progress)
     {
         List<Exception> failures = [];
         Report(progress, 0, "ContextProgressRollingBack");
+        if (classicWriteStarted)
+        {
+            try { RemoveLegacyMenus(); }
+            catch (Exception exception) { failures.Add(exception); }
+            try { Registry.CurrentUser.DeleteSubKeyTree(SettingsPath, throwOnMissingSubKey: false); }
+            catch (Exception exception) { failures.Add(exception); }
+        }
         if (!string.IsNullOrWhiteSpace(installedPackageFamilyName))
         {
             try { DeleteCommandFiles(installedPackageFamilyName); }
@@ -283,7 +331,7 @@ internal static class ContextMenuRegistrationService
             try { Registry.CurrentUser.DeleteSubKeyTree(SettingsPath, throwOnMissingSubKey: false); }
             catch (Exception exception) { failures.Add(exception); }
         }
-        if (!packageExisted)
+        if (packageInstallStarted)
         {
             try { await RemovePackageAsync(CancellationToken.None); }
             catch (Exception exception) { failures.Add(exception); }
@@ -432,7 +480,9 @@ internal static class ContextMenuRegistrationService
     {
         string systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
         string powerShellPath = Path.Combine(systemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
-        string wrappedCommand = "$ErrorActionPreference='Stop'; $OutputEncoding=[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); " + command;
+        // Redirected Windows PowerShell emits progress as CLIXML on stderr.
+        // Suppress that stream and write only the terminating error message.
+        string wrappedCommand = "$ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue'; $OutputEncoding=[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); try { " + command + " } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }";
         ProcessStartInfo startInfo = new(powerShellPath)
         {
             UseShellExecute = false,
@@ -521,6 +571,54 @@ internal static class ContextMenuRegistrationService
         }
         if (failures.Count > 0)
             throw new StageException("CTXMN0018", string.Join(Environment.NewLine, failures.Select(item => item.Message)), new AggregateException(failures)); //CTXMN0018
+    }
+
+    private static bool IsClassicMenuForced()
+    {
+        // The known Explorer CLSID override restores the classic menu as the
+        // primary menu for this user. Do not deploy an invisible MSIX there.
+        using RegistryKey? overrideKey = Registry.CurrentUser.OpenSubKey(ClassicOverridePath);
+        return overrideKey is not null;
+    }
+
+    private static void WriteLegacyMenus(string executablePath)
+    {
+        string fullPath = Path.GetFullPath(executablePath);
+        using RegistryKey shell = Registry.CurrentUser.CreateSubKey(LegacyShellPaths[0], writable: true)
+            ?? throw new StageException("CTXMN0020", LanguageManager.Get("ContextLegacyRegistrationFailed")); //CTXMN0020
+        (string Name, string Title, string Action)[] commands =
+        [
+            (LegacyVerbNames[0], LanguageManager.Get("ContextExtractMenu"), "--context-extract"),
+            (LegacyVerbNames[1], LanguageManager.Get("ContextCompressMenu"), "--context-compress"),
+            (LegacyVerbNames[2], LanguageManager.Get("ContextOpenMenu"), "--context-open")
+        ];
+        foreach (var item in commands)
+        {
+            using RegistryKey verb = shell.CreateSubKey(item.Name, writable: true)
+                ?? throw new StageException("CTXMN0020", LanguageManager.Get("ContextLegacyRegistrationFailed")); //CTXMN0020
+            verb.SetValue("MUIVerb", item.Title, RegistryValueKind.String);
+            verb.SetValue("Icon", $"{fullPath},0", RegistryValueKind.String);
+            verb.SetValue("MultiSelectModel", "Player", RegistryValueKind.String);
+            using RegistryKey command = verb.CreateSubKey("command", writable: true)
+                ?? throw new StageException("CTXMN0020", LanguageManager.Get("ContextLegacyRegistrationFailed")); //CTXMN0020
+            command.SetValue(null, $"\"{fullPath}\" {item.Action} \"%1\"", RegistryValueKind.String);
+        }
+    }
+
+    private static void VerifyLegacyMenus(string executablePath)
+    {
+        string fullPath = Path.GetFullPath(executablePath);
+        using RegistryKey? shell = Registry.CurrentUser.OpenSubKey(LegacyShellPaths[0]);
+        string[] actions = ["--context-extract", "--context-compress", "--context-open"];
+        for (int index = 0; index < LegacyVerbNames.Length; index++)
+        {
+            using RegistryKey? verb = shell?.OpenSubKey(LegacyVerbNames[index]);
+            using RegistryKey? command = verb?.OpenSubKey("command");
+            string expected = $"\"{fullPath}\" {actions[index]} \"%1\"";
+            if (string.IsNullOrWhiteSpace(verb?.GetValue("MUIVerb") as string) ||
+                !string.Equals(command?.GetValue(null) as string, expected, StringComparison.Ordinal))
+                throw new StageException("CTXMN0021", LanguageManager.Get("ContextLegacyRegistrationFailed")); //CTXMN0021
+        }
     }
 
     private static string GetCurrentUserSid() => WindowsIdentity.GetCurrent().User?.Value

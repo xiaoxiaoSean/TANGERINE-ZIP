@@ -486,10 +486,10 @@
     <value>移除 Windows 11 右鍵選單</value>
   </data>
   <data name="ContextWizardCreateDescription" xml:space="preserve">
-    <value>此精靈會在 Windows 11 第一層右鍵選單建立 TANGERINE ZIP 子選單，其中包含解壓、壓縮及開啟。已有設定會先移除再建立；如移動 TANGERINE-ZIP.exe，請重新建立選單。</value>
+    <value>此精靈會在 Windows 11 第一層選單建立 TANGERINE ZIP 子選單，並在「顯示更多選項」加入解壓、壓縮及開啟三個項目。如系統強制使用傳統選單，則只建立傳統項目。移動 TANGERINE-ZIP.exe 後請重新設定。</value>
   </data>
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
-    <value>此精靈會移除 Windows 11 延伸功能，並清理舊版 TANGERINE ZIP 遺留的傳統右鍵選單項目。</value>
+    <value>此精靈會移除 Windows 11 延伸功能及 TANGERINE ZIP 的三個傳統右鍵選單項目。</value>
   </data>
   <data name="ContextUacConsentHint" xml:space="preserve">
     <value>如出現 Windows UAC 提示框，請同意 TANGERINE ZIP 的管理員提權要求。</value>
@@ -501,7 +501,7 @@
     <value>開始移除</value>
   </data>
   <data name="ContextWindows11Required" xml:space="preserve">
-    <value>第一層右鍵選單延伸功能需要 Windows 11。</value>
+    <value>右鍵選單整合需要 Windows 10 或更新版本。</value>
   </data>
   <data name="ContextMenuModernCreated" xml:space="preserve">
     <value>Windows 11 第一層右鍵選單已建立。如選單未即時更新，請重新開啟檔案總管視窗。</value>
@@ -597,7 +597,7 @@
     <value>需要密碼</value>
   </data>
   <data name="CreatePasswordDescription" xml:space="preserve">
-    <value>為 {0} 建立標準密碼保護，相容的壓縮軟件可以正常開啟。</value>
+    <value>{0} 的密碼保護屬選用。需要加密時請勾選並輸入密碼；一般壓縮直接按「確認」。</value>
   </data>
   <data name="PasswordFormatUnsupportedDescription" xml:space="preserve">
     <value>{0} 格式沒有標準密碼功能。為確保檔案有效並可由其他軟件讀取，密碼功能已停用。</value>
@@ -768,4 +768,11 @@
   <data name="MouseConfigTemporaryCleanupFailed" xml:space="preserve">
     <value>無法刪除暫存檔案 {0}：{1}</value>
   </data>
+  <data name="ContextProgressWritingLegacy" xml:space="preserve"><value>正在加入三個傳統右鍵選單項目…</value></data>
+  <data name="ContextProgressVerifyingLegacy" xml:space="preserve"><value>正在核實傳統右鍵選單項目…</value></data>
+  <data name="ContextProgressClassicCompleted" xml:space="preserve"><value>傳統右鍵選單設定完成。</value></data>
+  <data name="ContextLegacyRegistrationFailed" xml:space="preserve"><value>無法建立或核實傳統右鍵選單項目。</value></data>
+  <data name="ContextMenuBothCreated" xml:space="preserve"><value>已建立 Windows 11 第一層選單，以及「顯示更多選項」中的三個項目。如未即時顯示，請重新開啟檔案總管。</value></data>
+  <data name="ContextMenuClassicOnlyCreated" xml:space="preserve"><value>已建立三個傳統右鍵選單項目。由於目前使用傳統選單或 Windows 10，已略過 Windows 11 第一層選單延伸功能。</value></data>
+  <data name="CompressionOutputMissing" xml:space="preserve"><value>壓縮工作已回報成功，但在指定位置找不到壓縮檔：{0}</value></data>
 </root>

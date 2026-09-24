@@ -21,7 +21,18 @@ namespace TANGERINE_ZIP
                 Environment.ExitCode = Services.ArchiveWorker.ExecuteAsync().GetAwaiter().GetResult();
                 return;
             }
-            var application = new System.Windows.Application();
+            bool isContextCommand = args.Length >= 2 &&
+                args[0].StartsWith("--context-", StringComparison.Ordinal);
+            var application = new System.Windows.Application
+            {
+                // Context commands display several modal windows in sequence.
+                // The password window may be the first and only open WPF window;
+                // the default OnLastWindowClose would shut down the dispatcher
+                // as soon as the user confirms it, before compression starts.
+                ShutdownMode = isContextCommand
+                    ? System.Windows.ShutdownMode.OnExplicitShutdown
+                    : System.Windows.ShutdownMode.OnLastWindowClose
+            };
             try
             {
                 // Read the marker before creating any WPF window. A present
@@ -85,9 +96,10 @@ namespace TANGERINE_ZIP
                     return;
                 }
             }
-            if (args.Length >= 2 && args[0].StartsWith("--context-", StringComparison.Ordinal))
+            if (isContextCommand)
             {
-                Services.ContextMenuCommandHandler.Run(args[0], args[1..]);
+                try { Services.ContextMenuCommandHandler.Run(args[0], args[1..]); }
+                finally { application.Shutdown(); }
                 return;
             }
             application.Run(new MainWindow());

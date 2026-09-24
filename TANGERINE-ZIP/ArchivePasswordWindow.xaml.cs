@@ -26,7 +26,10 @@ internal sealed partial class ArchivePasswordWindow : Window
         descriptionText.Text = string.Format(LanguageManager.Get(creating && !passwordSupported
             ? "PasswordFormatUnsupportedDescription" : creating ? "CreatePasswordDescription" : "EnterPasswordDescription"), archiveName);
         _enablePassword.Content = LanguageManager.Get("EnableArchivePassword");
-        _enablePassword.IsChecked = passwordSupported;
+        // Password protection is opt-in. Previously this was checked for ZIP,
+        // 7Z and RAR, so a normal compression attempt stopped at the password
+        // validator even when the user had not requested encryption.
+        _enablePassword.IsChecked = false;
         _enablePassword.IsEnabled = passwordSupported;
         _enablePassword.Visibility = creating ? Visibility.Visible : Visibility.Collapsed;
         passwordText.Text = LanguageManager.Get("PasswordLabel");

@@ -485,10 +485,10 @@
     <value>移除 Windows 11 右键菜单</value>
   </data>
   <data name="ContextWizardCreateDescription" xml:space="preserve">
-    <value>此向导会在 Windows 11 一级右键菜单中建立 TANGERINE ZIP 子菜单，其中包含解压、压缩和打开。已有设置会先移除再建立；如果移动 TANGERINE-ZIP.exe，请重新建立菜单。</value>
+    <value>此向导会在 Windows 11 一级菜单建立 TANGERINE ZIP 子菜单，并在“显示更多选项”中建立解压、压缩、打开三个菜单项。如果电脑强制使用传统菜单，则只建立传统菜单项。移动 TANGERINE-ZIP.exe 后请重新建立。</value>
   </data>
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
-    <value>此向导会移除 Windows 11 扩展，并清理旧版本 TANGERINE ZIP 遗留的传统右键菜单项。</value>
+    <value>此向导会移除 Windows 11 扩展及 TANGERINE ZIP 的三个传统右键菜单项。</value>
   </data>
   <data name="ContextUacConsentHint" xml:space="preserve">
     <value>如出现 Windows UAC 提示框，请同意 TANGERINE ZIP 的管理员提权请求。</value>
@@ -500,7 +500,7 @@
     <value>开始移除</value>
   </data>
   <data name="ContextWindows11Required" xml:space="preserve">
-    <value>一级右键菜单扩展需要 Windows 11。</value>
+    <value>右键菜单集成需要 Windows 10 或更新版本。</value>
   </data>
   <data name="ContextMenuModernCreated" xml:space="preserve">
     <value>Windows 11 一级右键菜单已建立。如果菜单未立即刷新，请重新打开资源管理器窗口。</value>
@@ -596,7 +596,7 @@
     <value>需要密码</value>
   </data>
   <data name="CreatePasswordDescription" xml:space="preserve">
-    <value>为 {0} 创建标准密码保护，兼容的压缩软件可以正常打开。</value>
+    <value>{0} 的密码保护是可选的。需要加密时请勾选并输入密码；普通压缩直接点击“确认”。</value>
   </data>
   <data name="PasswordFormatUnsupportedDescription" xml:space="preserve">
     <value>{0} 格式没有标准密码功能。为保证文件有效并可被其他软件读取，密码功能已禁用。</value>
@@ -767,4 +767,11 @@
   <data name="MouseConfigTemporaryCleanupFailed" xml:space="preserve">
     <value>无法删除临时文件 {0}：{1}</value>
   </data>
+  <data name="ContextProgressWritingLegacy" xml:space="preserve"><value>正在添加三个传统右键菜单选项…</value></data>
+  <data name="ContextProgressVerifyingLegacy" xml:space="preserve"><value>正在验证传统右键菜单选项…</value></data>
+  <data name="ContextProgressClassicCompleted" xml:space="preserve"><value>传统右键菜单设置完成。</value></data>
+  <data name="ContextLegacyRegistrationFailed" xml:space="preserve"><value>无法建立或验证传统右键菜单选项。</value></data>
+  <data name="ContextMenuBothCreated" xml:space="preserve"><value>Windows 11 一级菜单及“显示更多选项”中的三个菜单项已建立。如未立即出现，请重新打开资源管理器。</value></data>
+  <data name="ContextMenuClassicOnlyCreated" xml:space="preserve"><value>三个传统右键菜单选项已建立。当前启用了传统菜单或正在使用 Windows 10，因此跳过 Windows 11 一级菜单扩展。</value></data>
+  <data name="CompressionOutputMissing" xml:space="preserve"><value>压缩任务已报告成功，但在指定位置找不到压缩包：{0}</value></data>
 </root>

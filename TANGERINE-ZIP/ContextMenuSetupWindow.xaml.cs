@@ -49,13 +49,21 @@ internal sealed partial class ContextMenuSetupWindow : Window
         try
         {
             Progress<ContextMenuProgress> progress = new(UpdateProgress);
+            string key;
             if (_mode == ContextMenuSetupMode.Create)
-                // Explorer now exposes one fixed parent submenu. There is no
-                // presentation choice to persist or pass to the installer.
-                await ContextMenuRegistrationService.CreateAsync(_executablePath, progress, _cancellation.Token);
+            {
+                // A classic-menu override skips deployment of the modern package.
+                // Report the path actually completed, not a misleading success.
+                ContextMenuCreationResult result = await ContextMenuRegistrationService.CreateAsync(
+                    _executablePath, progress, _cancellation.Token);
+                key = result == ContextMenuCreationResult.ClassicOnly
+                    ? "ContextMenuClassicOnlyCreated" : "ContextMenuBothCreated";
+            }
             else
+            {
                 await ContextMenuRegistrationService.DeleteAsync(_executablePath, progress, _cancellation.Token);
-            string key = _mode == ContextMenuSetupMode.Create ? "ContextMenuModernCreated" : "ContextMenuDeleted";
+                key = "ContextMenuDeleted";
+            }
             _statusText.Text = LanguageManager.Get(key);
             MessageBox.Show(this, LanguageManager.Get(key), Title, MessageBoxButton.OK, MessageBoxImage.Information);
             _isBusy = false;

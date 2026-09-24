@@ -139,7 +139,11 @@ MessageBox.Show(
 
 ### Windows 11 一级右键菜单
 
-Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。项目采用开源项目 [ikas-mc/ContextMenuForWindows11](https://github.com/ikas-mc/ContextMenuForWindows11) 的 `IExplorerCommand` 原生宿主实现，许可证为 LGPL-3.0。对应源码及许可证保留在 `third_party/ContextMenuForWindows11`，便于替换或重新链接；当前只注册一个 `TANGERINE ZIP` 父菜单入口。MSIX 的内部包名为 `TangerineZip.ContextMenu`，不会覆盖用户另行安装的 Custom Context Menu。
+Win11 一级菜单不使用 `HKCU\Software\Classes\*\shell` 传统动词。项目采用开源项目 [ikas-mc/ContextMenuForWindows11](https://github.com/ikas-mc/ContextMenuForWindows11) 的 `IExplorerCommand` 原生宿主实现，许可证为 LGPL-3.0。对应源码及许可证保留在 `third_party/ContextMenuForWindows11`，便于替换或重新链接；一级菜单注册一个 `TANGERINE ZIP` 父菜单入口。MSIX 的内部包名为 `TangerineZip.ContextMenu`，不会覆盖用户另行安装的 Custom Context Menu。与此同时，建立向导会在当前用户的传统菜单中写入解压、压缩、打开三个动词，因此 Win11 的“显示更多选项”也可访问这三个操作；删除向导移除两套菜单。传统菜单项只写入 HKCU，不需要管理员权限。
+
+若检测到 `HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32`（常见的强制传统菜单设置），或系统是 Windows 10，建立向导只注册传统菜单，不部署不可见的 Win11 MSIX，也不会因为该包部署失败而拒绝传统菜单。向导会明确告知实际建立了哪一套菜单。检测针对这个已知覆盖键；其他第三方工具若通过不同方式替换 Explorer，仍可能需要人工确认其兼容性。
+
+2026-09-24 修复 `CTXMN0009`：原 MSIX 清单声明了 `uap10:RuntimeBehavior="win32App"`，却缺少 `rescap:Capability Name="unvirtualizedResources"`，系统以 `0x80080204` 拒绝部署。现已补充能力、重新打包签名并更新主程序的内嵌 MSIX/公钥证书。PowerShell 部署调用抑制重定向进度流中的 CLIXML，只把实际异常原因呈现给用户。构建机没有可用签名证书时，可给打包脚本传 `-PfxPath` 和 `-PfxPassword`，代替 `-CertificateThumbprint`；私钥必须由维护者安全保管，不得提交仓库。此次构建使用临时私钥，签名后已删除；公开证书指纹为 `197CB826234EB827C7EC7FFBDB3D62CE9B171F03`。以后重建 MSIX 时需要新证书（以及更新内嵌 `.cer`），或由维护者提供私下保存的签名私钥。
 
 主 EXE 内嵌已签名 MSIX、公钥证书及 LGPL-3.0 许可证。建立向导现在固定创建一级 **TANGERINE ZIP** 父菜单，子菜单依次为“用TZIP将此文件解压到当前文件夹”“用TZIP压缩...”“用TZIP打开”；向导不再提供布局选项。每次建立先检测已安装的 MSIX、用户设置与旧式菜单；存在时先删除命令文件、原包、TANGERINE ZIP 所有的旧证书和设置，再重新建立。旧版 `MenuMode` 设置和 `TZIP-mode.txt` 在替换或移除时清理，新版不再写入。移除向导会独立尝试清理所有旧菜单路径、命令文件、MSIX、证书所有权和用户设置；一个步骤失败不会阻止其他清理步骤，最终统一显示全部错误。证书辅助程序只接受主程序内嵌证书进行安装；删除旧版证书时按保存的指纹查找，并在 `HKLM\SOFTWARE\TangerineZip\ContextMenuCertificates` 核对 TANGERINE ZIP 所有权及使用者 SID。预先存在或仍由其他用户使用的证书不会被删除。
 
@@ -159,7 +163,7 @@ Win11 一级菜单不再使用 `HKCU\Software\Classes\*\shell` 传统动词。�
   -PublicCertificatePath ./TANGERINE-ZIP/Embedded/TangerineZipContextMenu.cer
 ```
 
-清单中的 `Publisher` 必须与签名证书 Subject 完全一致。当前为 `CN=TANGERINE ZIP Development`；旧版主体名称大小写不同，所以包系列标识也会变化，建立向导通过内部包名检测并先移除旧系列。打包脚本签名成功后，用 `PublicCertificatePath` 同步导出相同证书的公开 `.cer`；禁止提交 `.pfx` 或私钥。变更原生源码后，必须先重新生成并签名 MSIX，再发布主程序，否则单文件 EXE 会继续嵌入旧版本。当前包的公开证书指纹为 `940604C134D52273B98494E90107B6DCEA69B50F`；后续重新签名时以实际证书为准。
+清单中的 `Publisher` 必须与签名证书 Subject 完全一致。当前为 `CN=TANGERINE ZIP Development`；旧版主体名称大小写不同，所以包系列标识也会变化，建立向导通过内部包名检测并先移除旧系列。打包脚本签名成功后，用 `PublicCertificatePath` 同步导出相同证书的公开 `.cer`；禁止提交 `.pfx` 或私钥。变更原生源码后，必须先重新生成并签名 MSIX，再发布主程序，否则单文件 EXE 会继续嵌入旧版本。当前包的公开证书指纹为 `197CB826234EB827C7EC7FFBDB3D62CE9B171F03`；后续重新签名时以实际证书为准。
 
 在仓库根目录执行：
 
@@ -172,9 +176,13 @@ dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -p:ENA
 
 按用户最新要求，仓库中的冒烟测试项目已删除，后续不再执行冒烟测试。历史验证结果记录在 `20260923.md` 和 `2026092302.md`，不代表当前版本的新增测试结果。
 
-本次发布结果的可运行文件为 `artifacts/single-file-context-menu-final/TANGERINE-ZIP.exe`。PDB 仅用于调试，可不随软件分发；Win11 右键菜单宿主、MSIX 和公开证书均嵌入此 EXE，安装时释放到系统管理的位置。只有创建 RAR 时需要应用程序目录中的可选 `rar.exe`。
+2026-09-24 本次发布结果的可运行文件为 `artifacts/single-file-context-menu-dual/TANGERINE-ZIP.exe`。PDB 仅用于调试，可不随软件分发；Win11 右键菜单宿主、MSIX 和公开证书均嵌入此 EXE，安装时释放到系统管理的位置。只有创建 RAR 时需要应用程序目录中的可选 `rar.exe`。
 
 ## 7. 维护注意事项
+
+2026-09-24 压缩确认无输出修复：`ArchivePasswordWindow` 曾在 ZIP、7Z、RAR 上默认勾选“启用密码保护”，普通压缩在未输入密码时被挡在校验窗口，后台任务根本不会开始。现在密码默认关闭，只有用户主动勾选并输入匹配的密码才走加密压缩。主窗口将选源文件、选输出位置、密码窗口均包进带 `MAINW0005` 阶段码的异常处理；主窗口及右键菜单的压缩任务在显示成功前，还检查用户选择的确切输出路径是否真的存在，缺失时分别显示 `MAINW0012` / `CTXCM0006`，而不是假报成功。针对单文件程序的普通 ZIP 与带密码 ZIP 后台创建已做短时验证；这不等于对桌面交互的全面测试。
+
+右键入口另有独立的生命周期故障：`Program.Main` 创建 WPF `Application` 后，直接用多个 `ShowDialog` 顺序展示右键操作界面，却没有调用 `Application.Run`。默认 `OnLastWindowClose` 会在密码窗口关闭时隐式关闭应用，导致后续 `ContextOperationWindow` 不出现，表现为确认后没有压缩结果。右键命令现改为 `OnExplicitShutdown`，在完整的右键流程返回后才显式 `Shutdown`；正常主窗口仍使用原先的最后窗口关闭规则。更新二进制后必须从该新版 EXE 再次运行右键菜单建立向导，因为菜单注册保存了 EXE 的绝对路径。
 
 - 压缩源文件选择使用复用的 Windows 原生 `OpenFileDialog`。该对话框使用经典 Win32 模式，避免加载 Explorer Shell 扩展和不可用的最近位置，并以本地用户目录作为首次位置。点击菜单只显示文件对话框；归档工作进程在选择输出格式并确认保存后才启动，`rar.exe` 仅在输出格式为 RAR 时启动。
 

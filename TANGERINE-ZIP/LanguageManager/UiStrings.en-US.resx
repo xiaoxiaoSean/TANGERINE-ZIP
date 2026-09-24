@@ -485,10 +485,10 @@ Stage Code is :
     <value>Remove Windows 11 context menu</value>
   </data>
   <data name="ContextWizardCreateDescription" xml:space="preserve">
-    <value>This wizard creates one TANGERINE ZIP submenu in the primary Windows 11 context menu. Existing setup is removed first. If TANGERINE-ZIP.exe is moved, create the menu again.</value>
+    <value>This wizard adds a TANGERINE ZIP submenu to the Windows 11 primary menu and three commands to Show more options. If the classic menu is forced, only its three commands are installed. If TANGERINE-ZIP.exe is moved, run setup again.</value>
   </data>
   <data name="ContextWizardDeleteDescription" xml:space="preserve">
-    <value>This wizard removes both the Windows 11 extension and any TANGERINE ZIP legacy context-menu entries left by older versions.</value>
+    <value>This wizard removes the Windows 11 extension and all three TANGERINE ZIP classic context-menu commands.</value>
   </data>
   <data name="ContextUacConsentHint" xml:space="preserve">
     <value>If Windows shows a UAC prompt, approve TANGERINE ZIP's administrator elevation request.</value>
@@ -500,7 +500,7 @@ Stage Code is :
     <value>Start removal</value>
   </data>
   <data name="ContextWindows11Required" xml:space="preserve">
-    <value>The primary context-menu extension requires Windows 11.</value>
+    <value>Context-menu integration requires Windows 10 or later.</value>
   </data>
   <data name="ContextMenuModernCreated" xml:space="preserve">
     <value>The Windows 11 context menu was created. Reopen File Explorer windows if it does not refresh immediately.</value>
@@ -596,7 +596,7 @@ Stage Code is :
     <value>Password required</value>
   </data>
   <data name="CreatePasswordDescription" xml:space="preserve">
-    <value>Create a standard password-protected {0} archive that compatible archive software can open.</value>
+    <value>Password protection is optional for {0}. To encrypt the archive, enable it and enter a password; otherwise select Confirm to compress normally.</value>
   </data>
   <data name="PasswordFormatUnsupportedDescription" xml:space="preserve">
     <value>{0} does not define standard password protection. Password is disabled so the file remains valid and interoperable.</value>
@@ -767,4 +767,11 @@ Existing file: {1}</value>
   <data name="MouseConfigTemporaryCleanupFailed" xml:space="preserve">
     <value>Cannot remove temporary file {0}: {1}</value>
   </data>
+  <data name="ContextProgressWritingLegacy" xml:space="preserve"><value>Adding three classic context-menu commands…</value></data>
+  <data name="ContextProgressVerifyingLegacy" xml:space="preserve"><value>Verifying the classic context-menu commands…</value></data>
+  <data name="ContextProgressClassicCompleted" xml:space="preserve"><value>Classic context-menu setup completed.</value></data>
+  <data name="ContextLegacyRegistrationFailed" xml:space="preserve"><value>The classic context-menu commands could not be registered or verified.</value></data>
+  <data name="ContextMenuBothCreated" xml:space="preserve"><value>The Windows 11 primary menu and three Show more options commands were created. Reopen File Explorer if they do not appear immediately.</value></data>
+  <data name="ContextMenuClassicOnlyCreated" xml:space="preserve"><value>The three classic context-menu commands were created. The Windows 11 primary extension was skipped because the classic menu is active or Windows 10 is in use.</value></data>
+  <data name="CompressionOutputMissing" xml:space="preserve"><value>Compression reported success, but no archive was found at: {0}</value></data>
 </root>
