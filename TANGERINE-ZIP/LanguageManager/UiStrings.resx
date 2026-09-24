@@ -794,5 +794,4 @@ Existing file: {1}</value>
   <data name="PreviewReady" xml:space="preserve"><value>Preview ready.</value></data>
   <data name="ExtractWouldOverwriteArchive" xml:space="preserve"><value>Extraction would overwrite the archive currently being read, so this operation was stopped.</value></data>
   <data name="VersionUnavailable" xml:space="preserve"><value>The application version could not be read.</value></data>
-  <data name="AboutDetails" xml:space="preserve"><value>TZIP v{0}&#10;Founder: xiaoxiaoSean&#10;Thanks to all contributors, the RAR authors and contributors, and the authors and contributors of the NuGet packages.&#10;&#10;Changes:&#10;Added password-protected compression.&#10;Added the top-level Windows 11 context menu.&#10;Quick progress windows now close automatically after success.&#10;Fixed extraction from the context menu.</value></data>
 </root>
