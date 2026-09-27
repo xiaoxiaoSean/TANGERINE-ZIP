@@ -35,6 +35,7 @@ internal static class MouseEffectSettings
     private const string MarkerName = "NO_MOUSE_EFFECT";
     private const string RadiusFileName = "MOUSE_EFFECT_CONFIG1";
     private const string ThicknessFileName = "MOUSE_EFFECT_CONFIG2";
+    internal const bool DefaultEnabled = true;
     internal const double DefaultRadius = 140.0;
     internal const double MinimumRadius = 40.0;
     internal const double MaximumRadius = 360.0;

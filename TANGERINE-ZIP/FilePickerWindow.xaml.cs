@@ -93,7 +93,7 @@ public sealed partial class FilePickerWindow : Window
             .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         if (SelectedFiles.Count == 0)
         {
-            MessageBox.Show(this, LanguageManager.Get("SelectAtLeastOneFile"), LanguageManager.Get("ApplicationTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("ApplicationTitle"), LanguageManager.Get("SelectAtLeastOneFile"));
             return;
         }
         DialogResult = true;
@@ -130,6 +130,6 @@ public sealed partial class FilePickerWindow : Window
         catch (Exception exception) { ShowError("FLPKW0005", exception); }
     }
 
-    private void ShowError(string code, Exception exception) => MessageBox.Show(this,
-        MessageTipGenerator.GenerateTip(code, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+    private void ShowError(string code, Exception exception) => ThemedPromptWindow.Inform(this,
+        LanguageManager.Get("ErrorTitle"), MessageTipGenerator.GenerateTip(code, exception.Message));
 }

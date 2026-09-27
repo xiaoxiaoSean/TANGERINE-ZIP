@@ -14,6 +14,10 @@ internal sealed partial class SettingsWindow : Window
     private bool _radiusSaveRunning;
     private bool _thicknessSaveRunning;
     private bool _colorSaveRunning;
+    private bool _radiusResetRunning;
+    private bool _thicknessResetRunning;
+    private Task _radiusSaveTask = Task.CompletedTask;
+    private Task _thicknessSaveTask = Task.CompletedTask;
 
     internal SettingsWindow()
     {
@@ -26,6 +30,10 @@ internal sealed partial class SettingsWindow : Window
         basicTab.Header = LanguageManager.Get("SettingsBasicTab");
         basicHeadingText.Text = LanguageManager.Get("SettingsBasicTab");
         appearanceTab.Header = LanguageManager.Get("SettingsAppearanceTab");
+        moreTab.Header = LanguageManager.Get("SettingsMoreTab");
+        moreHeadingText.Text = LanguageManager.Get("TempDirectoryTitle");
+        tempDirectoryDescription.Text = LanguageManager.Get("TempDirectoryDescription");
+        tempDirectoryChooseButton.Content = LanguageManager.Get("TempDirectoryChange");
         appearanceHeadingText.Text = LanguageManager.Get("SettingsAppearanceTab");
         appearanceDescriptionText.Text = LanguageManager.Get("SettingsAppearanceDescription");
         textAccentLabel.Text = LanguageManager.Get("SettingsTextAccent");
@@ -35,6 +43,10 @@ internal sealed partial class SettingsWindow : Window
         textAccentButton.Content = windowBackgroundButton.Content =
             progressAccentButton.Content = progressBackgroundButton.Content =
             LanguageManager.Get("SettingsChooseColor");
+        mouseEffectResetButton.Content = radiusResetButton.Content =
+            thicknessResetButton.Content = textAccentResetButton.Content =
+            windowBackgroundResetButton.Content = progressAccentResetButton.Content =
+            progressBackgroundResetButton.Content = LanguageManager.Get("SettingsRestoreDefault");
         mouseEffectLabel.Text = LanguageManager.Get("SettingsMouseEffect");
         mouseEffectDescription.Text = LanguageManager.Get("SettingsMouseEffectDescription");
         radiusLabel.Text = LanguageManager.Get("SettingsMouseRadius");
@@ -60,6 +72,48 @@ internal sealed partial class SettingsWindow : Window
         RefreshToggle();
         RefreshParameterText();
         RefreshColors();
+        RefreshTempDirectory();
+    }
+
+    private void RefreshTempDirectory()
+    {
+        string path = TempDirectorySettings.CurrentPath;
+        tempDirectoryPathText.Text = string.Format(LanguageManager.Get("TempDirectoryCurrent"), path);
+        try
+        {
+            TempDirectorySettings.GetDirectory();
+            string root = Path.GetPathRoot(path)!;
+            long free = new DriveInfo(root).AvailableFreeSpace;
+            tempDirectoryAvailableText.Text = string.Format(LanguageManager.Get("TempDirectoryAvailable"),
+                ResourcePreflight.FormatBytes(free));
+        }
+        catch
+        {
+            tempDirectoryAvailableText.Text = LanguageManager.Get("TempDirectoryUnavailable");
+        }
+    }
+
+    private async void ChooseTempDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        Microsoft.Win32.OpenFolderDialog folder = new()
+        {
+            Title = LanguageManager.Get("TempDirectoryChoosePrompt"),
+            InitialDirectory = TempDirectorySettings.CurrentPath
+        };
+        if (folder.ShowDialog(this) != true) return;
+        tempDirectoryChooseButton.IsEnabled = false;
+        try
+        {
+            await TempDirectorySettings.SetAsync(folder.FolderName);
+            RefreshTempDirectory();
+        }
+        catch (Exception exception)
+        {
+            string code = exception is StageException stage ? stage.StageCode : "SETWN0010";
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
+                MessageTipGenerator.GenerateTip(code, exception.Message)); //SETWN0010
+        }
+        finally { tempDirectoryChooseButton.IsEnabled = true; }
     }
 
     private void RefreshColors()
@@ -79,12 +133,10 @@ internal sealed partial class SettingsWindow : Window
     {
         if (_colorSaveRunning) return;
         _colorSaveRunning = true;
+        SetColorControlsEnabled(false);
         try
         {
-            if (sender is not Button button ||
-                !int.TryParse(button.Tag?.ToString(), NumberStyles.None,
-                    CultureInfo.InvariantCulture, out int index) || index is < 0 or > 3)
-                throw new StageException("SETWN0004", LanguageManager.Get("SettingsColorInvalidSelection")); //SETWN0004
+            int index = ReadColorIndex(sender);
 
             System.Windows.Media.Color current = AppearanceSettings.GetColor(index);
             using System.Windows.Forms.ColorDialog picker = new()
@@ -101,10 +153,8 @@ internal sealed partial class SettingsWindow : Window
         }
         catch (ColorContrastException exception)
         {
-            MessageBox.Show(this,
-                MessageTipGenerator.GenerateTip(exception.StageCode, exception.Message),
-                LanguageManager.Get("SettingsColorInvalidTitle"),
-                MessageBoxButton.OK, MessageBoxImage.Warning); //COLRS0008
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("SettingsColorInvalidTitle"),
+                MessageTipGenerator.GenerateTip(exception.StageCode, exception.Message)); //COLRS0008
         }
         catch (Exception exception)
         {
@@ -113,8 +163,63 @@ internal sealed partial class SettingsWindow : Window
         finally
         {
             _colorSaveRunning = false;
+            SetColorControlsEnabled(true);
             RefreshColors();
         }
+    }
+
+    private async void ResetColor_Click(object sender, RoutedEventArgs e)
+    {
+        if (_colorSaveRunning) return;
+        _colorSaveRunning = true;
+        SetColorControlsEnabled(false);
+        try
+        {
+            int index = ReadColorIndex(sender);
+            System.Windows.Media.Color defaultColor = AppearanceSettings.GetDefaultColor(index);
+            if (AppearanceSettings.GetColor(index) == defaultColor) return;
+
+            try { await AppearanceSettings.SetColorAsync(index, defaultColor); }
+            catch (ColorContrastException contrast)
+            {
+                // An individual reset can make a currently inverted color
+                // pair unreadable. Change neither file unless the user
+                // explicitly approves resetting the whole pair together.
+                string prompt = MessageTipGenerator.GenerateTip(contrast.StageCode,
+                    LanguageManager.Get("SettingsResetPairPrompt")); //COLRS0008
+                if (ThemedPromptWindow.Ask(this, LanguageManager.Get("SettingsColorInvalidTitle"), prompt,
+                    (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
+                    (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) == MessageBoxResult.Yes)
+                    await AppearanceSettings.ResetPairAsync(index < 2 ? 0 : 2);
+            }
+        }
+        catch (Exception exception)
+        {
+            ShowSettingError("SETWN0006", exception); //SETWN0006
+        }
+        finally
+        {
+            _colorSaveRunning = false;
+            SetColorControlsEnabled(true);
+            RefreshColors();
+        }
+    }
+
+    private static int ReadColorIndex(object sender)
+    {
+        if (sender is not Button button ||
+            !int.TryParse(button.Tag?.ToString(), NumberStyles.None,
+                CultureInfo.InvariantCulture, out int index) || index is < 0 or > 3)
+            throw new StageException("SETWN0004", LanguageManager.Get("SettingsColorInvalidSelection")); //SETWN0004
+        return index;
+    }
+
+    private void SetColorControlsEnabled(bool enabled)
+    {
+        textAccentButton.IsEnabled = windowBackgroundButton.IsEnabled =
+            progressAccentButton.IsEnabled = progressBackgroundButton.IsEnabled =
+            textAccentResetButton.IsEnabled = windowBackgroundResetButton.IsEnabled =
+            progressAccentResetButton.IsEnabled = progressBackgroundResetButton.IsEnabled = enabled;
     }
 
     private sealed class ColorDialogOwner(IntPtr handle) : System.Windows.Forms.IWin32Window
@@ -168,7 +273,8 @@ internal sealed partial class SettingsWindow : Window
     {
         if (!_pageReady || _updatingSliders) return;
         RefreshParameterText();
-        await SaveRadiusChangesAsync();
+        if (_radiusSaveTask.IsCompleted) _radiusSaveTask = SaveRadiusChangesAsync();
+        await _radiusSaveTask;
     }
 
     private async Task SaveRadiusChangesAsync()
@@ -207,7 +313,8 @@ internal sealed partial class SettingsWindow : Window
     {
         if (!_pageReady || _updatingSliders) return;
         RefreshParameterText();
-        await SaveThicknessChangesAsync();
+        if (_thicknessSaveTask.IsCompleted) _thicknessSaveTask = SaveThicknessChangesAsync();
+        await _thicknessSaveTask;
     }
 
     private async Task SaveThicknessChangesAsync()
@@ -244,18 +351,22 @@ internal sealed partial class SettingsWindow : Window
         string stageCode = exception is StageException stageException
             ? stageException.StageCode : fallbackStageCode;
         string message = MessageTipGenerator.GenerateTip(stageCode, exception.Message);
-        if (IsVisible)
-            MessageBox.Show(this, message, LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //SETWN0002/SETWN0003
-        else
-            MessageBox.Show(message, LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //SETWN0002/SETWN0003
+        ThemedPromptWindow.Inform(IsVisible ? this : null, LanguageManager.Get("ErrorTitle"),
+            message); //SETWN0002/SETWN0003/SETWN0005-SETWN0009
     }
 
-    private async void MouseEffectToggle_Click(object sender, RoutedEventArgs e)
+    private async void MouseEffectToggle_Click(object sender, RoutedEventArgs e) =>
+        await SaveMouseEffectAsync(mouseEffectToggle.IsChecked == true, "SETWN0001"); //SETWN0001
+
+    private async void MouseEffectReset_Click(object sender, RoutedEventArgs e) =>
+        await SaveMouseEffectAsync(MouseEffectSettings.DefaultEnabled, "SETWN0007"); //SETWN0007
+
+    private async Task SaveMouseEffectAsync(bool requestedState, string fallbackStageCode)
     {
         if (_isSaving) return;
-        bool requestedState = mouseEffectToggle.IsChecked == true;
         _isSaving = true;
         mouseEffectToggle.IsEnabled = false;
+        mouseEffectResetButton.IsEnabled = false;
         try
         {
             // Persist first; the service broadcasts only after the marker has
@@ -264,17 +375,67 @@ internal sealed partial class SettingsWindow : Window
         }
         catch (Exception exception)
         {
-            string stageCode = exception is StageException stageException
-                ? stageException.StageCode : "SETWN0001";
-            MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message),
-                LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //SETWN0001
+            ShowSettingError(fallbackStageCode, exception); //SETWN0001/SETWN0007
         }
         finally
         {
             // On failure, restore the button to the last committed value.
             RefreshToggle();
             mouseEffectToggle.IsEnabled = true;
+            mouseEffectResetButton.IsEnabled = true;
             _isSaving = false;
+        }
+    }
+
+    private async void RadiusReset_Click(object sender, RoutedEventArgs e)
+    {
+        if (_radiusResetRunning) return;
+        _radiusResetRunning = true;
+        radiusSlider.IsEnabled = radiusResetButton.IsEnabled = false;
+        try
+        {
+            _updatingSliders = true;
+            radiusSlider.Value = MouseEffectSettings.DefaultRadius;
+            _updatingSliders = false;
+            await _radiusSaveTask;
+            if (Math.Abs(MouseEffectSettings.Radius - MouseEffectSettings.DefaultRadius) > 0.001)
+                await MouseEffectSettings.SetRadiusAsync(MouseEffectSettings.DefaultRadius);
+        }
+        catch (Exception exception) { ShowSettingError("SETWN0008", exception); } //SETWN0008
+        finally
+        {
+            _radiusResetRunning = false;
+            _updatingSliders = true;
+            radiusSlider.Value = MouseEffectSettings.Radius;
+            _updatingSliders = false;
+            radiusSlider.IsEnabled = radiusResetButton.IsEnabled = true;
+            RefreshParameterText();
+        }
+    }
+
+    private async void ThicknessReset_Click(object sender, RoutedEventArgs e)
+    {
+        if (_thicknessResetRunning) return;
+        _thicknessResetRunning = true;
+        thicknessSlider.IsEnabled = thicknessResetButton.IsEnabled = false;
+        try
+        {
+            _updatingSliders = true;
+            thicknessSlider.Value = MouseEffectSettings.DefaultThickness;
+            _updatingSliders = false;
+            await _thicknessSaveTask;
+            if (Math.Abs(MouseEffectSettings.Thickness - MouseEffectSettings.DefaultThickness) > 0.001)
+                await MouseEffectSettings.SetThicknessAsync(MouseEffectSettings.DefaultThickness);
+        }
+        catch (Exception exception) { ShowSettingError("SETWN0009", exception); } //SETWN0009
+        finally
+        {
+            _thicknessResetRunning = false;
+            _updatingSliders = true;
+            thicknessSlider.Value = MouseEffectSettings.Thickness;
+            _updatingSliders = false;
+            thicknessSlider.IsEnabled = thicknessResetButton.IsEnabled = true;
+            RefreshParameterText();
         }
     }
 }

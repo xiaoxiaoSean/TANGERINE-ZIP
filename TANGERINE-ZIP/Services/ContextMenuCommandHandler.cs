@@ -23,7 +23,8 @@ internal static class ContextMenuCommandHandler
         catch (Exception exception)
         {
             string stageCode = exception is StageException stageException ? stageException.StageCode : "CTXCM0003";
-            MessageBox.Show(MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //CTXCM0003
+            ThemedPromptWindow.Inform(null, LanguageManager.Get("ErrorTitle"),
+                MessageTipGenerator.GenerateTip(stageCode, exception.Message)); //CTXCM0003
         }
     }
 
@@ -80,11 +81,13 @@ internal static class ContextMenuCommandHandler
         if (dialog.ShowDialog() != true) return;
         string outputPath = dialog.FileName;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(dialog.FilterIndex);
-        if (!ArchivePasswordWindow.TryGetCreationPassword(null, Path.GetFileName(outputPath), type, out string? password)) return;
+        CompressionOptionsWindow optionsWindow = new(Path.GetFileName(outputPath), type);
+        if (optionsWindow.ShowDialog() != true) return;
+        CompressionOptions options = optionsWindow.Options!;
         ContextOperationWindow window = new(LanguageManager.Get("ContextCompressProgress"), async (progress, token) =>
         {
-            await new ArchiveWorkerClient().CreateAsync(paths, outputPath, type, progress, token, password);
-            if (!File.Exists(outputPath))
+            await new ArchiveWorkerClient().CreateAsync(paths, outputPath, type, progress, token, options.Password, options);
+            if (!ArchiveOutput.Exists(outputPath))
                 throw new StageException("CTXCM0006", string.Format(LanguageManager.Get("CompressionOutputMissing"), outputPath)); //CTXCM0006
         });
         window.ShowDialog();
@@ -94,7 +97,7 @@ internal static class ContextMenuCommandHandler
     {
         if (paths.Length != 1)
         {
-            MessageBox.Show(LanguageManager.Get("ContextOpenMultiple"), LanguageManager.Get("ApplicationTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            ThemedPromptWindow.Inform(null, LanguageManager.Get("ApplicationTitle"), LanguageManager.Get("ContextOpenMultiple"));
             return;
         }
         new MainWindow(paths[0]).ShowDialog();
@@ -143,12 +146,14 @@ internal static class ContextMenuCommandHandler
                         finally { passwordPromptLock.Release(); }
                     }
                 }
+                ResourcePreflight.Check(destination, 64L * 1024 * 1024, 128L * 1024 * 1024);
                 Directory.CreateDirectory(destination);
                 Progress<ArchiveProgress> fileProgress = new(item =>
                 {
                     percentages[path] = item.Percentage;
                     int overall = percentages.Values.Sum() / paths.Length;
-                    progress.Report(new ArchiveProgress(overall, $"{Path.GetFileName(path)}: {item.EntryKey}"));
+                    progress.Report(new ArchiveProgress(overall, $"{Path.GetFileName(path)}: {item.EntryKey}",
+                        item.BytesDone, item.BytesTotal, item.BytesPerSecond));
                 });
                 async Task<ConflictChoice> ResolveBatchConflictAsync(ArchiveConflict conflict, CancellationToken conflictToken)
                 {
@@ -158,9 +163,11 @@ internal static class ContextMenuCommandHandler
                 }
                 if (nested.FlattenAutomatically)
                     await client.ExtractNestedTarsAsync(path, nested.TarEntryKeys, destination, null, false, OverwritePolicy.Ask,
-                        fileProgress, operationToken, password, ResolveBatchConflictAsync);
+                        fileProgress, operationToken, password, ResolveBatchConflictAsync,
+                        (issue, issueToken) => ExtractionPrompt.AskAsync(null, issue, issueToken));
                 else
-                    await client.ExtractAsync(path, destination, null, OverwritePolicy.Ask, fileProgress, operationToken, password, ResolveBatchConflictAsync);
+                    await client.ExtractAsync(path, destination, null, OverwritePolicy.Ask, fileProgress, operationToken, password, ResolveBatchConflictAsync,
+                        (issue, issueToken) => ExtractionPrompt.AskAsync(null, issue, issueToken));
                 percentages[path] = 100;
             }
             finally

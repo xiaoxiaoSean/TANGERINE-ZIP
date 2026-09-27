@@ -85,6 +85,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,18,0">
                                 <TextBlock x:Name="mouseEffectLabel" FontWeight="SemiBold" />
@@ -93,6 +94,8 @@
                             <ToggleButton x:Name="mouseEffectToggle" Grid.Column="1"
                                           Style="{StaticResource MouseEffectToggleStyle}"
                                           VerticalAlignment="Center" Click="MouseEffectToggle_Click" />
+                            <Button x:Name="mouseEffectResetButton" Grid.Column="2"
+                                    VerticalAlignment="Center" Click="MouseEffectReset_Click" />
                         </Grid>
                         <Separator Margin="0,24,0,16" />
                         <TextBlock x:Name="radiusLabel" FontWeight="SemiBold" />
@@ -101,10 +104,12 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Slider x:Name="radiusSlider" Grid.Column="0" VerticalAlignment="Center"
                                     ValueChanged="RadiusSlider_ValueChanged" />
                             <TextBlock x:Name="radiusValueText" Grid.Column="1" Margin="12,0,0,0" />
+                            <Button x:Name="radiusResetButton" Grid.Column="2" Click="RadiusReset_Click" />
                         </Grid>
                         <Separator Margin="0,24,0,16" />
                         <TextBlock x:Name="thicknessLabel" FontWeight="SemiBold" />
@@ -113,10 +118,12 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Slider x:Name="thicknessSlider" Grid.Column="0" VerticalAlignment="Center"
                                     ValueChanged="ThicknessSlider_ValueChanged" />
                             <TextBlock x:Name="thicknessValueText" Grid.Column="1" Margin="12,0,0,0" />
+                            <Button x:Name="thicknessResetButton" Grid.Column="2" Click="ThicknessReset_Click" />
                         </Grid>
                     </StackPanel>
                 </ScrollViewer>
@@ -127,32 +134,46 @@
                         <TextBlock x:Name="appearanceHeadingText" FontWeight="SemiBold" Margin="0,0,0,12" />
                         <TextBlock x:Name="appearanceDescriptionText" Margin="0,0,0,20" />
                         <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                             <TextBlock x:Name="textAccentLabel" Grid.Column="0" VerticalAlignment="Center" />
                             <TextBlock x:Name="textAccentValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
                             <Button x:Name="textAccentButton" Grid.Column="2" Tag="0" Click="SelectColor_Click" />
+                            <Button x:Name="textAccentResetButton" Grid.Column="3" Tag="0" Click="ResetColor_Click" />
                         </Grid>
                         <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                             <TextBlock x:Name="windowBackgroundLabel" Grid.Column="0" VerticalAlignment="Center" />
                             <TextBlock x:Name="windowBackgroundValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
                             <Button x:Name="windowBackgroundButton" Grid.Column="2" Tag="1" Click="SelectColor_Click" />
+                            <Button x:Name="windowBackgroundResetButton" Grid.Column="3" Tag="1" Click="ResetColor_Click" />
                         </Grid>
                         <Separator Margin="0,0,0,16" />
                         <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                             <TextBlock x:Name="progressAccentLabel" Grid.Column="0" VerticalAlignment="Center" />
                             <TextBlock x:Name="progressAccentValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
                             <Button x:Name="progressAccentButton" Grid.Column="2" Tag="2" Click="SelectColor_Click" />
+                            <Button x:Name="progressAccentResetButton" Grid.Column="3" Tag="2" Click="ResetColor_Click" />
                         </Grid>
                         <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                             <TextBlock x:Name="progressBackgroundLabel" Grid.Column="0" VerticalAlignment="Center" />
                             <TextBlock x:Name="progressBackgroundValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
                             <Button x:Name="progressBackgroundButton" Grid.Column="2" Tag="3" Click="SelectColor_Click" />
+                            <Button x:Name="progressBackgroundResetButton" Grid.Column="3" Tag="3" Click="ResetColor_Click" />
                         </Grid>
                     </StackPanel>
                 </ScrollViewer>
+            </TabItem>
+            <TabItem x:Name="moreTab">
+                <StackPanel Margin="24">
+                    <TextBlock x:Name="moreHeadingText" FontWeight="SemiBold" Margin="0,0,0,14" />
+                    <TextBlock x:Name="tempDirectoryDescription" Margin="0,0,0,12" />
+                    <TextBlock x:Name="tempDirectoryPathText" Margin="0,0,0,8" TextWrapping="Wrap" />
+                    <TextBlock x:Name="tempDirectoryAvailableText" Margin="0,0,0,12" />
+                    <Button x:Name="tempDirectoryChooseButton" HorizontalAlignment="Left"
+                            Click="ChooseTempDirectory_Click" />
+                </StackPanel>
             </TabItem>
         </TabControl>
     </Grid>

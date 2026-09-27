@@ -1,5 +1,7 @@
 # TANGERINE ZIP 开发文档
 
+2026-09-27 新增功能与修复见 [`change20260927/README.md`](change20260927/README.md)。
+
 密码压缩、解压、加密封装与安全清理的详细设计见 [`PASSWORD_ARCHIVES.md`](PASSWORD_ARCHIVES.md)。
 
 ## 1. 实现概览
@@ -84,6 +86,7 @@ StageCode 固定为 9 个字符：5 字符 `stageHead` + 4 字符 `stageDetail`�
 | `CTOPW` | ContextOperationWindow 右键操作进度窗口 |
 | `OVDWN` | OverwriteDecisionWindow 覆盖选择窗口 |
 | `ARCSV` | 归档服务 |
+| `ARCED` | ZIP 内成员编辑与备份 |
 | `NESTR` | TAR 嵌套分析与解压 |
 | `RARTL` | 外部 RAR 工具 |
 | `CTXMN` | Win11 右键菜单安装、移除与回滚服务 |

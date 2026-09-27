@@ -2,9 +2,19 @@ using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP.Services;
 
-internal sealed record ArchiveEntryInfo(string Key, bool IsDirectory, long Size);
+// Optional metadata is kept with each member so the details dialog never has to reopen the archive.
+// SizeKnown distinguishes a real empty file from formats whose listing API cannot report its size.
+internal sealed record ArchiveEntryInfo(string Key, bool IsDirectory, long Size, long? CompressedSize = null,
+    string? CompressionMethod = null, bool? IsEncrypted = null, DateTime? LastModifiedTime = null,
+    long? Crc = null, bool SizeKnown = true);
 
-internal sealed record ArchiveProgress(int Percentage, string EntryKey);
+internal sealed record ArchiveProgress(int Percentage, string EntryKey,
+    long? BytesDone = null, long? BytesTotal = null, double? BytesPerSecond = null);
+
+internal enum ExtractionIssueKind { PathTraversal, SuspiciousSize, FileFailure }
+internal enum ExtractionDecision { Continue, Retry, Skip, Stop, Redirect }
+internal sealed record ExtractionIssue(ExtractionIssueKind Kind, string EntryKey, string Detail);
+internal sealed record ExtractionAnswer(ExtractionDecision Decision, string? Destination = null);
 
 // Buffer may have spare capacity; Length is the exact decompressed byte count.
 internal sealed record PreviewPayload(string EntryKey, byte[] Buffer, int Length);

@@ -19,6 +19,12 @@ namespace TANGERINE_ZIP.Services;
 
 internal sealed class ArchiveService
 {
+    public static Func<ExtractionIssue, ExtractionAnswer>? SafetyResolver { get; set; }
+    private sealed class SkipArchiveEntryException : Exception;
+
+    private static ExtractionAnswer AskSafety(ExtractionIssueKind kind, string key, string detail) =>
+        SafetyResolver?.Invoke(new(kind, key, detail)) ?? new(ExtractionDecision.Stop);
+
     private static readonly object NativeInitializationLock = new();
     private static bool _xzInitialized;
     private static bool _wimInitialized;
@@ -31,9 +37,12 @@ internal sealed class ArchiveService
         UTF8 = Encoding.UTF8
     };
 
+    public static string? EntryEncodingName { get; set; }
+
     private static ReaderOptions CreateReaderOptions(string? password = null) => new()
     {
-        ArchiveEncoding = UnicodeArchiveEncoding,
+        ArchiveEncoding = string.IsNullOrEmpty(EntryEncodingName) ? UnicodeArchiveEncoding :
+            new ArchiveEncoding { Default = Encoding.GetEncoding(EntryEncodingName), UTF8 = Encoding.UTF8 },
         Password = password
     };
 
@@ -49,7 +58,8 @@ internal sealed class ArchiveService
                     FileDetector.FileType.Iso => ListIso(archivePath),
                     FileDetector.FileType.Wim => ListWim(archivePath),
                     FileDetector.FileType.GZip or FileDetector.FileType.BZip2 or FileDetector.FileType.Lz4 or FileDetector.FileType.Xz or FileDetector.FileType.Zstd =>
-                        [new ArchiveEntryInfo(GetRawOutputName(archivePath), false, new FileInfo(archivePath).Length)],
+                        [new ArchiveEntryInfo(GetRawOutputName(archivePath), false, 0,
+                            new FileInfo(archivePath).Length, type.ToString(), SizeKnown: false)],
                     _ => ListSharpCompress(archivePath, cancellationToken, password)
                 };
             }
@@ -229,6 +239,7 @@ internal sealed class ArchiveService
     {
         try
         {
+            ResourcePreflight.Check(destinationPath, 64L * 1024 * 1024, 128L * 1024 * 1024);
             Directory.CreateDirectory(destinationPath);
             FileDetector.FileType type = FileDetector.DetectFileType(archivePath);
             switch (type)
@@ -477,7 +488,13 @@ internal sealed class ArchiveService
             cancellationToken.ThrowIfCancellationRequested();
             string key = NormalizeEntry(entry.Key ?? string.Empty);
             if (string.IsNullOrEmpty(key)) key = GetRawOutputName(archivePath);
-            return new ArchiveEntryInfo(key, entry.IsDirectory, entry.Size);
+            // Some formats report zero for unavailable compressed size and CRC metadata.
+            // Keep those values unknown unless the member size confirms a genuine empty stream.
+            return new ArchiveEntryInfo(key, entry.IsDirectory, entry.Size,
+                entry.IsDirectory ? null : entry.CompressedSize > 0 || entry.Size == 0 ? entry.CompressedSize : null,
+                entry.CompressionType == SharpCompress.Common.CompressionType.Unknown ? null : entry.CompressionType.ToString(),
+                entry.IsEncrypted, entry.LastModifiedTime,
+                entry.Crc > 0 && entry.Crc <= uint.MaxValue ? entry.Crc : null);
         }).ToArray();
     }
 
@@ -506,7 +523,8 @@ internal sealed class ArchiveService
             {
                 string path = imageRoot + NormalizeEntry((entry.FullPath ?? string.Empty).TrimStart('\\'));
                 bool isDirectory = entry.Attributes.HasFlag(FileAttributes.Directory);
-                result.Add(new ArchiveEntryInfo(isDirectory ? path.TrimEnd('/') + "/" : path, isDirectory, 0));
+                result.Add(new ArchiveEntryInfo(isDirectory ? path.TrimEnd('/') + "/" : path,
+                    isDirectory, 0, SizeKnown: isDirectory));
                 return 0;
             });
         }
@@ -521,42 +539,70 @@ internal sealed class ArchiveService
             IArchiveEntry[] entries = archive.Entries.Where(entry => ShouldInclude(entry.Key ?? string.Empty, selectedEntries)).ToArray();
             if (entries.Any(entry => entry.IsEncrypted) && string.IsNullOrEmpty(password))
                 throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
-            long total = Math.Max(entries.Where(entry => !entry.IsDirectory).Sum(entry => Math.Max(entry.Size, 1)), 1);
+            long total = Math.Max(entries.Where(entry => !entry.IsDirectory).Aggregate(0L,
+                (sum, entry) => sum > long.MaxValue - Math.Max(entry.Size, 1) ? long.MaxValue : sum + Math.Max(entry.Size, 1)), 1);
             long completed = 0;
             foreach (IArchiveEntry entry in entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                string key = NormalizeEntry(entry.Key ?? string.Empty);
+                string key = entry.Key ?? string.Empty;
                 if (string.IsNullOrEmpty(key)) key = GetRawOutputName(archivePath);
-                string targetPath = GetSafeTargetPath(destinationPath, key);
+                string targetPath;
+                try { targetPath = GetSafeTargetPath(destinationPath, key); }
+                catch (SkipArchiveEntryException) { completed += Math.Max(entry.Size, 1); continue; }
                 if (entry.IsDirectory)
                 {
                     Directory.CreateDirectory(targetPath);
                     continue;
                 }
+                long compressedBaseline = entry.CompressedSize > 0 ? entry.CompressedSize : new FileInfo(archivePath).Length;
+                bool preapprovedBomb = false;
+                if (entry.Size >= 1024L * 1024 * 1024 && compressedBaseline > 0 &&
+                    entry.Size / compressedBaseline >= 1000)
+                {
+                    ExtractionAnswer bombAnswer = AskSafety(ExtractionIssueKind.SuspiciousSize, key,
+                        $"{ResourcePreflight.FormatBytes(compressedBaseline)} → {ResourcePreflight.FormatBytes(entry.Size)}");
+                    if (bombAnswer.Decision == ExtractionDecision.Stop) throw new OperationCanceledException();
+                    if (bombAnswer.Decision == ExtractionDecision.Skip) { completed += Math.Max(entry.Size, 1); continue; }
+                    preapprovedBomb = true;
+                }
+                ResourcePreflight.Check(targetPath, entry.Size > long.MaxValue - 16L * 1024 * 1024
+                    ? long.MaxValue : Math.Max(0, entry.Size) + 16L * 1024 * 1024, 128L * 1024 * 1024);
                 Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
                 if (!ShouldOverwriteTarget(targetPath, key, overwritePolicy, conflicts))
                 {
                     completed += Math.Max(entry.Size, 1);
                     continue;
                 }
-                string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
-                try
+                while (true)
                 {
-                    using Stream input = entry.OpenEntryStream();
-                    using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                        CopyWithProgress(input, output, entry.Size, () => completed, value => completed += value, total, key, progress, cancellationToken);
-                    File.Move(temporaryTarget, targetPath, true);
+                    string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                    long entryCompleted = 0;
+                    try
+                    {
+                        using Stream input = entry.OpenEntryStream();
+                        using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                            CopyWithProgress(input, output, entry.Size, () => completed + entryCompleted,
+                                value => entryCompleted += value, total, key, progress, cancellationToken,
+                                preapprovedBomb ? 0 : compressedBaseline);
+                        File.Move(temporaryTarget, targetPath, true);
+                        completed += Math.Max(entryCompleted, 1);
+                        break;
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (SkipArchiveEntryException) { completed += Math.Max(entry.Size, 1); break; }
+                    catch (Exception exception) when (entry.IsEncrypted && IsPasswordFailure(exception))
+                    { throw CreatePasswordException(password, exception); }
+                    catch (Exception exception)
+                    {
+                        ExtractionAnswer answer = AskSafety(ExtractionIssueKind.FileFailure, key, exception.Message);
+                        if (answer.Decision == ExtractionDecision.Retry) continue;
+                        if (answer.Decision == ExtractionDecision.Skip) { completed += Math.Max(entry.Size, 1); break; }
+                        throw new OperationCanceledException();
+                    }
+                    finally { if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget); }
                 }
-                catch (Exception exception) when (entry.IsEncrypted && IsPasswordFailure(exception))
-                {
-                    throw CreatePasswordException(password, exception);
-                }
-                finally
-                {
-                    if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget);
-                }
-                if (entry.LastModifiedTime.HasValue)
+                if (entry.LastModifiedTime.HasValue && File.Exists(targetPath))
                 {
                     File.SetLastWriteTime(targetPath, entry.LastModifiedTime.Value);
                 }
@@ -574,17 +620,58 @@ internal sealed class ArchiveService
             progress?.Report(new ArchiveProgress(100, entryName));
             return;
         }
-        string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
-        try
+        while (true)
         {
-            await using FileStream input = new(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, true);
-            await using ProgressStream monitoredInput = new(input, input.Length, entryName, progress);
-            await using Stream decoder = CreateDecoder(monitoredInput, type);
-            await using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1024 * 128, true))
-                await decoder.CopyToAsync(output, cancellationToken);
-            File.Move(temporaryTarget, targetPath, true);
+            string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                await using FileStream input = new(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 128, true);
+                await using ProgressStream monitoredInput = new(input, input.Length, entryName, progress);
+                await using Stream decoder = CreateDecoder(monitoredInput, type);
+                await using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1024 * 128, true))
+                {
+                    byte[] buffer = new byte[128 * 1024];
+                    long written = 0, lastCheck = 0;
+                    bool bombAccepted = false;
+                    System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+                    int read;
+                    while ((read = await decoder.ReadAsync(buffer, cancellationToken)) > 0)
+                    {
+                        long next = written + read;
+                        if (!bombAccepted && next >= 1024L * 1024 * 1024 && input.Length > 0 &&
+                            next / input.Length >= 1000)
+                        {
+                            ExtractionAnswer answer = AskSafety(ExtractionIssueKind.SuspiciousSize, entryName,
+                                $"{ResourcePreflight.FormatBytes(input.Length)} → {ResourcePreflight.FormatBytes(next)}");
+                            if (answer.Decision == ExtractionDecision.Skip) throw new SkipArchiveEntryException();
+                            if (answer.Decision != ExtractionDecision.Continue) throw new OperationCanceledException();
+                            bombAccepted = true;
+                        }
+                        if (next - lastCheck >= 64L * 1024 * 1024)
+                        {
+                            ResourcePreflight.Check(targetPath, 16L * 1024 * 1024, 128L * 1024 * 1024);
+                            lastCheck = next;
+                        }
+                        await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                        written = next;
+                        progress?.Report(new ArchiveProgress((int)Math.Clamp(input.Position * 100 / Math.Max(input.Length, 1), 0, 99),
+                            entryName, written, null, written / Math.Max(watch.Elapsed.TotalSeconds, 0.1)));
+                    }
+                }
+                File.Move(temporaryTarget, targetPath, true);
+                break;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (SkipArchiveEntryException) { return; }
+            catch (Exception exception)
+            {
+                ExtractionAnswer answer = AskSafety(ExtractionIssueKind.FileFailure, entryName, exception.Message);
+                if (answer.Decision == ExtractionDecision.Retry) continue;
+                if (answer.Decision == ExtractionDecision.Skip) return;
+                throw new OperationCanceledException();
+            }
+            finally { if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget); }
         }
-        finally { if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget); }
         progress?.Report(new ArchiveProgress(100, entryName));
     }
 
@@ -606,15 +693,30 @@ internal sealed class ArchiveService
                 completed += reader.GetFileLength(file);
                 continue;
             }
-            string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
-            try
+            while (true)
             {
-                using Stream input = reader.OpenFile(file, FileMode.Open);
-                using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                    CopyWithProgress(input, output, reader.GetFileLength(file), () => completed, value => completed += value, total, key, progress, cancellationToken);
-                File.Move(temporaryTarget, targetPath, true);
+                string temporaryTarget = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                long entryCompleted = 0;
+                try
+                {
+                    using Stream input = reader.OpenFile(file, FileMode.Open);
+                    using (FileStream output = new(temporaryTarget, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                        CopyWithProgress(input, output, reader.GetFileLength(file), () => completed + entryCompleted,
+                            value => entryCompleted += value, total, key, progress, cancellationToken);
+                    File.Move(temporaryTarget, targetPath, true);
+                    completed += Math.Max(entryCompleted, 1);
+                    break;
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception exception)
+                {
+                    ExtractionAnswer answer = AskSafety(ExtractionIssueKind.FileFailure, key, exception.Message);
+                    if (answer.Decision == ExtractionDecision.Retry) continue;
+                    if (answer.Decision == ExtractionDecision.Skip) { completed += reader.GetFileLength(file); break; }
+                    throw new OperationCanceledException();
+                }
+                finally { if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget); }
             }
-            finally { if (File.Exists(temporaryTarget)) File.Delete(temporaryTarget); }
         }
         progress?.Report(new ArchiveProgress(100, string.Empty));
     }
@@ -622,7 +724,7 @@ internal sealed class ArchiveService
     private static void ExtractWim(string archivePath, string destinationPath, IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy, IProgress<ArchiveProgress>? progress, ConflictResolutionState? conflicts)
     {
         EnsureWimInitialized();
-        string stagingPath = Path.Combine(Path.GetTempPath(), "TangerineZipWim", Guid.NewGuid().ToString("N"));
+        string stagingPath = Path.Combine(TempDirectorySettings.GetDirectory(), "TangerineZipWim", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(stagingPath);
         try
         {
@@ -993,7 +1095,7 @@ internal sealed class ArchiveService
 
     private static string CreateTemporaryPath(string fileName)
     {
-        string directory = Path.Combine(Path.GetTempPath(), "TangerineZipNested", Guid.NewGuid().ToString("N"));
+        string directory = Path.Combine(TempDirectorySettings.GetDirectory(), "TangerineZipNested", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         return Path.Combine(directory, fileName);
     }
@@ -1021,13 +1123,37 @@ internal sealed class ArchiveService
 
     private static string GetSafeTargetPath(string destinationPath, string entryKey)
     {
-        string root = Path.GetFullPath(destinationPath) + Path.DirectorySeparatorChar;
-        string target = Path.GetFullPath(Path.Combine(root, NormalizeEntry(entryKey).Replace('/', Path.DirectorySeparatorChar)));
-        if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+        string root = Path.GetFullPath(destinationPath).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        bool unsafeName = Path.IsPathRooted(entryKey) || entryKey.Contains(':') ||
+            entryKey.Replace('\\', '/').Split('/').Any(part => part == "..");
+        if (!unsafeName)
         {
-            throw new StageException("ARCSV0008", LanguageManager.Get("UnsafeArchivePath")); //ARCSV0008
+            try
+            {
+                string target = Path.GetFullPath(Path.Combine(root, NormalizeEntry(entryKey).Replace('/', Path.DirectorySeparatorChar)));
+                if (target.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return target;
+            }
+            catch (ArgumentException) { }
+            catch (NotSupportedException) { }
         }
-        return target;
+        ExtractionAnswer answer = AskSafety(ExtractionIssueKind.PathTraversal, entryKey,
+            LanguageManager.Get("UnsafeArchivePath"));
+        if (answer.Decision == ExtractionDecision.Skip) throw new SkipArchiveEntryException();
+        if (answer.Decision == ExtractionDecision.Stop || string.IsNullOrWhiteSpace(answer.Destination))
+            throw new OperationCanceledException();
+        // A redirected unsafe member is stored under its final filename only; no untrusted
+        // parent component is allowed to influence the chosen target folder.
+        string fileName = Path.GetFileName(entryKey.TrimEnd('/', '\\'));
+        if (string.IsNullOrWhiteSpace(fileName) || fileName is "." or ".." ||
+            fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            throw new SkipArchiveEntryException();
+        string redirectedRoot = Path.GetFullPath(answer.Destination).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        string redirected = Path.GetFullPath(Path.Combine(redirectedRoot, fileName));
+        if (!redirected.StartsWith(redirectedRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new SkipArchiveEntryException();
+        }
+        return redirected;
     }
 
     private static string GetRawOutputName(string archivePath)
@@ -1036,16 +1162,35 @@ internal sealed class ArchiveService
         return string.IsNullOrWhiteSpace(name) ? LanguageManager.Get("ExtractedFileName") : name;
     }
 
-    private static void CopyWithProgress(Stream input, Stream output, long entryLength, Func<long> getCompleted, Action<long> addCompleted, long total, string key, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken)
+    private static void CopyWithProgress(Stream input, Stream output, long entryLength, Func<long> getCompleted, Action<long> addCompleted, long total, string key, IProgress<ArchiveProgress>? progress, CancellationToken cancellationToken, long compressedLength = 0)
     {
+        System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+        bool suspiciousSizeAccepted = false;
+        long lastDiskCheck = 0;
         byte[] buffer = new byte[1024 * 128];
         int read;
         while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            long nextLength = output.Length + read;
+            if (!suspiciousSizeAccepted && compressedLength > 0 && nextLength >= 1024L * 1024 * 1024 &&
+                nextLength / compressedLength >= 1000)
+            {
+                ExtractionAnswer answer = AskSafety(ExtractionIssueKind.SuspiciousSize, key,
+                    $"{ResourcePreflight.FormatBytes(compressedLength)} → {ResourcePreflight.FormatBytes(nextLength)}");
+                if (answer.Decision == ExtractionDecision.Skip) throw new SkipArchiveEntryException();
+                if (answer.Decision != ExtractionDecision.Continue) throw new OperationCanceledException();
+                suspiciousSizeAccepted = true;
+            }
+            if (nextLength - lastDiskCheck >= 64L * 1024 * 1024 && output is FileStream file)
+            {
+                ResourcePreflight.Check(file.Name, 16L * 1024 * 1024, 128L * 1024 * 1024);
+                lastDiskCheck = nextLength;
+            }
             output.Write(buffer, 0, read);
             addCompleted(read);
-            progress?.Report(new ArchiveProgress((int)Math.Clamp(getCompleted() * 100 / total, 0, 100), key));
+            progress?.Report(new ArchiveProgress((int)Math.Clamp(getCompleted() * 100 / total, 0, 100), key,
+                getCompleted(), total, getCompleted() / Math.Max(watch.Elapsed.TotalSeconds, 0.1)));
         }
         if (entryLength == 0)
         {

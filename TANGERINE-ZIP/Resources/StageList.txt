@@ -1,7 +1,55 @@
-StageCode uses a five-character stage head followed by a four-digit detail code.
-MAINW=TANGERINE-ZIP/MainWindow.xaml.cs
-FLPKW=TANGERINE-ZIP/FilePickerWindow.xaml.cs
-APWDW=TANGERINE-ZIP/ArchivePasswordWindow.xaml.cs
-CMSPW=TANGERINE-ZIP/ContextMenuSetupWindow.xaml.cs
-CTOPW=TANGERINE-ZIP/ContextOperationWindow.xaml.cs
-OVDWN=TANGERINE-ZIP/OverwriteDecisionWindow.xaml.cs
+StageCode format: five uppercase ASCII letters (component head) + four decimal digits (failure branch).
+The code is stable across languages. MessageTipGenerator displays it using localized StageCodeTip1/StageCodeTip2 labels.
+Callers preserve an existing StageException.StageCode; only unexpected exceptions receive the boundary's fallback code.
+UNKWN=malformed or absent diagnostic identifier (MessageTipGenerator fallback)
+ABTWN=AboutWindow
+APWDW=ArchivePasswordWindow
+ARCED=ArchiveEditService
+ARCSV=ArchiveService
+CMSPW=ContextMenuSetupWindow
+CNFLT=archive overwrite/conflict handling
+COLRS=AppearanceSettings and color validation
+CTOPW=ContextOperationWindow
+CTXCM=ContextMenuCommandHandler
+CTXMN=ContextMenuRegistrationService
+FLPKW=FilePickerWindow
+IMPVW=ImagePreviewWindow
+MAINW=MainWindow
+MECFG=mouse effect numeric configuration
+MESVC=mouse effect settings service
+MWFXT=mouse effect rendering
+NESTR=nested TAR archive handling
+OVDWN=OverwriteDecisionWindow
+PRMEM=memory preflight and job limit
+PROGM=Program startup
+PRSVS=preview service
+PRVWS=preview window
+PWDAR=archive password handling
+RARTL=RAR tool service
+RSRCE=resource preflight
+SETWN=SettingsWindow
+SZTLS=7-Zip tool service
+TMPDR=TEMP_D and temporary workspace management
+TXPVW=TextPreviewWindow
+WORKR=archive worker process and IPC
+ZIPPD=ZIP password detection
+
+Temporary workspace codes:
+TMPDR0001=TEMP_D is missing or empty; ask the user to select a directory.
+TMPDR0002=the configured parent directory is unavailable, unwritable, or has insufficient space.
+TMPDR0004=atomic write/readback of TEMP_D failed.
+TMPDR0005=creating or validating the private TangerineZipWorkspace directory failed.
+TMPDR0006=first-instance startup cleanup of the private workspace failed.
+PROGM0009=unexpected failure at the startup cleanup boundary.
+PROGM0010=unhandled exception escaping the main WPF application loop.
+MAINW0024=removing a completed or superseded clipboard staging directory failed.
+MAINW0025=building or displaying archive member details failed.
+SZTLS0006=removing temporary compression output or embedded 7-Zip files failed.
+CLINE0001=unexpected failure while executing or formatting a command-line request.
+CLINE0002=command-line compression output already exists.
+CLINE0003=the requested command-line archive format does not support password protection.
+CLINE0004=a selected command-line archive member was not found.
+CLINE0005=the command-line input is not a supported archive format.
+CLINE0006=the specified password environment variable is missing or empty.
+CLINE0007=command-line arguments are invalid; command usage is shown.
+CLINE0008=the supplied command-line archive password contains characters unsupported by the archive writer.

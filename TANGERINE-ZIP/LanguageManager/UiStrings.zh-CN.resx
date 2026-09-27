@@ -813,4 +813,135 @@
   <data name="SettingsColorInvalidPrompt" xml:space="preserve"><value>{0} 中的颜色数据无效。是否删除此文件并按默认值重新创建？删除后无法恢复。不修正该文件，程序就无法继续运行。</value></data>
   <data name="SettingsColorInvalidTitle" xml:space="preserve"><value>颜色设置需要处理</value></data>
   <data name="SettingsColorStartupContrast" xml:space="preserve"><value>{0}与{1}过于相近。现在重新选择{0}吗？如果拒绝或取消，程序将不修改颜色并退出。</value></data>
+  <data name="SettingsRestoreDefault" xml:space="preserve"><value>恢复默认值</value></data>
+  <data name="SettingsResetPairPrompt" xml:space="preserve"><value>仅恢复此颜色会使这一组颜色过于相近。是否改为将这一组的两种颜色一起恢复默认值？选择“否”不会修改文件。</value></data>
+  <data name="SettingsResetPairFailed" xml:space="preserve"><value>无法同时恢复这组颜色：{0}</value></data>
+  <data name="SettingsResetPairRollbackFailed" xml:space="preserve"><value>恢复这组颜色失败，且无法完整还原原文件。请重启程序以检查并修复颜色设置。详情：{0}</value></data>
+  <data name="CompressionOptionsTitle" xml:space="preserve"><value>压缩配置</value></data>
+  <data name="CompressionOptionsDescription" xml:space="preserve"><value>配置 {0} 的压缩任务</value></data>
+  <data name="CompressionPasswordRisk" xml:space="preserve"><value>默认关闭。ZIP、7z 和 RAR 可用密码保护。丢失密码后通常无法恢复；较旧的压缩软件可能不支持加密格式。</value></data>
+  <data name="CompressionAdvanced" xml:space="preserve"><value>高级选项（本任务展开后不可收起）</value></data>
+  <data name="CompressionMethod" xml:space="preserve"><value>压缩算法（默认：格式默认值）</value></data>
+  <data name="CompressionMethodRisk" xml:space="preserve"><value>7z 默认 LZMA2，ZIP 默认 Deflate，RAR 使用原生算法。ZIP 不支持 LZMA2，7z 不支持 Deflate。部分旧版软件无法识别其他算法。</value></data>
+  <data name="CompressionLevel" xml:space="preserve"><value>压缩等级（默认：5）</value></data>
+  <data name="CompressionLevelRisk" xml:space="preserve"><value>0 几乎不压缩；ZIP/7z 最高 9，RAR 最高 5。高等级显著增加时间、CPU 和内存占用，低配置设备可能长时间无响应。</value></data>
+  <data name="CompressionDictionary" xml:space="preserve"><value>字典大小 MiB（默认：16）</value></data>
+  <data name="CompressionDictionaryRisk" xml:space="preserve"><value>仅 7z 和 RAR 生效。较大的字典可能提升压缩率，但解压也需要相近内存；过高时低内存设备可能失败或卡死。ZIP Deflate 忽略此值。</value></data>
+  <data name="CompressionThreads" xml:space="preserve"><value>线程数（默认：0，自动）</value></data>
+  <data name="CompressionThreadsRisk" xml:space="preserve"><value>线程过多会占用更多 CPU 和内存，使其他程序无响应；过少会降低速度。解压仍可能需要较多内存。</value></data>
+  <data name="CompressionMemory" xml:space="preserve"><value>内存限制 MiB（默认：0，自动）</value></data>
+  <data name="CompressionMemoryRisk" xml:space="preserve"><value>限制过低可能导致压缩失败或降速；限制过高可能耗尽内存，使系统无响应。</value></data>
+  <data name="CompressionVolume" xml:space="preserve"><value>分卷大小 MiB（默认：0，不分卷）</value></data>
+  <data name="CompressionVolumeRisk" xml:space="preserve"><value>分卷解压需要所有编号文件。部分软件不支持分卷 ZIP/7z；丢失任何一卷可能导致后续数据无法读取。</value></data>
+  <data name="CompressionInvalidOptions" xml:space="preserve"><value>压缩参数无效或与格式不兼容，请检查范围和算法。</value></data>
+  <data name="PreflightDiskUnknown" xml:space="preserve"><value>无法确定目标磁盘。</value></data>
+  <data name="PreflightDiskInsufficient" xml:space="preserve"><value>剩余空间不足。估计需要：{0}；可用：{1}。</value></data>
+  <data name="PreflightMemoryInsufficient" xml:space="preserve"><value>可用内存不足。估计需要：{0}；可用：{1}。</value></data>
+  <data name="ToolsMenu" xml:space="preserve"><value>压缩包工具</value></data>
+  <data name="IntegrityMenu" xml:space="preserve"><value>压缩包完整性测试</value></data>
+  <data name="RepairMenu" xml:space="preserve"><value>压缩包损坏探测与修复</value></data>
+  <data name="HashMenu" xml:space="preserve"><value>hash显示和校验</value></data>
+  <data name="EncodingMenu" xml:space="preserve"><value>乱码修复</value></data>
+  <data name="IntegrityHashResult" xml:space="preserve"><value>SHA-256：{0}（输入预期值可校验）</value></data>
+  <data name="IntegrityHashMatch" xml:space="preserve"><value>SHA-256 匹配：{0}</value></data>
+  <data name="IntegrityHashMismatch" xml:space="preserve"><value>SHA-256 不匹配：{0}</value></data>
+  <data name="IntegrityBlocksResult" xml:space="preserve"><value>已读取 {0} 压缩包数据块，无 I/O 错误。此项不验证解压内容。</value></data>
+  <data name="IntegrityCrcResult" xml:space="preserve"><value>检测 {0} 个文件，{1} 个失败。</value></data>
+  <data name="IntegrityHealthy" xml:space="preserve"><value>正常</value></data>
+  <data name="RepairResult" xml:space="preserve"><value>恢复 {0} 个文件，跳过 {1} 个。备份：{2}。恢复的 ZIP：{3}。</value></data>
+  <data name="ToolChooseArchives" xml:space="preserve"><value>选择一个或多个压缩包</value></data>
+  <data name="ToolMode" xml:space="preserve"><value>测试方式</value></data>
+  <data name="ToolExpectedHash" xml:space="preserve"><value>预期 SHA-256（可选）</value></data>
+  <data name="ToolRun" xml:space="preserve"><value>执行</value></data>
+  <data name="ToolResults" xml:space="preserve"><value>结果</value></data>
+  <data name="ToolChooseArchive" xml:space="preserve"><value>选择压缩包</value></data>
+  <data name="ToolHashAlgorithm" xml:space="preserve"><value>Hash 算法</value></data>
+  <data name="ToolExpected" xml:space="preserve"><value>预期 Hash（可选）</value></data>
+  <data name="ToolSelectEncoding" xml:space="preserve"><value>文件名编码</value></data>
+  <data name="ToolReopen" xml:space="preserve"><value>用此编码重新打开</value></data>
+  <data name="ListName" xml:space="preserve"><value>名称</value></data>
+  <data name="ListOriginalSize" xml:space="preserve"><value>原始大小</value></data>
+  <data name="ListCompressedSize" xml:space="preserve"><value>压缩后大小</value></data>
+  <data name="SearchEntries" xml:space="preserve"><value>搜索压缩包内文件</value></data>
+  <data name="ExtractEntryToFolder" xml:space="preserve"><value>解压此文件到文件夹</value></data>
+  <data name="EntryDetails" xml:space="preserve"><value>文件详细信息</value></data>
+  <data name="EntryDetailsUnknown" xml:space="preserve"><value>未知</value></data>
+  <data name="EntryDetailsKind" xml:space="preserve"><value>类型</value></data>
+  <data name="EntryDetailsFormat" xml:space="preserve"><value>压缩包格式</value></data>
+  <data name="EntryDetailsFile" xml:space="preserve"><value>文件</value></data>
+  <data name="EntryDetailsDirectory" xml:space="preserve"><value>文件夹</value></data>
+  <data name="EntryDetailsMethod" xml:space="preserve"><value>压缩方式</value></data>
+  <data name="EntryDetailsRatio" xml:space="preserve"><value>压缩率</value></data>
+  <data name="EntryDetailsSaved" xml:space="preserve"><value>节省空间</value></data>
+  <data name="EntryDetailsModified" xml:space="preserve"><value>修改时间</value></data>
+  <data name="EntryDetailsEncrypted" xml:space="preserve"><value>是否加密</value></data>
+  <data name="EntryDetailsYes" xml:space="preserve"><value>是</value></data>
+  <data name="EntryDetailsNo" xml:space="preserve"><value>否</value></data>
+  <data name="EntryDetailsStored" xml:space="preserve"><value>仅存储（未压缩）</value></data>
+  <data name="DropBusyPrompt" xml:space="preserve"><value>当前正在执行任务。是否启动另一个实例打开拖入的文件？</value></data>
+  <data name="DropLoadedPrompt" xml:space="preserve"><value>当前已打开压缩包，请选择拖入文件的打开方式。</value></data>
+  <data name="RepairWarning" xml:space="preserve"><value>将先备份原压缩包，再生成仅包含可读文件的独立 ZIP。是否继续？</value></data>
+  <data name="NoArchiveSelected" xml:space="preserve"><value>请先打开压缩包。</value></data>
+  <data name="UnknownCompressedSize" xml:space="preserve"><value>—</value></data>
+  <data name="ContextProgressBytes" xml:space="preserve"><value>{0} / {1}  •  {2}/秒</value></data>
+  <data name="TraversalChooseFolder" xml:space="preserve"><value>压缩包中发现不安全路径：{0}。请选择此文件的安全解压目录，或取消任务。</value></data>
+  <data name="TraversalChooseFolderTitle" xml:space="preserve"><value>选择安全解压目录</value></data>
+  <data name="BombPrompt" xml:space="preserve"><value>此文件的解压体积异常：{0}（{1}）。请选择继续、跳过此文件或终止解压。</value></data>
+  <data name="ExtractFailurePrompt" xml:space="preserve"><value>解压 {0} 失败：{1}。请选择重试、跳过此文件或终止解压。</value></data>
+  <data name="IntegrityCrcMismatch" xml:space="preserve"><value>CRC 校验不匹配</value></data>
+  <data name="ToolDataBlocks" xml:space="preserve"><value>数据块</value></data>
+  <data name="CompressionVolumeExists" xml:space="preserve"><value>第一卷已存在，请选择其他输出名称。</value></data>
+  <data name="PromptYes" xml:space="preserve"><value>是</value></data>
+  <data name="PromptNo" xml:space="preserve"><value>否</value></data>
+  <data name="PromptContinue" xml:space="preserve"><value>继续</value></data>
+  <data name="PromptRetry" xml:space="preserve"><value>重试</value></data>
+  <data name="PromptSkip" xml:space="preserve"><value>跳过</value></data>
+  <data name="PromptStop" xml:space="preserve"><value>终止任务</value></data>
+  <data name="PromptUnload" xml:space="preserve"><value>卸载当前压缩包</value></data>
+  <data name="PromptNewInstance" xml:space="preserve"><value>启动新实例</value></data>
+  <data name="ArchiveEditCopy" xml:space="preserve"><value>复制（Ctrl+C）</value></data>
+  <data name="ArchiveEditCut" xml:space="preserve"><value>剪切（Ctrl+X）</value></data>
+  <data name="ArchiveEditPaste" xml:space="preserve"><value>粘贴（Ctrl+V）</value></data>
+  <data name="ArchiveEditDelete" xml:space="preserve"><value>删除（Delete）</value></data>
+  <data name="ArchiveEditUnsupported" xml:space="preserve"><value>目前仅支持编辑未加密、未分卷的 ZIP、7z 和 TAR 压缩包。此压缩包未被修改。</value></data>
+  <data name="ArchiveEditEmptyDirectory" xml:space="preserve"><value>此压缩包含有当前写入器无法保留的空目录，未对压缩包进行修改。</value></data>
+  <data name="ArchiveEditInvalidEntry" xml:space="preserve"><value>压缩包存在重复或不安全的文件名，无法安全编辑。</value></data>
+  <data name="ArchiveEditSelectedMissing" xml:space="preserve"><value>选中的文件已不在压缩包中。</value></data>
+  <data name="ArchiveEditSameLocation" xml:space="preserve"><value>请为剪切的文件选择其他目标目录。</value></data>
+  <data name="ArchiveEditChanged" xml:space="preserve"><value>压缩包在打开或复制后发生了变化。请重新打开并选择文件。</value></data>
+  <data name="ArchiveEditClipboardEmpty" xml:space="preserve"><value>请先选中文件并按 Ctrl+C 或 Ctrl+X。</value></data>
+  <data name="ArchiveEditCopyReady" xml:space="preserve"><value>已复制 {0} 项，可在当前压缩包或资源管理器按 Ctrl+V 粘贴。</value></data>
+  <data name="ArchiveEditCutReady" xml:space="preserve"><value>已剪切 {0} 项，可在当前压缩包或资源管理器按 Ctrl+V 粘贴。</value></data>
+  <data name="ArchiveEditDeleteConfirm" xml:space="preserve"><value>确定从压缩包删除选中的 {0} 项吗？操作会保留备份。</value></data>
+  <data name="ArchiveEditProgress" xml:space="preserve"><value>正在编辑压缩包</value></data>
+  <data name="ArchiveEditCompleted" xml:space="preserve"><value>压缩包已更新。备份：{0}</value></data>
+  <data name="SettingsMoreTab" xml:space="preserve"><value>更多</value></data>
+  <data name="TempDirectoryTitle" xml:space="preserve"><value>临时目录</value></data>
+  <data name="TempDirectoryDescription" xml:space="preserve"><value>临时工作文件保存在此目录。请选择可访问且剩余空间充足的位置。</value></data>
+  <data name="TempDirectoryChange" xml:space="preserve"><value>更改目录</value></data>
+  <data name="TempDirectoryCurrent" xml:space="preserve"><value>当前目录：{0}</value></data>
+  <data name="TempDirectoryAvailable" xml:space="preserve"><value>剩余空间：{0}</value></data>
+  <data name="TempDirectoryUnavailable" xml:space="preserve"><value>临时目录不可用，或剩余空间不足。</value></data>
+  <data name="TempDirectoryNotConfigured" xml:space="preserve"><value>请先设置临时目录。</value></data>
+  <data name="TempDirectoryChoosePrompt" xml:space="preserve"><value>选择临时目录</value></data>
+  <data name="TempDirectorySaveFailed" xml:space="preserve"><value>无法将临时目录保存到程序同目录的 TEMP_D 文件。</value></data>
+  <data name="ArchiveEditPreparingClipboard" xml:space="preserve"><value>正在暂存选中的文件</value></data>
+  <data name="ArchiveEditClipboardStageFailed" xml:space="preserve"><value>部分选中文件无法解压到临时目录，未写入剪贴板。</value></data>
+  <data name="TempDirectoryCleanupFailed" xml:space="preserve"><value>无法清空程序临时工作目录。请关闭其他实例或选择其他临时目录。</value></data>
+  <data name="CliHelp" xml:space="preserve"><value>TANGERINE ZIP 命令行&#10;  TANGERINE-ZIP.exe help [命令]&#10;  TANGERINE-ZIP.exe compress &lt;输出文件&gt; &lt;来源&gt;... [参数]&#10;  TANGERINE-ZIP.exe extract &lt;压缩包&gt; &lt;目标目录&gt; [参数]&#10;  TANGERINE-ZIP.exe list &lt;压缩包&gt; [参数]&#10;用 help compress、help extract 或 help list 查看参数。无参数时打开图形界面。</value></data>
+  <data name="CliHelp_compress" xml:space="preserve"><value>compress &lt;输出文件&gt; &lt;来源&gt;... [参数]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|iso|wim（默认按输出后缀）&#10;  --password 密码 | --password-env 环境变量名&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads 数量（0=自动）&#10;  --memory-limit MiB（0=不限）  --volume MiB（0=不分卷）&#10;高级参数仅适用于 ZIP、7z、RAR。已存在的输出会被拒绝。以 -- 开头的路径前可添加单独的 --。</value></data>
+  <data name="CliHelp_extract" xml:space="preserve"><value>extract &lt;压缩包&gt; &lt;目标目录&gt; [参数]&#10;  --password 密码 | --password-env 环境变量名&#10;  --encoding 编码名称（成员文件名）&#10;  --entry 成员路径（可重复）&#10;  --on-conflict abort|overwrite|skip（默认 abort）&#10;  --on-issue abort|skip（默认 abort；包括不安全路径和可疑体积）</value></data>
+  <data name="CliHelp_list" xml:space="preserve"><value>list &lt;压缩包&gt; [参数]&#10;  --password 密码 | --password-env 环境变量名&#10;  --encoding 编码名称（成员文件名）&#10;  --json（输出完整成员元数据）&#10;默认列：路径、原始字节数、压缩后字节数、压缩方式。</value></data>
+  <data name="CliInvalidArguments" xml:space="preserve"><value>命令参数无效。</value></data>
+  <data name="CliOutputExists" xml:space="preserve"><value>输出文件已存在，请换一个路径。</value></data>
+  <data name="CliSourceMissing" xml:space="preserve"><value>来源文件或目录不存在。</value></data>
+  <data name="CliArchiveMissing" xml:space="preserve"><value>压缩包不存在。</value></data>
+  <data name="CliUnsupportedArchive" xml:space="preserve"><value>不支持的压缩包格式。</value></data>
+  <data name="CliEntryMissing" xml:space="preserve"><value>压缩包内找不到指定成员。</value></data>
+  <data name="CliPasswordEnvMissing" xml:space="preserve"><value>密码环境变量不存在或为空。</value></data>
+  <data name="CliTempHint" xml:space="preserve"><value>请在图形界面的“设置 > 更多”中设置临时目录（程序旁的 TEMP_D）。</value></data>
+  <data name="CliCancelled" xml:space="preserve"><value>操作已取消。</value></data>
+  <data name="CliCreated" xml:space="preserve"><value>已创建：{0}</value></data>
+  <data name="CliExtracted" xml:space="preserve"><value>已解压到：{0}</value></data>
+  <data name="CliListHeader" xml:space="preserve"><value>路径&#9;原始字节数&#9;压缩后字节数&#9;压缩方式</value></data>
 </root>

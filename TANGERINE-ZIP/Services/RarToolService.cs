@@ -22,7 +22,8 @@ internal sealed class RarToolService
         string outputPath,
         IProgress<ArchiveProgress>? progress,
         CancellationToken cancellationToken,
-        string? password = null)
+        string? password = null,
+        CompressionOptions? options = null)
     {
         if (!IsAvailable)
         {
@@ -30,11 +31,16 @@ internal sealed class RarToolService
         }
 
         string temporaryOutputPath = outputPath + "." + Guid.NewGuid().ToString("N") + ".rar";
+        string temporaryBase = Path.Combine(Path.GetDirectoryName(temporaryOutputPath)!, Path.GetFileNameWithoutExtension(temporaryOutputPath));
+        string outputBase = Path.Combine(Path.GetDirectoryName(outputPath)!, Path.GetFileNameWithoutExtension(outputPath));
+        List<string> movedVolumes = [];
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (sourcePaths.Any(path => Path.GetFullPath(path).Equals(Path.GetFullPath(outputPath), StringComparison.OrdinalIgnoreCase)))
                 throw new StageException("RARTL0006", LanguageManager.Get("OutputConflictsInput")); //RARTL0006
+            if (options?.VolumeMiB > 0 && File.Exists(outputBase + ".part1.rar"))
+                throw new StageException("RARTL0007", LanguageManager.Get("CompressionVolumeExists"));
             ProcessStartInfo startInfo = new()
             {
                 FileName = ExecutablePath,
@@ -47,7 +53,13 @@ internal sealed class RarToolService
             startInfo.ArgumentList.Add("a");
             startInfo.ArgumentList.Add("-r");
             startInfo.ArgumentList.Add("-ep1");
-            startInfo.ArgumentList.Add("-m5");
+            startInfo.ArgumentList.Add($"-m{(options?.Advanced == true ? options.Level : 5)}");
+            if (options?.Advanced == true)
+            {
+                startInfo.ArgumentList.Add($"-md{options.DictionaryMiB}m");
+                if (options.Threads > 0) startInfo.ArgumentList.Add($"-mt{options.Threads}");
+                if (options.VolumeMiB > 0) startInfo.ArgumentList.Add($"-v{options.VolumeMiB}m");
+            }
             startInfo.ArgumentList.Add("-y");
             // -hp enables native RAR data and header encryption. ArgumentList preserves Unicode exactly
             // and avoids shell parsing; the same Windows user can still inspect the temporary process argument.
@@ -63,6 +75,8 @@ internal sealed class RarToolService
             {
                 throw new StageException("RARTL0002", LanguageManager.Get("RarToolStartFailed")); //RARTL0002
             }
+            using JobObjectMemoryLimit? memoryLimit = options?.MemoryLimitMiB > 0
+                ? JobObjectMemoryLimit.Attach(process, (long)options.MemoryLimitMiB * 1024 * 1024) : null;
             // RAR refreshes percentages with backspaces, not necessarily with line breaks.
             // Read characters continuously and report only parsed percentages to avoid code-page-dependent UI text.
             Task<string> outputTask = ReadProgressAsync(process.StandardOutput, progress);
@@ -90,24 +104,44 @@ internal sealed class RarToolService
             {
                 throw new StageException("RARTL0003", string.Format(LanguageManager.Get("RarToolExitCode"), process.ExitCode) + Environment.NewLine + string.Join(Environment.NewLine, diagnostics)); //RARTL0003
             }
-            File.Move(temporaryOutputPath, outputPath, true);
+            string[] parts = Directory.GetFiles(Path.GetDirectoryName(temporaryOutputPath)!,
+                Path.GetFileName(temporaryBase) + ".part*.rar");
+            if (parts.Length > 0)
+            {
+                foreach (string part in parts.OrderBy(path => path, StringComparer.Ordinal))
+                {
+                    string destination = outputBase + part[temporaryBase.Length..];
+                    File.Move(part, destination);
+                    movedVolumes.Add(destination);
+                }
+            }
+            else File.Move(temporaryOutputPath, outputPath, true);
             progress?.Report(new ArchiveProgress(100, string.Empty));
         }
         catch (StageException)
         {
+            DeleteMovedVolumes();
             throw;
         }
         catch (OperationCanceledException)
         {
+            DeleteMovedVolumes();
             throw;
         }
         catch (Exception exception)
         {
+            DeleteMovedVolumes();
             throw new StageException("RARTL0004", exception.Message, exception); //RARTL0004
         }
         finally
         {
             if (File.Exists(temporaryOutputPath)) File.Delete(temporaryOutputPath);
+            foreach (string part in Directory.GetFiles(Path.GetDirectoryName(temporaryOutputPath)!,
+                Path.GetFileName(temporaryBase) + ".part*.rar")) File.Delete(part);
+        }
+        void DeleteMovedVolumes()
+        {
+            foreach (string part in movedVolumes) if (File.Exists(part)) File.Delete(part);
         }
     }
 

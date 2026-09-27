@@ -348,7 +348,7 @@ internal static class ContextMenuRegistrationService
 
     private static async Task<string> ExtractEmbeddedPackageAsync(CancellationToken token)
     {
-        string directory = Path.Combine(Path.GetTempPath(), "TangerineZip", "ContextMenu", Guid.NewGuid().ToString("N"));
+        string directory = Path.Combine(TempDirectorySettings.GetDirectory(), "TangerineZip", "ContextMenu", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         string packagePath = Path.Combine(directory, "TangerineZipContextMenu.msix");
         await using Stream source = OpenEmbeddedResource(PackageResourceName, "CTXMN0005");

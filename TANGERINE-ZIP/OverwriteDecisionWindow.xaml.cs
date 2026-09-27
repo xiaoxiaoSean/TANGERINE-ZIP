@@ -40,8 +40,8 @@ public sealed partial class OverwriteDecisionWindow : Window
             case 3: _output = -99; _allSkip = true; break;
             default:
                 string detail = LanguageManager.Get("Suggestion1") + LanguageManager.Get("OverWriteSuggestion1");
-                MessageBox.Show(this, MessageTipGenerator.GenerateTip("OVDWN0001", detail), //OVDWN0001
-                    LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
+                    MessageTipGenerator.GenerateTip("OVDWN0001", detail)); //OVDWN0001
                 return;
         }
         Close();

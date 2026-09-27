@@ -48,6 +48,11 @@ internal sealed partial class ContextOperationWindow : Window
             _operationProgressBar.Value = Math.Clamp(item.Percentage, 0, 100);
             _progressPercentText.Text = $"{_operationProgressBar.Value:0}%";
             if (!string.IsNullOrWhiteSpace(item.EntryKey)) _statusText.Text = item.EntryKey;
+            if (item.BytesDone.HasValue && item.BytesPerSecond.HasValue)
+                _speedText.Text = string.Format(LanguageManager.Get("ContextProgressBytes"),
+                    ResourcePreflight.FormatBytes(item.BytesDone.Value),
+                    item.BytesTotal.HasValue ? ResourcePreflight.FormatBytes(item.BytesTotal.Value) : "?",
+                    ResourcePreflight.FormatBytes((long)item.BytesPerSecond.Value));
         });
         try
         {
@@ -68,7 +73,8 @@ internal sealed partial class ContextOperationWindow : Window
         catch (Exception exception)
         {
             string code = exception is StageException stage ? stage.StageCode : "CTOPW0001";
-            MessageBox.Show(this, MessageTipGenerator.GenerateTip(code, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
+                MessageTipGenerator.GenerateTip(code, exception.Message));
             _completed = true;
             _actionButton.Content = LanguageManager.Get("Confirm");
         }

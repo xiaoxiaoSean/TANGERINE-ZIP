@@ -15,6 +15,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -28,7 +29,8 @@
             <TextBlock x:Name="_progressPercentText" Grid.Column="1" Text="0%" Margin="4" />
         </Grid>
         <TextBlock x:Name="_engineText" Grid.Row="1" Margin="4" Visibility="Collapsed" />
-        <TextBlock x:Name="_statusText" Grid.Row="2" Text="Operation in progress" Margin="4" />
-        <Button x:Name="_actionButton" Grid.Row="3" Content="Stop" Click="ActionButton_Click" />
+        <TextBlock x:Name="_speedText" Grid.Row="2" Margin="4" />
+        <TextBlock x:Name="_statusText" Grid.Row="3" Text="Operation in progress" Margin="4" />
+        <Button x:Name="_actionButton" Grid.Row="4" Content="Stop" Click="ActionButton_Click" />
     </Grid>
 </Window>

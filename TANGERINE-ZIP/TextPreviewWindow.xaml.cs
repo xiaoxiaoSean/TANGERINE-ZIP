@@ -52,7 +52,7 @@ internal sealed partial class TextPreviewWindow : Window
     private void ShowError(string fallback, Exception exception)
     {
         string code = exception is StageException stage ? stage.StageCode : fallback;
-        MessageBox.Show(this, MessageTipGenerator.GenerateTip(code, exception.Message),
-            LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //TXPVW0001/TXPVW0002
+        ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
+            MessageTipGenerator.GenerateTip(code, exception.Message)); //TXPVW0001/TXPVW0002
     }
 }

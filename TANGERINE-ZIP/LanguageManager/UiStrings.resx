@@ -811,4 +811,135 @@ Existing file: {1}</value>
   <data name="SettingsColorInvalidPrompt" xml:space="preserve"><value>The color in {0} is invalid. Delete this file and recreate its default? Deletion cannot be undone. The program cannot continue unless the invalid file is corrected.</value></data>
   <data name="SettingsColorInvalidTitle" xml:space="preserve"><value>Color settings need attention</value></data>
   <data name="SettingsColorStartupContrast" xml:space="preserve"><value>{0} and {1} are too similar. Choose a new {0} now? If you decline or cancel, the program will close without changing the colors.</value></data>
+  <data name="SettingsRestoreDefault" xml:space="preserve"><value>Restore default</value></data>
+  <data name="SettingsResetPairPrompt" xml:space="preserve"><value>Restoring only this color would make the pair too similar. Restore both colors in this pair to their defaults instead? No files will be changed if you decline.</value></data>
+  <data name="SettingsResetPairFailed" xml:space="preserve"><value>Could not restore both colors: {0}</value></data>
+  <data name="SettingsResetPairRollbackFailed" xml:space="preserve"><value>Restoring both colors failed, and the previous files could not be fully restored. Restart the program to inspect and repair the color settings. Details: {0}</value></data>
+  <data name="CompressionOptionsTitle" xml:space="preserve"><value>Compression settings</value></data>
+  <data name="CompressionOptionsDescription" xml:space="preserve"><value>Configure compression for {0}</value></data>
+  <data name="CompressionPasswordRisk" xml:space="preserve"><value>Default: off. Passwords protect archive contents in ZIP, 7z and RAR. Losing the password makes recovery impractical; encryption may be unavailable in older archive apps.</value></data>
+  <data name="CompressionAdvanced" xml:space="preserve"><value>Advanced options (cannot collapse during this task)</value></data>
+  <data name="CompressionMethod" xml:space="preserve"><value>Algorithm (default: format default)</value></data>
+  <data name="CompressionMethodRisk" xml:space="preserve"><value>7z defaults to LZMA2; ZIP defaults to Deflate; RAR uses its native codec. LZMA2 in ZIP and Deflate in 7z are unsupported. Other codecs may not be readable by older archive programs.</value></data>
+  <data name="CompressionLevel" xml:space="preserve"><value>Level (default: 5)</value></data>
+  <data name="CompressionLevelRisk" xml:space="preserve"><value>0 stores data with little compression; ZIP/7z allow up to 9, RAR up to 5. High levels can take much longer and consume more CPU and memory, stalling low-spec devices.</value></data>
+  <data name="CompressionDictionary" xml:space="preserve"><value>Dictionary MiB (default: 16)</value></data>
+  <data name="CompressionDictionaryRisk" xml:space="preserve"><value>7z and RAR only. A larger dictionary can improve compression but requires similar memory for decompression; very large values can fail or freeze low-memory devices. ZIP Deflate ignores this value.</value></data>
+  <data name="CompressionThreads" xml:space="preserve"><value>Threads (default: 0 = automatic)</value></data>
+  <data name="CompressionThreadsRisk" xml:space="preserve"><value>More threads can use more memory and CPU and make other apps unresponsive. A low value slows compression. The decoder may still need substantial memory.</value></data>
+  <data name="CompressionMemory" xml:space="preserve"><value>Memory limit MiB (default: 0 = automatic)</value></data>
+  <data name="CompressionMemoryRisk" xml:space="preserve"><value>Too low a limit may make compression fail or force a slower mode. A very high limit can exhaust RAM and make the system unresponsive.</value></data>
+  <data name="CompressionVolume" xml:space="preserve"><value>Volume size MiB (default: 0 = one archive)</value></data>
+  <data name="CompressionVolumeRisk" xml:space="preserve"><value>Split archives require every numbered part to extract. Some archive apps cannot open split ZIP/7z archives; losing one part can make later data inaccessible.</value></data>
+  <data name="CompressionInvalidOptions" xml:space="preserve"><value>Invalid or incompatible compression setting. Check the supported range and algorithm for this format.</value></data>
+  <data name="PreflightDiskUnknown" xml:space="preserve"><value>The target drive could not be determined.</value></data>
+  <data name="PreflightDiskInsufficient" xml:space="preserve"><value>Not enough free space. Estimated need: {0}; available: {1}.</value></data>
+  <data name="PreflightMemoryInsufficient" xml:space="preserve"><value>Not enough available memory. Estimated need: {0}; available: {1}.</value></data>
+  <data name="ToolsMenu" xml:space="preserve"><value>Archive tools</value></data>
+  <data name="IntegrityMenu" xml:space="preserve"><value>Archive integrity test</value></data>
+  <data name="RepairMenu" xml:space="preserve"><value>Detect damage and repair</value></data>
+  <data name="HashMenu" xml:space="preserve"><value>Show and verify hashes</value></data>
+  <data name="EncodingMenu" xml:space="preserve"><value>Repair garbled names</value></data>
+  <data name="IntegrityHashResult" xml:space="preserve"><value>SHA-256: {0} (provide an expected hash to verify)</value></data>
+  <data name="IntegrityHashMatch" xml:space="preserve"><value>SHA-256 matches: {0}</value></data>
+  <data name="IntegrityHashMismatch" xml:space="preserve"><value>SHA-256 does not match: {0}</value></data>
+  <data name="IntegrityBlocksResult" xml:space="preserve"><value>Read {0} of archive blocks without an I/O error. This does not verify decompressed content.</value></data>
+  <data name="IntegrityCrcResult" xml:space="preserve"><value>Checked {0} files; {1} failed.</value></data>
+  <data name="IntegrityHealthy" xml:space="preserve"><value>OK</value></data>
+  <data name="RepairResult" xml:space="preserve"><value>Recovered {0} files; skipped {1}. Backup: {2}. Recovered ZIP: {3}.</value></data>
+  <data name="ToolChooseArchives" xml:space="preserve"><value>Choose one or more archives</value></data>
+  <data name="ToolMode" xml:space="preserve"><value>Test mode</value></data>
+  <data name="ToolExpectedHash" xml:space="preserve"><value>Expected SHA-256 (optional)</value></data>
+  <data name="ToolRun" xml:space="preserve"><value>Run</value></data>
+  <data name="ToolResults" xml:space="preserve"><value>Results</value></data>
+  <data name="ToolChooseArchive" xml:space="preserve"><value>Choose an archive</value></data>
+  <data name="ToolHashAlgorithm" xml:space="preserve"><value>Hash algorithm</value></data>
+  <data name="ToolExpected" xml:space="preserve"><value>Expected hash (optional)</value></data>
+  <data name="ToolSelectEncoding" xml:space="preserve"><value>Filename encoding</value></data>
+  <data name="ToolReopen" xml:space="preserve"><value>Reopen archive with encoding</value></data>
+  <data name="ListName" xml:space="preserve"><value>Name</value></data>
+  <data name="ListOriginalSize" xml:space="preserve"><value>Original size</value></data>
+  <data name="ListCompressedSize" xml:space="preserve"><value>Compressed size</value></data>
+  <data name="SearchEntries" xml:space="preserve"><value>Search files in archive</value></data>
+  <data name="ExtractEntryToFolder" xml:space="preserve"><value>Extract this item to folder</value></data>
+  <data name="EntryDetails" xml:space="preserve"><value>File details</value></data>
+  <data name="EntryDetailsUnknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="EntryDetailsKind" xml:space="preserve"><value>Type</value></data>
+  <data name="EntryDetailsFormat" xml:space="preserve"><value>Archive format</value></data>
+  <data name="EntryDetailsFile" xml:space="preserve"><value>File</value></data>
+  <data name="EntryDetailsDirectory" xml:space="preserve"><value>Folder</value></data>
+  <data name="EntryDetailsMethod" xml:space="preserve"><value>Compression method</value></data>
+  <data name="EntryDetailsRatio" xml:space="preserve"><value>Space saving</value></data>
+  <data name="EntryDetailsSaved" xml:space="preserve"><value>Space saved</value></data>
+  <data name="EntryDetailsModified" xml:space="preserve"><value>Modified</value></data>
+  <data name="EntryDetailsEncrypted" xml:space="preserve"><value>Encrypted</value></data>
+  <data name="EntryDetailsYes" xml:space="preserve"><value>Yes</value></data>
+  <data name="EntryDetailsNo" xml:space="preserve"><value>No</value></data>
+  <data name="EntryDetailsStored" xml:space="preserve"><value>Stored (no compression)</value></data>
+  <data name="DropBusyPrompt" xml:space="preserve"><value>A task is running. Open the dropped file in another instance?</value></data>
+  <data name="DropLoadedPrompt" xml:space="preserve"><value>An archive is already open. Choose where to open the dropped file.</value></data>
+  <data name="RepairWarning" xml:space="preserve"><value>Recovery will copy the archive to a backup and create a separate ZIP containing readable files. Continue?</value></data>
+  <data name="NoArchiveSelected" xml:space="preserve"><value>Open an archive first.</value></data>
+  <data name="UnknownCompressedSize" xml:space="preserve"><value>—</value></data>
+  <data name="ContextProgressBytes" xml:space="preserve"><value>{0} / {1}  •  {2}/s</value></data>
+  <data name="TraversalChooseFolder" xml:space="preserve"><value>Unsafe path in archive: {0}. Choose a folder for this file, or cancel extraction.</value></data>
+  <data name="TraversalChooseFolderTitle" xml:space="preserve"><value>Choose safe extraction folder</value></data>
+  <data name="BombPrompt" xml:space="preserve"><value>This file has an unusually large expansion ratio: {0} ({1}). Choose whether to continue, skip this file, or stop extraction.</value></data>
+  <data name="ExtractFailurePrompt" xml:space="preserve"><value>Could not extract {0}: {1}. Choose retry, skip this file, or stop extraction.</value></data>
+  <data name="IntegrityCrcMismatch" xml:space="preserve"><value>CRC mismatch</value></data>
+  <data name="ToolDataBlocks" xml:space="preserve"><value>Data blocks</value></data>
+  <data name="CompressionVolumeExists" xml:space="preserve"><value>The first split volume already exists. Choose a different output name.</value></data>
+  <data name="PromptYes" xml:space="preserve"><value>Yes</value></data>
+  <data name="PromptNo" xml:space="preserve"><value>No</value></data>
+  <data name="PromptContinue" xml:space="preserve"><value>Continue</value></data>
+  <data name="PromptRetry" xml:space="preserve"><value>Retry</value></data>
+  <data name="PromptSkip" xml:space="preserve"><value>Skip</value></data>
+  <data name="PromptStop" xml:space="preserve"><value>Stop task</value></data>
+  <data name="PromptUnload" xml:space="preserve"><value>Unload current</value></data>
+  <data name="PromptNewInstance" xml:space="preserve"><value>New instance</value></data>
+  <data name="ArchiveEditCopy" xml:space="preserve"><value>Copy (Ctrl+C)</value></data>
+  <data name="ArchiveEditCut" xml:space="preserve"><value>Cut (Ctrl+X)</value></data>
+  <data name="ArchiveEditPaste" xml:space="preserve"><value>Paste (Ctrl+V)</value></data>
+  <data name="ArchiveEditDelete" xml:space="preserve"><value>Delete (Delete)</value></data>
+  <data name="ArchiveEditUnsupported" xml:space="preserve"><value>Editing is supported for unencrypted, unsplit ZIP, 7z and TAR archives only. This archive was not changed.</value></data>
+  <data name="ArchiveEditEmptyDirectory" xml:space="preserve"><value>This archive has empty directories that cannot be preserved by the current writer. It was not changed.</value></data>
+  <data name="ArchiveEditInvalidEntry" xml:space="preserve"><value>This archive contains duplicate or unsafe entry names and cannot be edited safely.</value></data>
+  <data name="ArchiveEditSelectedMissing" xml:space="preserve"><value>A selected entry no longer exists in the archive.</value></data>
+  <data name="ArchiveEditSameLocation" xml:space="preserve"><value>Choose a different destination folder for the cut items.</value></data>
+  <data name="ArchiveEditChanged" xml:space="preserve"><value>The archive has changed since it was opened or copied. Reopen it and select the entries again.</value></data>
+  <data name="ArchiveEditClipboardEmpty" xml:space="preserve"><value>Select entries and press Ctrl+C or Ctrl+X first.</value></data>
+  <data name="ArchiveEditCopyReady" xml:space="preserve"><value>Copied {0} item(s). Paste in this archive or File Explorer with Ctrl+V.</value></data>
+  <data name="ArchiveEditCutReady" xml:space="preserve"><value>Cut {0} item(s). Paste in this archive or File Explorer with Ctrl+V.</value></data>
+  <data name="ArchiveEditDeleteConfirm" xml:space="preserve"><value>Delete {0} selected item(s) from this archive? A backup will be kept.</value></data>
+  <data name="ArchiveEditProgress" xml:space="preserve"><value>Editing archive</value></data>
+  <data name="ArchiveEditCompleted" xml:space="preserve"><value>Archive updated. Backup: {0}</value></data>
+  <data name="SettingsMoreTab" xml:space="preserve"><value>More</value></data>
+  <data name="TempDirectoryTitle" xml:space="preserve"><value>Temporary directory</value></data>
+  <data name="TempDirectoryDescription" xml:space="preserve"><value>Temporary work files use this directory. Choose a reachable location with enough free space.</value></data>
+  <data name="TempDirectoryChange" xml:space="preserve"><value>Change directory</value></data>
+  <data name="TempDirectoryCurrent" xml:space="preserve"><value>Current directory: {0}</value></data>
+  <data name="TempDirectoryAvailable" xml:space="preserve"><value>Available space: {0}</value></data>
+  <data name="TempDirectoryUnavailable" xml:space="preserve"><value>The temporary directory is unavailable or has insufficient free space.</value></data>
+  <data name="TempDirectoryNotConfigured" xml:space="preserve"><value>Set a temporary directory before continuing.</value></data>
+  <data name="TempDirectoryChoosePrompt" xml:space="preserve"><value>Choose a temporary directory</value></data>
+  <data name="TempDirectorySaveFailed" xml:space="preserve"><value>Could not save the temporary directory in TEMP_D beside the application.</value></data>
+  <data name="ArchiveEditPreparingClipboard" xml:space="preserve"><value>Preparing selected files for the clipboard</value></data>
+  <data name="ArchiveEditClipboardStageFailed" xml:space="preserve"><value>Some selected files could not be extracted to the temporary directory. Nothing was placed on the clipboard.</value></data>
+  <data name="TempDirectoryCleanupFailed" xml:space="preserve"><value>Could not clear the application's temporary workspace. Close other instances or choose another temporary directory.</value></data>
+  <data name="CliHelp" xml:space="preserve"><value>TANGERINE ZIP command line&#10;  TANGERINE-ZIP.exe help [command]&#10;  TANGERINE-ZIP.exe compress &lt;output&gt; &lt;source&gt;... [options]&#10;  TANGERINE-ZIP.exe extract &lt;archive&gt; &lt;destination&gt; [options]&#10;  TANGERINE-ZIP.exe list &lt;archive&gt; [options]&#10;Run help compress, help extract, or help list for parameters. No arguments opens the GUI.</value></data>
+  <data name="CliHelp_compress" xml:space="preserve"><value>compress &lt;output&gt; &lt;source&gt;... [options]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|iso|wim (default: output extension)&#10;  --password TEXT | --password-env NAME&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads N (0=auto)&#10;  --memory-limit MiB (0=unlimited)  --volume MiB (0=single file)&#10;Advanced options apply to ZIP, 7z, and RAR. Existing output is rejected. Use -- before paths that begin with --.</value></data>
+  <data name="CliHelp_extract" xml:space="preserve"><value>extract &lt;archive&gt; &lt;destination&gt; [options]&#10;  --password TEXT | --password-env NAME&#10;  --encoding NAME (archive entry names)&#10;  --entry PATH (repeat to select members)&#10;  --on-conflict abort|overwrite|skip (default: abort)&#10;  --on-issue abort|skip (default: abort; includes unsafe paths and suspicious sizes)</value></data>
+  <data name="CliHelp_list" xml:space="preserve"><value>list &lt;archive&gt; [options]&#10;  --password TEXT | --password-env NAME&#10;  --encoding NAME (archive entry names)&#10;  --json (output full member metadata as JSON)&#10;Default output columns: path, original bytes, compressed bytes, compression method.</value></data>
+  <data name="CliInvalidArguments" xml:space="preserve"><value>Invalid command arguments.</value></data>
+  <data name="CliOutputExists" xml:space="preserve"><value>Output already exists; choose a new path.</value></data>
+  <data name="CliSourceMissing" xml:space="preserve"><value>Source does not exist.</value></data>
+  <data name="CliArchiveMissing" xml:space="preserve"><value>Archive does not exist.</value></data>
+  <data name="CliUnsupportedArchive" xml:space="preserve"><value>Unsupported archive format.</value></data>
+  <data name="CliEntryMissing" xml:space="preserve"><value>Selected member was not found in the archive.</value></data>
+  <data name="CliPasswordEnvMissing" xml:space="preserve"><value>The password environment variable is unset or empty.</value></data>
+  <data name="CliTempHint" xml:space="preserve"><value>Set the temporary directory in the GUI Settings > More tab (TEMP_D beside the executable).</value></data>
+  <data name="CliCancelled" xml:space="preserve"><value>Operation cancelled.</value></data>
+  <data name="CliCreated" xml:space="preserve"><value>Created: {0}</value></data>
+  <data name="CliExtracted" xml:space="preserve"><value>Extracted to: {0}</value></data>
+  <data name="CliListHeader" xml:space="preserve"><value>Path&#9;Original bytes&#9;Compressed bytes&#9;Method</value></data>
 </root>

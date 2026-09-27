@@ -235,8 +235,8 @@ internal sealed partial class ImagePreviewWindow : Window
         catch (Exception exception)
         {
             StopPanning();
-            MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message),
-                LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //IMPVW0003-IMPVW0013
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
+                MessageTipGenerator.GenerateTip(stageCode, exception.Message)); //IMPVW0003-IMPVW0013
         }
     }
 
@@ -247,8 +247,8 @@ internal sealed partial class ImagePreviewWindow : Window
         catch (Exception exception)
         {
             string code = exception is StageException stage ? stage.StageCode : "IMPVW0001";
-            MessageBox.Show(this, MessageTipGenerator.GenerateTip(code, exception.Message),
-                LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //IMPVW0001
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
+                MessageTipGenerator.GenerateTip(code, exception.Message)); //IMPVW0001
         }
         finally { saveAsButton.IsEnabled = true; }
     }

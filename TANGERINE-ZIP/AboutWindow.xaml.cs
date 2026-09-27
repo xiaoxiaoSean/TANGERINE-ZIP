@@ -17,7 +17,7 @@ public sealed partial class AboutWindow : Window
             ?? throw new StageException("ABTWN0001", LanguageManager.Get("VersionUnavailable")); //ABTWN0001
         // Keep the original English details unchanged apart from replacing
         // both occurrences of the current application version.
-        string aboutDetails = $"TZIP v{currentVersion}\nfounder:xiaoxiaoSean\nthanks all contributor\nthanks the author and all contributors  of rar\nthanks the author and all contributors of all nuget packages\n\nv{currentVersion}-1.0.0changelog:\nnew:compression password\nnew:first-layer right button menu for win11\nnew:quick window auto-close\nfix:cannot be extracted normally via right button menu";
+        string aboutDetails = $"TZIP v{currentVersion}\nfounder:xiaoxiaoSean\nthanks all contributor\nthanks the author and all contributors  of rar\nthanks the author and all contributors of all nuget packages";
         informationText.Text = aboutDetails;
         MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemParameters.WorkArea.Height * 0.018;

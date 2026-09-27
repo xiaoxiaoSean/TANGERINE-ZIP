@@ -1,5 +1,6 @@
 using TANGERINE_ZIP.Services;
 using TANGERINE_ZIP.Tools;
+using System.Windows.Input;
 
 namespace TANGERINE_ZIP;
 
@@ -20,12 +21,38 @@ public partial class MainWindow : Window
     private string? _archivePassword;
     private string _archiveCurrentDirectory = string.Empty;
     private bool _isBusy;
+    private CancellationTokenSource? _searchCancellation;
+    private (long Length, DateTime LastWriteUtc)? _loadedArchiveIdentity;
+    private ArchiveClipboard? _archiveClipboard;
+    private ExplorerArchiveClipboard? _explorerClipboard;
+    private string? _clipboardStaging;
+
+    private sealed record ArchiveClipboard(string ArchivePath, string[] Keys, bool Cut,
+        (long Length, DateTime LastWriteUtc) SourceIdentity);
+
+    private sealed record ArchiveEntryRow(string Name, string Key, bool IsDirectory,
+        string OriginalSize, string CompressedSize)
+    {
+        public override string ToString() => Name;
+    }
 
     public MainWindow() : this(null) { }
 
     public MainWindow(string? startupArchivePath)
     {
         InitializeComponent();
+        // ContextMenu owns a separate popup presentation source. Refresh its local
+        // resources when settings change and before each open so it never keeps
+        // brushes from the previous appearance profile.
+        AppearanceSettings.Changed += RefreshArchiveContextMenuTheme;
+        archiveEntriesList.ContextMenu!.Opened += (_, _) => RefreshArchiveContextMenuTheme();
+        Closed += (_, _) =>
+        {
+            AppearanceSettings.Changed -= RefreshArchiveContextMenuTheme;
+            // The process-owned OLE data object can no longer serve Explorer
+            // after this window closes, so its staged payload can be released.
+            if (_clipboardStaging is not null) CleanupClipboardStaging(_clipboardStaging);
+        };
         MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemFonts.MessageFontSize;
         // Scale from the work area and keep the startup window's long-to-short ratio at sqrt(2):1.
@@ -87,23 +114,55 @@ public partial class MainWindow : Window
         deleteContextMenuItem.Header = LanguageManager.Get("DeleteContextMenu");
         archiveOpenDialog.Title = LanguageManager.Get("SelectArchive");
         archiveOpenDialog.Filter = LanguageManager.Get("ArchiveDialogFilter");
+        toolsMenuItem.Header = LanguageManager.Get("ToolsMenu");
+        integrityMenuItem.Header = LanguageManager.Get("IntegrityMenu");
+        repairMenuItem.Header = LanguageManager.Get("RepairMenu");
+        hashMenuItem.Header = LanguageManager.Get("HashMenu");
+        encodingMenuItem.Header = LanguageManager.Get("EncodingMenu");
+        nameColumn.Header = LanguageManager.Get("ListName");
+        originalSizeColumn.Header = LanguageManager.Get("ListOriginalSize");
+        compressedSizeColumn.Header = LanguageManager.Get("ListCompressedSize");
+        extractEntryContextMenu.Header = LanguageManager.Get("ExtractEntryToFolder");
+        entryDetailsContextMenu.Header = LanguageManager.Get("EntryDetails");
+        copyEntryContextMenu.Header = LanguageManager.Get("ArchiveEditCopy");
+        cutEntryContextMenu.Header = LanguageManager.Get("ArchiveEditCut");
+        pasteEntryContextMenu.Header = LanguageManager.Get("ArchiveEditPaste");
+        deleteEntryContextMenu.Header = LanguageManager.Get("ArchiveEditDelete");
+        searchBox.ToolTip = LanguageManager.Get("SearchEntries");
     }
 
     private void ConfigureEntryColors()
     {
         archiveEntriesList.ItemContainerGenerator.StatusChanged += (_, _) =>
         {
-            foreach (string item in archiveEntriesList.Items.OfType<string>())
+            foreach (ArchiveEntryRow item in archiveEntriesList.Items.OfType<ArchiveEntryRow>())
                 if (archiveEntriesList.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
                 {
                     // Keep entries on the shared text brush even after a live
                     // appearance change. Weight distinguishes directories
                     // without risking an unreadable hard-coded highlight.
                     container.SetResourceReference(Control.ForegroundProperty, "ForegroundBrush");
-                    container.FontWeight = IsDirectoryEntry(item)
+                    container.FontWeight = item.IsDirectory
                         ? FontWeights.SemiBold : FontWeights.Normal;
                 }
         };
+    }
+
+    private void RefreshArchiveContextMenuTheme()
+    {
+        ContextMenu? menu = archiveEntriesList.ContextMenu;
+        if (menu is null || Application.Current is null) return;
+        ResourceDictionary shared = Application.Current.Resources;
+        foreach (string key in new[] { "SurfaceBrush", "ForegroundBrush", "BorderBrush", "ButtonBrush" })
+            menu.Resources[key] = shared[key];
+        menu.Background = (Brush)shared["SurfaceBrush"];
+        menu.Foreground = (Brush)shared["ForegroundBrush"];
+        menu.BorderBrush = (Brush)shared["BorderBrush"];
+        foreach (MenuItem item in menu.Items.OfType<MenuItem>())
+        {
+            item.Background = (Brush)shared["SurfaceBrush"];
+            item.Foreground = (Brush)shared["ForegroundBrush"];
+        }
     }
 
     private async void OpenArchiveMenu_Click(object sender, EventArgs e)
@@ -147,6 +206,8 @@ public partial class MainWindow : Window
                     _archiveCurrentDirectory = string.Empty;
                     _archiveEntries.Clear();
                     _archiveEntries.AddRange(entries);
+                    _loadedArchiveIdentity = GetArchiveIdentity(archivePath);
+                    searchBox.Clear();
                     archiveHeaderText.Text = LanguageManager.Get($"Format_{type}") + " " + LanguageManager.Get(type is FileDetector.FileType.Iso or FileDetector.FileType.Wim ? "ImageFile" : "CompressFile");
                     RefreshArchiveEntriesList();
                     SetArchiveControls(true);
@@ -271,9 +332,9 @@ public partial class MainWindow : Window
             await RunOperationAsync(LanguageManager.Get("ExtractingText"), (progress, token) =>
                 _nestedTarInfo.FlattenAutomatically
                     ? _archiveService.ExtractNestedTarsAsync(_archivePath, _nestedTarInfo.TarEntryKeys, destination, selectedEntries, false, OverwritePolicy.Ask, progress, token, _archivePassword,
-                        ResolveConflictAsync)
+                        ResolveConflictAsync, (issue, issueToken) => ExtractionPrompt.AskAsync(this, issue, issueToken))
                     : _archiveService.ExtractAsync(_archivePath, destination, selectedEntries, OverwritePolicy.Ask, progress, token, _archivePassword,
-                        ResolveConflictAsync));
+                        ResolveConflictAsync, (issue, issueToken) => ExtractionPrompt.AskAsync(this, issue, issueToken)));
             operationProgressBar.Value = 100;
             operationStatusText.Text = LanguageManager.Get("ExtractingCompleted");
         }
@@ -297,12 +358,14 @@ public partial class MainWindow : Window
             if (archiveSaveDialog.ShowDialog(this) != true) return;
             string outputPath = archiveSaveDialog.FileName;
             FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(archiveSaveDialog.FilterIndex);
-            if (!ArchivePasswordWindow.TryGetCreationPassword(this, Path.GetFileName(outputPath), type, out string? password)) return;
+            CompressionOptionsWindow optionsWindow = new(Path.GetFileName(outputPath), type) { Owner = this };
+            if (optionsWindow.ShowDialog() != true) return;
+            CompressionOptions options = optionsWindow.Options!;
             await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) =>
-                _archiveService.CreateAsync(sourcePaths, outputPath, type, progress, token, password));
+                _archiveService.CreateAsync(sourcePaths, outputPath, type, progress, token, options.Password, options));
             // Never display completion when the worker returned success but the
             // expected archive is missing from the exact path chosen by the user.
-            if (!File.Exists(outputPath))
+            if (!ArchiveOutput.Exists(outputPath))
                 throw new StageException("MAINW0012", string.Format(LanguageManager.Get("CompressionOutputMissing"), outputPath)); //MAINW0012
             operationProgressBar.Value = 100;
             operationStatusText.Text = LanguageManager.Get("CompressionCompleted");
@@ -352,6 +415,7 @@ public partial class MainWindow : Window
 
     private void RefreshArchiveEntriesList()
     {
+        if (!string.IsNullOrWhiteSpace(searchBox.Text)) { _ = SearchEntriesAsync(searchBox.Text); return; }
         SortedDictionary<string, bool> children = new(StringComparer.CurrentCultureIgnoreCase);
         foreach (ArchiveEntryInfo entry in _archiveEntries)
         {
@@ -363,8 +427,17 @@ public partial class MainWindow : Window
             children[name] = slash >= 0 || entry.IsDirectory;
         }
         archiveEntriesList.Items.Clear();
-        if (!string.IsNullOrEmpty(_archiveCurrentDirectory)) archiveEntriesList.Items.Add(LanguageManager.Get("goToParentDirectoryText"));
-        foreach ((string name, _) in children) archiveEntriesList.Items.Add(name);
+        if (!string.IsNullOrEmpty(_archiveCurrentDirectory))
+            archiveEntriesList.Items.Add(new ArchiveEntryRow(LanguageManager.Get("goToParentDirectoryText"), "..", true, "", ""));
+        foreach ((string name, bool directory) in children)
+        {
+            string key = _archiveCurrentDirectory + name;
+            ArchiveEntryInfo? entry = _archiveEntries.FirstOrDefault(item =>
+                item.Key.TrimEnd('/').Equals(key, StringComparison.OrdinalIgnoreCase));
+            archiveEntriesList.Items.Add(new ArchiveEntryRow(name, directory ? key + "/" : key, directory,
+                directory || entry is null ? "" : entry.SizeKnown ? ResourcePreflight.FormatBytes(entry.Size) : LanguageManager.Get("EntryDetailsUnknown"),
+                directory || entry?.CompressedSize is null ? LanguageManager.Get("UnknownCompressedSize") : ResourcePreflight.FormatBytes(entry.CompressedSize.Value)));
+        }
         RefreshCurrentDirectoryStatus();
     }
 
@@ -379,20 +452,21 @@ public partial class MainWindow : Window
             entry.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
-    private List<string> GetSelectedArchiveEntries() => archiveEntriesList.SelectedItems.Cast<object>()
-        .Select(item => item.ToString() ?? string.Empty)
-        .Where(item => !string.IsNullOrEmpty(item) && item != LanguageManager.Get("goToParentDirectoryText"))
-        .Select(item => IsDirectoryEntry(item) ? (_archiveCurrentDirectory + item).TrimEnd('/') + "/" : _archiveCurrentDirectory + item)
+    private List<string> GetSelectedArchiveEntries() => archiveEntriesList.SelectedItems.OfType<ArchiveEntryRow>()
+        .Select(item => item.Key)
+        .Where(item => !string.IsNullOrEmpty(item) && item != "..")
         .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
     private async void ArchiveEntriesList_MouseDoubleClick(object? sender, EventArgs e)
     {
-        string selected = archiveEntriesList.SelectedItem?.ToString() ?? string.Empty;
+        ArchiveEntryRow? row = archiveEntriesList.SelectedItem as ArchiveEntryRow;
+        string selected = row?.Name ?? string.Empty;
         if (string.IsNullOrEmpty(selected)) return;
         if (selected == LanguageManager.Get("goToParentDirectoryText")) { GoToParentDirectory(); return; }
-        if (IsDirectoryEntry(selected))
+        if (row!.IsDirectory)
         {
-            _archiveCurrentDirectory = (_archiveCurrentDirectory + selected).TrimEnd('/') + "/";
+            _archiveCurrentDirectory = row.Key.TrimEnd('/') + "/";
+            searchBox.Clear();
             RefreshArchiveEntriesList();
             return;
         }
@@ -410,7 +484,7 @@ public partial class MainWindow : Window
             string selected = archiveEntriesList.SelectedItem?.ToString() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(selected) || selected == LanguageManager.Get("goToParentDirectoryText"))
             { ShowInformation("NoSelectedEntries"); return; }
-            string key = _archiveCurrentDirectory + selected;
+            string key = (archiveEntriesList.SelectedItem as ArchiveEntryRow)?.Key ?? _archiveCurrentDirectory + selected;
             ArchiveEntryInfo entry = _archiveEntries.FirstOrDefault(item => !item.IsDirectory &&
                 item.Key.TrimEnd('/').Equals(key, StringComparison.OrdinalIgnoreCase))
                 ?? throw new StageException("MAINW0013", LanguageManager.Get("PreviewEntryMissing")); //MAINW0013
@@ -449,12 +523,350 @@ public partial class MainWindow : Window
     }
 
     private void RefreshCurrentDirectoryStatus() => operationStatusText.Text = string.Format(LanguageManager.Get("CurrentDirectoryFormat"), string.IsNullOrEmpty(_archiveCurrentDirectory) ? LanguageManager.Get("Root") : _archiveCurrentDirectory);
+
+    private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(searchBox.Text))
+        {
+            _searchCancellation?.Cancel();
+            _searchCancellation = null;
+            RefreshArchiveEntriesList();
+        }
+        else _ = SearchEntriesAsync(searchBox.Text);
+    }
+
+    private async Task SearchEntriesAsync(string query)
+    {
+        _searchCancellation?.Cancel();
+        CancellationTokenSource cancellation = new();
+        _searchCancellation = cancellation;
+        ArchiveEntryInfo[] snapshot = _archiveEntries.ToArray();
+        try
+        {
+            // PLINQ searches independent entry names on multiple pool threads. The UI is
+            // updated once on the dispatcher, and stale searches cannot replace newer text.
+            ArchiveEntryInfo[] matches = await Task.Run(() => snapshot.AsParallel()
+                .WithCancellation(cancellation.Token)
+                .Where(item => item.Key.Contains(query, StringComparison.CurrentCultureIgnoreCase))
+                .OrderBy(item => item.Key).ToArray(), cancellation.Token);
+            if (!ReferenceEquals(_searchCancellation, cancellation)) return;
+            archiveEntriesList.Items.Clear();
+            foreach (ArchiveEntryInfo entry in matches)
+                archiveEntriesList.Items.Add(new ArchiveEntryRow(entry.Key, entry.Key, entry.IsDirectory,
+                    entry.IsDirectory ? "" : entry.SizeKnown ? ResourcePreflight.FormatBytes(entry.Size) : LanguageManager.Get("EntryDetailsUnknown"),
+                    entry.CompressedSize is null ? LanguageManager.Get("UnknownCompressedSize") : ResourcePreflight.FormatBytes(entry.CompressedSize.Value)));
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async void ExtractEntryContext_Click(object sender, RoutedEventArgs e) => await ExtractAsync(true, false);
+
+    private void ArchiveEntriesList_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        ModifierKeys modifiers = e.KeyboardDevice.Modifiers;
+        if (modifiers == ModifierKeys.Control && e.Key is Key.C or Key.X or Key.V)
+        {
+            e.Handled = true;
+            if (e.Key == Key.V) _ = PasteArchiveEntriesAsync();
+            else _ = CopyArchiveEntriesAsync(e.Key == Key.X);
+        }
+        else if (modifiers == ModifierKeys.None && e.Key == Key.Delete)
+        {
+            e.Handled = true;
+            _ = DeleteArchiveEntriesAsync();
+        }
+    }
+
+    private async void CopyEntryContext_Click(object sender, RoutedEventArgs e) => await CopyArchiveEntriesAsync(false);
+    private async void CutEntryContext_Click(object sender, RoutedEventArgs e) => await CopyArchiveEntriesAsync(true);
+    private async void PasteEntryContext_Click(object sender, RoutedEventArgs e) => await PasteArchiveEntriesAsync();
+    private async void DeleteEntryContext_Click(object sender, RoutedEventArgs e) => await DeleteArchiveEntriesAsync();
+
+    private static (long Length, DateTime LastWriteUtc) GetArchiveIdentity(string path)
+    {
+        FileInfo file = new(path);
+        file.Refresh();
+        return (file.Length, file.LastWriteTimeUtc);
+    }
+
+    private bool CanEditOpenedArchive()
+    {
+        if (_isBusy) { ShowInformation("AlreadyDoingJob"); return false; }
+        if (string.IsNullOrEmpty(_archivePath) || !File.Exists(_archivePath))
+        { ShowInformation("NoOpenedFile"); return false; }
+        if (_nestedTarInfo.FlattenAutomatically ||
+            !ArchiveEditService.CanEdit(FileDetector.DetectFileType(_archivePath)))
+        { ShowInformation("ArchiveEditUnsupported"); return false; }
+        if (_loadedArchiveIdentity != GetArchiveIdentity(_archivePath))
+        { ShowInformation("ArchiveEditChanged"); return false; }
+        return true;
+    }
+
+    private async Task CopyArchiveEntriesAsync(bool cut)
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            if (string.IsNullOrEmpty(_archivePath) || !File.Exists(_archivePath))
+            { ShowInformation("NoOpenedFile"); return; }
+            if (_nestedTarInfo.FlattenAutomatically ||
+                (cut && !ArchiveEditService.CanEdit(FileDetector.DetectFileType(_archivePath))))
+            { ShowInformation("ArchiveEditUnsupported"); return; }
+            if (_loadedArchiveIdentity != GetArchiveIdentity(_archivePath))
+            { ShowInformation("ArchiveEditChanged"); return; }
+            string[] selected = GetSelectedArchiveEntries().ToArray();
+            if (selected.Length == 0) { ShowInformation("NoSelectedEntries"); return; }
+            string archive = _archivePath;
+            (long Length, DateTime LastWriteUtc) identity = GetArchiveIdentity(archive);
+            string temporaryRoot = TempDirectorySettings.GetDirectory();
+            long bytes = _archiveEntries.Where(entry => !entry.IsDirectory && selected.Any(key =>
+                    entry.Key.Equals(key.TrimEnd('/'), StringComparison.OrdinalIgnoreCase) ||
+                    entry.Key.StartsWith(key.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)))
+                .Aggregate(0L, (total, entry) => total > long.MaxValue - Math.Max(entry.Size, 0)
+                    ? long.MaxValue : total + Math.Max(entry.Size, 0));
+            ResourcePreflight.Check(temporaryRoot, bytes > long.MaxValue - 64L * 1024 * 1024
+                ? long.MaxValue : bytes + 64L * 1024 * 1024, 128L * 1024 * 1024);
+            string staging = Path.Combine(temporaryRoot, "TangerineZipClipboard", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(staging);
+            try
+            {
+                await RunOperationAsync(LanguageManager.Get("ArchiveEditPreparingClipboard"),
+                    (progress, token) => _archiveService.ExtractAsync(archive, staging, selected,
+                        OverwritePolicy.SkipAll, progress, token, _archivePassword,
+                        issueResolver: (issue, issueToken) => issue.Kind == ExtractionIssueKind.PathTraversal
+                            ? Task.FromResult(new ExtractionAnswer(ExtractionDecision.Stop))
+                            : ExtractionPrompt.AskAsync(this, issue, issueToken)));
+                if (identity != GetArchiveIdentity(archive))
+                    throw new StageException("MAINW0021", LanguageManager.Get("ArchiveEditChanged")); //MAINW0021
+                string[] stagedPaths = selected.Select(key =>
+                {
+                    string relative = key.TrimEnd('/').Replace('/', Path.DirectorySeparatorChar);
+                    string full = Path.GetFullPath(Path.Combine(staging, relative));
+                    if (!full.StartsWith(Path.GetFullPath(staging) + Path.DirectorySeparatorChar,
+                            StringComparison.OrdinalIgnoreCase) || (!File.Exists(full) && !Directory.Exists(full)))
+                        throw new StageException("MAINW0022", LanguageManager.Get("ArchiveEditClipboardStageFailed")); //MAINW0022
+                    return full;
+                }).ToArray();
+                ExplorerArchiveClipboard replacement = ExplorerArchiveClipboard.PutFiles(stagedPaths, cut,
+                    () => Dispatcher.BeginInvoke(async () => await FinishExplorerCutAsync(
+                        new ArchiveClipboard(archive, selected, true, identity), stagedPaths, staging)));
+                string? previousStaging = _clipboardStaging;
+                _explorerClipboard = replacement;
+                _clipboardStaging = staging;
+                _archiveClipboard = new(archive, selected, cut, identity);
+                if (previousStaging is not null) CleanupClipboardStaging(previousStaging);
+            }
+            catch
+            {
+                // Only a failed staging session can be removed immediately. A
+                // successful session remains available for later Explorer pastes.
+                CleanupClipboardStaging(staging);
+                throw;
+            }
+            operationStatusText.Text = string.Format(LanguageManager.Get(cut ? "ArchiveEditCutReady" :
+                "ArchiveEditCopyReady"), selected.Length);
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0018", exception); } //MAINW0018
+    }
+
+    private async Task FinishExplorerCutAsync(ArchiveClipboard clipboard, string[] stagedPaths, string staging)
+    {
+        try
+        {
+            // A shell callback may arrive while another job holds the archive.
+            // Wait for that job, then recheck identity before changing anything.
+            while (_isBusy) await Task.Delay(100);
+            // If Explorer skipped even one file, retain every original member.
+            if (stagedPaths.Any(path => File.Exists(path) || Directory.Exists(path))) return;
+            if (!File.Exists(clipboard.ArchivePath) ||
+                clipboard.SourceIdentity != GetArchiveIdentity(clipboard.ArchivePath)) return;
+            string backup = string.Empty;
+            await RunOperationAsync(LanguageManager.Get("ArchiveEditProgress"), async (progress, token) =>
+                backup = await _archiveService.EditAsync(clipboard.ArchivePath, clipboard.Keys,
+                    string.Empty, ArchiveEditAction.Delete, progress, token));
+            _archiveClipboard = null;
+            CleanupClipboardStaging(staging);
+            if (string.Equals(_clipboardStaging, staging, StringComparison.OrdinalIgnoreCase))
+                _clipboardStaging = null;
+            if (_archivePath.Equals(clipboard.ArchivePath, StringComparison.OrdinalIgnoreCase))
+                await ReloadEditedArchiveAsync(clipboard.ArchivePath, _archiveCurrentDirectory, backup);
+        }
+        catch (Exception exception) { ShowException("MAINW0023", exception); } //MAINW0023
+    }
+
+    private void CleanupClipboardStaging(string staging)
+    {
+        try
+        {
+            if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
+        }
+        catch (Exception exception)
+        {
+            // A failed deletion must be visible, yet must not turn a completed
+            // clipboard or archive operation into an apparent write failure.
+            string message = MessageTipGenerator.GenerateTip("MAINW0024", exception.Message);
+            ThemedPromptWindow.Inform(IsLoaded ? this : null,
+                LanguageManager.Get("ErrorTitle"), message); //MAINW0024
+        }
+    }
+
+    private async Task PasteArchiveEntriesAsync()
+    {
+        try
+        {
+            if (!CanEditOpenedArchive()) return;
+            ArchiveClipboard? clipboard = _archiveClipboard;
+            if (clipboard is null) { ShowInformation("ArchiveEditClipboardEmpty"); return; }
+            if (!clipboard.ArchivePath.Equals(_archivePath, StringComparison.OrdinalIgnoreCase) ||
+                clipboard.SourceIdentity != GetArchiveIdentity(_archivePath))
+            { _archiveClipboard = null; ShowInformation("ArchiveEditChanged"); return; }
+            string path = _archivePath;
+            string directory = _archiveCurrentDirectory;
+            string backup = string.Empty;
+            await RunOperationAsync(LanguageManager.Get("ArchiveEditProgress"), async (progress, token) =>
+                backup = await _archiveService.EditAsync(path, clipboard.Keys, directory,
+                    clipboard.Cut ? ArchiveEditAction.Move : ArchiveEditAction.Copy, progress, token));
+            _archiveClipboard = clipboard.Cut ? null : clipboard with { SourceIdentity = GetArchiveIdentity(path) };
+            await ReloadEditedArchiveAsync(path, directory, backup);
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0019", exception); } //MAINW0019
+    }
+
+    private async Task DeleteArchiveEntriesAsync()
+    {
+        try
+        {
+            if (!CanEditOpenedArchive()) return;
+            string[] selected = GetSelectedArchiveEntries().ToArray();
+            if (selected.Length == 0) { ShowInformation("NoSelectedEntries"); return; }
+            if (ThemedPromptWindow.Ask(this, LanguageManager.Get("ArchiveEditDelete"),
+                string.Format(LanguageManager.Get("ArchiveEditDeleteConfirm"), selected.Length),
+                (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
+                (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) != MessageBoxResult.Yes) return;
+            string path = _archivePath;
+            string directory = _archiveCurrentDirectory;
+            string backup = string.Empty;
+            await RunOperationAsync(LanguageManager.Get("ArchiveEditProgress"), async (progress, token) =>
+                backup = await _archiveService.EditAsync(path, selected, directory,
+                    ArchiveEditAction.Delete, progress, token));
+            _archiveClipboard = null;
+            await ReloadEditedArchiveAsync(path, directory, backup);
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0020", exception); } //MAINW0020
+    }
+
+    private async Task ReloadEditedArchiveAsync(string path, string directory, string backup)
+    {
+        await OpenArchiveAsync(path);
+        if (!string.IsNullOrEmpty(_archivePath))
+        {
+            _archiveCurrentDirectory = directory;
+            RefreshArchiveEntriesList();
+            operationStatusText.Text = string.Format(LanguageManager.Get("ArchiveEditCompleted"), backup);
+        }
+    }
+
+    private void EntryDetailsContext_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (archiveEntriesList.SelectedItem is not ArchiveEntryRow row || row.Key == "..") return;
+            ArchiveEntryInfo? entry = _archiveEntries.FirstOrDefault(item =>
+                item.Key.Equals(row.Key, StringComparison.OrdinalIgnoreCase));
+            string unknown = LanguageManager.Get("EntryDetailsUnknown");
+            string originalSize = entry is null || !entry.SizeKnown ? unknown : ResourcePreflight.FormatBytes(entry.Size);
+            string compressedSize = entry?.CompressedSize is long compressed
+                ? ResourcePreflight.FormatBytes(compressed) : unknown;
+            // Ratios use the selected member's bytes, never the total archive size.
+            // Negative savings are valid when compression adds overhead to a small file.
+            string ratio = entry is { IsDirectory: false, SizeKnown: true, Size: > 0, CompressedSize: >= 0 }
+                ? (100d * (1d - (double)entry.CompressedSize.Value / entry.Size)).ToString("0.##", System.Globalization.CultureInfo.CurrentCulture) + "%"
+                : unknown;
+            string saved = entry is { IsDirectory: false, SizeKnown: true, CompressedSize: >= 0 }
+                ? (entry.Size - entry.CompressedSize.Value).ToString("N0", System.Globalization.CultureInfo.CurrentCulture) + " B"
+                : unknown;
+            string method = entry?.CompressionMethod is { Length: > 0 } name
+                ? name == "None" ? LanguageManager.Get("EntryDetailsStored") : name : unknown;
+            string encrypted = entry?.IsEncrypted is bool isEncrypted
+                ? LanguageManager.Get(isEncrypted ? "EntryDetailsYes" : "EntryDetailsNo") : unknown;
+            string crc = entry?.Crc is long value ? value.ToString("X8") : unknown;
+            string modified = entry?.LastModifiedTime?.ToString("G", System.Globalization.CultureInfo.CurrentCulture) ?? unknown;
+            string kind = LanguageManager.Get(row.IsDirectory ? "EntryDetailsDirectory" : "EntryDetailsFile");
+            string format = string.IsNullOrEmpty(_archivePath) ? unknown :
+                LanguageManager.Get($"Format_{FileDetector.DetectFileType(_archivePath)}");
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("EntryDetails"),
+                $"{LanguageManager.Get("ListName")}: {row.Key}\n" +
+                $"{LanguageManager.Get("EntryDetailsKind")}: {kind}\n" +
+                $"{LanguageManager.Get("EntryDetailsFormat")}: {format}\n" +
+                $"{LanguageManager.Get("ListOriginalSize")}: {originalSize}\n" +
+                $"{LanguageManager.Get("ListCompressedSize")}: {compressedSize}\n" +
+                $"{LanguageManager.Get("EntryDetailsMethod")}: {method}\n" +
+                $"{LanguageManager.Get("EntryDetailsRatio")}: {ratio}\n" +
+                $"{LanguageManager.Get("EntryDetailsSaved")}: {saved}\n" +
+                $"{LanguageManager.Get("EntryDetailsModified")}: {modified}\n" +
+                $"{LanguageManager.Get("EntryDetailsEncrypted")}: {encrypted}\n" +
+                $"CRC32: {crc}");
+        }
+        catch (Exception exception) { ShowException("MAINW0025", exception); } //MAINW0025
+    }
+
+    private void IntegrityMenu_Click(object sender, RoutedEventArgs e) => new ArchiveToolsWindow(ArchiveToolKind.Integrity, _archivePath, _archivePassword) { Owner = this }.ShowDialog();
+    private void RepairMenu_Click(object sender, RoutedEventArgs e) => new ArchiveToolsWindow(ArchiveToolKind.Repair, _archivePath, _archivePassword) { Owner = this }.ShowDialog();
+    private void HashMenu_Click(object sender, RoutedEventArgs e) => new ArchiveToolsWindow(ArchiveToolKind.Hash, _archivePath) { Owner = this }.ShowDialog();
+
+    private async void EncodingMenu_Click(object sender, RoutedEventArgs e)
+    {
+        EncodingChoiceWindow dialog = new() { Owner = this };
+        if (dialog.ShowDialog() != true) return;
+        _archiveService.EntryEncodingName = dialog.EncodingName;
+        if (!string.IsNullOrEmpty(_archivePath)) await OpenArchiveAsync(_archivePath);
+    }
+
+    private void MainWindow_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void MainWindow_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0 || !File.Exists(files[0])) return;
+        string path = files[0];
+        if (_isBusy)
+        {
+            if (ThemedPromptWindow.Ask(this, Title, LanguageManager.Get("DropBusyPrompt"),
+                    (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
+                    (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) == MessageBoxResult.Yes) StartAnotherInstance(path);
+            return;
+        }
+        if (!string.IsNullOrEmpty(_archivePath))
+        {
+            MessageBoxResult choice = ThemedPromptWindow.Ask(this, Title, LanguageManager.Get("DropLoadedPrompt"),
+                (LanguageManager.Get("PromptUnload"), MessageBoxResult.Yes),
+                (LanguageManager.Get("PromptNewInstance"), MessageBoxResult.No),
+                (LanguageManager.Get("Cancel"), MessageBoxResult.Cancel));
+            if (choice == MessageBoxResult.Cancel) return;
+            if (choice == MessageBoxResult.No) { StartAnotherInstance(path); return; }
+            UnloadArchive();
+        }
+        await OpenArchiveAsync(path);
+    }
+
+    private static void StartAnotherInstance(string path)
+    {
+        System.Diagnostics.ProcessStartInfo start = new(Environment.ProcessPath!) { UseShellExecute = false };
+        start.ArgumentList.Add(path);
+        System.Diagnostics.Process.Start(start);
+    }
     private void SetArchiveControls(bool loaded) { unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; previewEntryMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar ? Visibility.Visible : Visibility.Collapsed; }
     private void SetMenuEnabled(bool enabled) { openArchiveMenuItem.IsEnabled = enabled; previewEntryMenuItem.IsEnabled = enabled; extractMenuItem.IsEnabled = enabled; compressMenuItem.IsEnabled = enabled; unloadArchiveMenuItem.IsEnabled = enabled; extractNestedTarMenuItem.IsEnabled = enabled; contextMenuItem.IsEnabled = enabled; }
 
     private void UnloadArchive()
     {
-        _archivePath = string.Empty; _archivePassword = null; _archiveCurrentDirectory = string.Empty; _nestedTarInfo = NestedTarInfo.None; _archiveEntries.Clear(); archiveEntriesList.Items.Clear();
+        _archivePath = string.Empty; _archivePassword = null; _archiveCurrentDirectory = string.Empty; _nestedTarInfo = NestedTarInfo.None; _loadedArchiveIdentity = null; _archiveClipboard = null; _archiveEntries.Clear(); searchBox.Clear(); archiveEntriesList.Items.Clear();
         operationProgressBar.Value = 0; operationStatusText.Text = LanguageManager.Get("readytext"); archiveHeaderText.Text = LanguageManager.Get("ArchiveHeaderText"); SetArchiveControls(false);
     }
 
@@ -476,12 +888,14 @@ public partial class MainWindow : Window
             ShowException("MAINW0011", exception); //MAINW0011
         }
     }
-    private void ShowInformation(string resourceKey) => MessageBox.Show(this, LanguageManager.Get(resourceKey), LanguageManager.Get("ApplicationTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+    private void ShowInformation(string resourceKey) => ThemedPromptWindow.Inform(this,
+        LanguageManager.Get("ApplicationTitle"), LanguageManager.Get(resourceKey));
 
     private void ShowException(string fallbackStageCode, Exception exception)
     {
         string stageCode = exception is StageException stageException ? stageException.StageCode : fallbackStageCode;
-        MessageBox.Show(this, MessageTipGenerator.GenerateTip(stageCode, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //MAINW0006
+        ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
+            MessageTipGenerator.GenerateTip(stageCode, exception.Message)); //MAINW0006
     }
 
     private void AboutMenu_Click(object sender, EventArgs e)

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="TZIP" Icon="Resources/TZIP.png" WindowState="Normal" WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}" FontFamily="Microsoft YaHei UI"
-        Loaded="MainWindow_Loaded">
+        Loaded="MainWindow_Loaded" AllowDrop="True" DragOver="MainWindow_DragOver" Drop="MainWindow_Drop">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -38,6 +38,12 @@
             <MenuItem x:Name="compressMenuItem" Header="Compress">
                 <MenuItem x:Name="compressFilesMenuItem" Header="Select files" Click="CompressFilesMenu_Click" />
             </MenuItem>
+            <MenuItem x:Name="toolsMenuItem" Header="Archive tools">
+                <MenuItem x:Name="integrityMenuItem" Click="IntegrityMenu_Click" />
+                <MenuItem x:Name="repairMenuItem" Click="RepairMenu_Click" />
+                <MenuItem x:Name="hashMenuItem" Click="HashMenu_Click" />
+                <MenuItem x:Name="encodingMenuItem" Click="EncodingMenu_Click" />
+            </MenuItem>
             <MenuItem x:Name="settingsMenuItem" Header="Settings" Click="SettingsMenu_Click" />
             <MenuItem x:Name="unloadArchiveMenuItem" Header="Unload" Click="UnloadArchiveMenu_Click" />
             <MenuItem x:Name="stopWorkMenuItem" Header="Stop" Visibility="Collapsed" Click="StopWorkMenuItem_Click" />
@@ -58,7 +64,33 @@
             <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Grid.ColumnSpan="2">
                 <TextBlock x:Name="archiveHeaderText" Text="TZIP" Margin="8" />
             </Border>
-            <ListBox x:Name="archiveEntriesList" SelectionMode="Extended" MouseDoubleClick="ArchiveEntriesList_MouseDoubleClick" Grid.ColumnSpan="2" Margin="0,33,0,0" Grid.RowSpan="2" />
+            <TextBox x:Name="searchBox" Grid.Row="1" Grid.ColumnSpan="2" Margin="4,4,4,0" Height="27"
+                     VerticalAlignment="Top" TextChanged="SearchBox_TextChanged" />
+            <ListView x:Name="archiveEntriesList" SelectionMode="Extended" MouseDoubleClick="ArchiveEntriesList_MouseDoubleClick"
+                      PreviewKeyDown="ArchiveEntriesList_PreviewKeyDown"
+                      Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                      Grid.ColumnSpan="2" Grid.Row="1" Margin="0,35,0,0">
+                <ListView.View><GridView>
+                    <GridViewColumn x:Name="nameColumn" Width="360">
+                        <GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="{DynamicResource ForegroundBrush}" /></DataTemplate></GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="originalSizeColumn" Width="140">
+                        <GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding OriginalSize}" Foreground="{DynamicResource ForegroundBrush}" /></DataTemplate></GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="compressedSizeColumn" Width="140">
+                        <GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding CompressedSize}" Foreground="{DynamicResource ForegroundBrush}" /></DataTemplate></GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView></ListView.View>
+                <ListView.ContextMenu><ContextMenu Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" BorderBrush="{DynamicResource BorderBrush}">
+                    <MenuItem x:Name="extractEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="ExtractEntryContext_Click" />
+                    <MenuItem x:Name="entryDetailsContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="EntryDetailsContext_Click" />
+                    <Separator />
+                    <MenuItem x:Name="copyEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="CopyEntryContext_Click" />
+                    <MenuItem x:Name="cutEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="CutEntryContext_Click" />
+                    <MenuItem x:Name="pasteEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="PasteEntryContext_Click" />
+                    <MenuItem x:Name="deleteEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="DeleteEntryContext_Click" />
+                </ContextMenu></ListView.ContextMenu>
+            </ListView>
         </Grid>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>

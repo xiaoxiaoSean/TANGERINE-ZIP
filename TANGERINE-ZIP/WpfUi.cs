@@ -16,6 +16,8 @@ internal static class WpfUi
     }
 
     public static bool Confirm(Window? owner, string message, string title) =>
-        MessageBox.Show(owner, message, title, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+        ThemedPromptWindow.Ask(owner, title, message,
+            (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
+            (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) == MessageBoxResult.Yes;
 
 }

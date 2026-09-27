@@ -27,8 +27,9 @@ internal sealed class ColorContrastException : Exception
 /// <summary>
 /// Holds the four shared WPF colors. Configuration is stored as an invariant
 /// seven-character #RRGGBB string beside the executable, one color per file.
-/// The same mutable application brushes are used by every open window, so a
-/// successful settings change takes effect without rebuilding any windows.
+/// The same application resource keys are used by every open window. A
+/// successful change replaces their brushes and takes effect without
+/// rebuilding windows or modifying a WPF-frozen brush.
 /// </summary>
 internal static class AppearanceSettings
 {
@@ -41,6 +42,7 @@ internal static class AppearanceSettings
 
     internal static event Action? Changed;
     internal static Color GetColor(int index) => CurrentColors[index];
+    internal static Color GetDefaultColor(int index) => Defaults[index];
     internal static string Format(Color color) => $"#{color.R:X2}{color.G:X2}{color.B:X2}";
 
     internal static void Initialize()
@@ -87,6 +89,53 @@ internal static class AppearanceSettings
             // unsaved color visible to other windows.
             await Task.Run(() => WriteAndVerify(index, color));
             CurrentColors[index] = color;
+            ApplyBrushes();
+            Changed?.Invoke();
+        }
+        finally { SaveGate.Release(); }
+    }
+
+    internal static async Task ResetPairAsync(int accentIndex)
+    {
+        if (accentIndex is not (0 or 2))
+            throw new StageException("COLRS0017", LanguageManager.Get("SettingsColorInvalidSelection")); //COLRS0017
+        await SaveGate.WaitAsync();
+        try
+        {
+            Color previousAccent = CurrentColors[accentIndex];
+            Color previousBackground = CurrentColors[accentIndex + 1];
+            try
+            {
+                // The two files cannot be replaced in one filesystem move.
+                // If either write fails, restore both old values before the
+                // in-memory colors or any window resources are changed.
+                await Task.Run(() =>
+                {
+                    WriteAndVerify(accentIndex, Defaults[accentIndex]);
+                    WriteAndVerify(accentIndex + 1, Defaults[accentIndex + 1]);
+                });
+            }
+            catch (Exception failure)
+            {
+                try
+                {
+                    await Task.Run(() =>
+                    {
+                        WriteAndVerify(accentIndex, previousAccent);
+                        WriteAndVerify(accentIndex + 1, previousBackground);
+                    });
+                }
+                catch (Exception rollbackFailure)
+                {
+                    throw new StageException("COLRS0016",
+                        string.Format(LanguageManager.Get("SettingsResetPairRollbackFailed"), rollbackFailure.Message),
+                        new AggregateException(failure, rollbackFailure)); //COLRS0016
+                }
+                throw new StageException("COLRS0015",
+                    string.Format(LanguageManager.Get("SettingsResetPairFailed"), failure.Message), failure); //COLRS0015
+            }
+            CurrentColors[accentIndex] = Defaults[accentIndex];
+            CurrentColors[accentIndex + 1] = Defaults[accentIndex + 1];
             ApplyBrushes();
             Changed?.Invoke();
         }
@@ -237,8 +286,13 @@ internal static class AppearanceSettings
 
     private static void SetBrush(ResourceDictionary resources, string key, Color color)
     {
-        if (resources[key] is SolidColorBrush existing) existing.Color = color;
-        else resources[key] = new SolidColorBrush(color);
+        // WPF may freeze a brush after it enters a style/template. Changing
+        // its Color then throws even though the configuration file was saved.
+        // Replace the resource value instead: DynamicResource consumers in
+        // every open window re-resolve the key and receive the new brush.
+        SolidColorBrush replacement = new(color);
+        replacement.Freeze();
+        resources[key] = replacement;
     }
 
     private static Color Blend(Color background, Color foreground, double foregroundAmount) =>

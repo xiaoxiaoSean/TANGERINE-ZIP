@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 
 namespace TANGERINE_ZIP
 {
@@ -21,6 +22,15 @@ namespace TANGERINE_ZIP
                 Environment.ExitCode = Services.ArchiveWorker.ExecuteAsync().GetAwaiter().GetResult();
                 return;
             }
+            // Console commands must run before WPF startup and its interactive configuration dialogs.
+            if (Services.CommandLine.IsCommand(args))
+            {
+                Environment.ExitCode = Services.CommandLine.RunAsync(args).GetAwaiter().GetResult();
+                return;
+            }
+            // Console-subsystem apphosts make CLI output and exit codes work in scripts.
+            // Detach before any GUI window so Explorer launches do not retain a console.
+            FreeConsole();
             bool isContextCommand = args.Length >= 2 &&
                 args[0].StartsWith("--context-", StringComparison.Ordinal);
             var application = new System.Windows.Application
@@ -101,13 +111,33 @@ namespace TANGERINE_ZIP
                 Environment.ExitCode = 1;
                 return;
             }
+            if (!InitializeTempDirectory(application))
+            {
+                Environment.ExitCode = 1;
+                return;
+            }
             if (isContextCommand)
             {
                 try { Services.ContextMenuCommandHandler.Run(args[0], args[1..]); }
                 finally { application.Shutdown(); }
                 return;
             }
-            application.Run(new MainWindow());
+            try { Services.TempDirectorySettings.ClearOnFirstInstanceStartup(); }
+            catch (Exception exception)
+            {
+                ShowStartupError("PROGM0009", exception); //PROGM0009
+                Environment.ExitCode = 1;
+                return;
+            }
+            try
+            {
+                application.Run(new MainWindow(args.Length == 1 && File.Exists(args[0]) ? args[0] : null));
+            }
+            catch (Exception exception)
+            {
+                ShowStartupError("PROGM0010", exception); //PROGM0010
+                Environment.ExitCode = 1;
+            }
         }
 
         private static bool InitializeAppearance()
@@ -178,6 +208,43 @@ namespace TANGERINE_ZIP
             }
         }
 
+        private static bool InitializeTempDirectory(System.Windows.Application application)
+        {
+            System.Windows.ShutdownMode previous = application.ShutdownMode;
+            // The startup chooser is a WPF window shown before MainWindow.
+            // Closing it must not shut down the application dispatcher.
+            application.ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                while (true)
+                {
+                    try { Services.TempDirectorySettings.Initialize(); return true; }
+                    catch (Exception exception)
+                    {
+                        string stageCode = exception is Services.StageException stage
+                            ? stage.StageCode : "PROGM0007";
+                        ThemedPromptWindow.Inform(null, LanguageManager.Get("TempDirectoryTitle"),
+                            Tools.MessageTipGenerator.GenerateTip(stageCode, exception.Message) +
+                            Environment.NewLine + LanguageManager.Get("TempDirectoryChoosePrompt")); //PROGM0007
+                        Microsoft.Win32.OpenFolderDialog folder = new()
+                        {
+                            Title = LanguageManager.Get("TempDirectoryChoosePrompt")
+                        };
+                        if (folder.ShowDialog() != true) return false;
+                        try { Services.TempDirectorySettings.SetAsync(folder.FolderName).GetAwaiter().GetResult(); }
+                        catch (Exception saveError)
+                        {
+                            string saveCode = saveError is Services.StageException saveStage
+                                ? saveStage.StageCode : "PROGM0008";
+                            ThemedPromptWindow.Inform(null, LanguageManager.Get("TempDirectoryTitle"),
+                                Tools.MessageTipGenerator.GenerateTip(saveCode, saveError.Message)); //PROGM0008
+                        }
+                    }
+                }
+            }
+            finally { application.ShutdownMode = previous; }
+        }
+
         private static System.Drawing.Color ToDrawingColor(System.Windows.Media.Color color) =>
             System.Drawing.Color.FromArgb(color.R, color.G, color.B);
 
@@ -190,5 +257,9 @@ namespace TANGERINE_ZIP
                 LanguageManager.Get("ErrorTitle"),
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error); //PROGM0002/PROGM0003
         }
+
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool FreeConsole();
     }
 }

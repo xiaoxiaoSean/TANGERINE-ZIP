@@ -65,7 +65,7 @@ internal sealed partial class ContextMenuSetupWindow : Window
                 key = "ContextMenuDeleted";
             }
             _statusText.Text = LanguageManager.Get(key);
-            MessageBox.Show(this, LanguageManager.Get(key), Title, MessageBoxButton.OK, MessageBoxImage.Information);
+            ThemedPromptWindow.Inform(this, Title, LanguageManager.Get(key));
             _isBusy = false;
             DialogResult = true;
         }
@@ -78,7 +78,7 @@ internal sealed partial class ContextMenuSetupWindow : Window
         {
             _statusText.Text = LanguageManager.Get("ContextSetupIncomplete");
             string code = exception is StageException stage ? stage.StageCode : "CMSPW0001";
-            MessageBox.Show(this, MessageTipGenerator.GenerateTip(code, exception.Message), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"), MessageTipGenerator.GenerateTip(code, exception.Message));
         }
         finally
         {

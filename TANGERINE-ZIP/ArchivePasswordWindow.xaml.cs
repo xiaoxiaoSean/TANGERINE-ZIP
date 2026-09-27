@@ -81,8 +81,8 @@ internal sealed partial class ArchivePasswordWindow : Window
         DialogResult = true;
     }
 
-    private void Warn(string code, string key) => MessageBox.Show(this,
-        MessageTipGenerator.GenerateTip(code, LanguageManager.Get(key)), LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+    private void Warn(string code, string key) => ThemedPromptWindow.Inform(this,
+        LanguageManager.Get("ErrorTitle"), MessageTipGenerator.GenerateTip(code, LanguageManager.Get(key)));
 
     public static bool TryGetCreationPassword(Window? owner, string archiveName, FileDetector.FileType type, out string? password)
     {
