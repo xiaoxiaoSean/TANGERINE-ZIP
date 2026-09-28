@@ -3,6 +3,8 @@
 <p align="center">
   <img src="TANGERINE-ZIP/Resources/TZIP.png" alt="TANGERINE ZIP logo" width="110">
   &nbsp;&nbsp;&nbsp;
+  <img src="README-assets/tangerine.png" alt="Tangerine illustration" width="86">
+  &nbsp;&nbsp;&nbsp;
   <img src="TANGERINE-ZIP/Resources/Kiro.png" alt="Kiro, the TANGERINE ZIP mascot" width="110">
 </p>
 

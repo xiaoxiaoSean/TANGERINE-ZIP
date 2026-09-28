@@ -3,6 +3,8 @@
 <p align="center">
   <img src="TANGERINE-ZIP/Resources/TZIP.png" alt="TANGERINE ZIP 软件标志" width="110">
   &nbsp;&nbsp;&nbsp;
+  <img src="README-assets/tangerine.png" alt="橘子形象" width="86">
+  &nbsp;&nbsp;&nbsp;
   <img src="TANGERINE-ZIP/Resources/Kiro.png" alt="TANGERINE ZIP 的 Kiro 形象" width="110">
 </p>
 
