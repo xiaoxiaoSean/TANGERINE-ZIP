@@ -2,6 +2,8 @@
 
 系统设置菜单、默认打开方式注册及 Windows 10/11 兼容流程见 [`DEFAULT_OPEN_WITH.md`](DEFAULT_OPEN_WITH.md)。
 
+v2.0.0 发布流程回顾和 v2.1.0 发布记录见 [`release.md`](release.md)。
+
 全选/全不选、自适应窗口布局与禁止控制台闪窗见 [`WINDOW_LAYOUT_AND_PROCESS_STARTUP.md`](WINDOW_LAYOUT_AND_PROCESS_STARTUP.md)。
 
 2026-09-27 新增功能与修复见 [`change20260927/README.md`](change20260927/README.md)。

@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/latest">Download the latest release</a> ·
-  <a href="RELEASE_NOTES_v2.0.0.md">What's new in v2.0.0</a> ·
+  <a href="RELEASE_NOTES_v2.1.0.md">What's new in v2.1.0</a> ·
   <a href="dev_doc1/README.md">Developer documentation</a>
 </p>
 
@@ -25,6 +25,7 @@
 - Test archive integrity, inspect or verify hashes, recover readable files from damaged archives, and change filename encoding for archives with garbled names.
 - Configure compression for ZIP, 7z, and RAR, including supported advanced options and split volumes. Edit entries in eligible ZIP, 7z, and TAR archives with backup protection.
 - Use the Windows 11 Explorer context menu, customizable colors and mouse effects, and the built-in `help`, `compress`, `extract`, and `list` commands.
+- Under **System settings → Default apps**, register supported archive formats, try automatic current-user defaults, or remove this app's defaults and registrations. Windows may block automatic association changes on protected versions.
 
 Some operations depend on the archive format and its contents. The application explains unavailable options in the interface.
 
@@ -64,6 +65,7 @@ The project includes two publish profiles: `FolderProfile` for the self-containe
 
 ## Documentation and license
 
+- [v2.1.0 release notes](RELEASE_NOTES_v2.1.0.md)
 - [v2.0.0 release notes](RELEASE_NOTES_v2.0.0.md)
 - [Developer documentation and format details](dev_doc1/README.md)
 - [Command-line reference](dev_doc1/command.md)

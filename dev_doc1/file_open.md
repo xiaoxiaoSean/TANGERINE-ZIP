@@ -19,7 +19,11 @@
 
 ## 注销调用
 
-窗口的 `UnregisterThisAppButton_Click` 在后台线程调用 `DefaultAppUnregistrationService.Unregister(report)`。`report` 收到逐格式进度，由窗口 Dispatcher 写入日志。成功返回本次覆盖的扩展名数量；失败抛出带 `UNRAS` 阶段码的 `StageException`，界面显示本地化错误和已处理日志。按钮不读取复选框状态，不需要管理员权限，作用范围是当前 Windows 账户。
+窗口的 `UnregisterThisAppButton_Click` 通过 `Task.Run` 在后台线程调用 `DefaultAppUnregistrationService.Unregister(report)`。`Progress<string>` 捕获 WPF 同步上下文，将逐格式日志异步投递到界面，不阻塞注册表工作线程。成功返回本次覆盖的扩展名数量；失败抛出带 `UNRAS` 阶段码的 `StageException`，界面显示本地化错误和已处理日志。按钮不读取复选框状态，不需要管理员权限，作用范围是当前 Windows 账户。
+
+## 异步界面边界
+
+默认打开方式窗口内可能阻塞的调用均由 `Task.Run` 转移到后台：可执行文件路径检查、逐格式候选注册、自动默认关联、Windows 设置入口的 Shell 启动、手动流程的实际默认 ProgID 查询，以及完整注销。每次 `await` 后才访问 WPF 控件，按钮和选择区在操作期间禁用；关闭窗口会等待当前注册表操作完成。全选、全不选、日志显示和主题对话框只修改或读取 WPF 控件，必须在 UI 线程执行，不属于后台 I/O 操作。底层 Windows 注册表 API 本身是同步接口，因此这里的“异步”指不占用 UI 线程，而非中途强制取消注册表事务。
 
 `Unregister` 分为两阶段：
 

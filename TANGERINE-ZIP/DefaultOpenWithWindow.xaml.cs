@@ -93,18 +93,19 @@ internal sealed partial class DefaultOpenWithWindow : Window
     private async void UnregisterThisAppButton_Click(object sender, RoutedEventArgs e)
     {
         if (_operationBusy || _sequenceActive) return;
-        SetBusy(true);
-        formatChoicesPanel.IsEnabled = false;
-        selectionButtonsPanel.IsEnabled = false;
-        progressLogBox.Clear();
-        currentFormatText.Text = LanguageManager.Get("DefaultAppsUnregisterWorking");
         try
         {
+            SetBusy(true);
+            formatChoicesPanel.IsEnabled = false;
+            selectionButtonsPanel.IsEnabled = false;
+            progressLogBox.Clear();
+            currentFormatText.Text = LanguageManager.Get("DefaultAppsUnregisterWorking");
             // This action always covers every supported extension, regardless of
             // checkbox state. The service finishes all default removals before it
-            // starts removing handler registrations.
-            int count = await Task.Run(() => DefaultAppUnregistrationService.Unregister(message =>
-                Dispatcher.Invoke(() => Log(message))));
+            // starts removing handler registrations. Progress<T> posts messages
+            // to the WPF synchronization context without blocking the worker.
+            IProgress<string> progress = new Progress<string>(Log);
+            int count = await Task.Run(() => DefaultAppUnregistrationService.Unregister(progress.Report));
             currentFormatText.Text = string.Format(LanguageManager.Get("DefaultAppsUnregisterCompleted"), count);
             Log(currentFormatText.Text);
         }
@@ -128,17 +129,23 @@ internal sealed partial class DefaultOpenWithWindow : Window
             .SelectMany(choice => ((AssociationFormat)choice.Tag).Extensions).ToArray();
         if (selected.Length == 0)
             throw new StageException("DAPWN0002", LanguageManager.Get("DefaultAppsChooseFormats")); //DAPWN0002
-        _executablePath = DefaultAppAssociationService.GetExecutablePath();
-        _useThisApp = useThisApp;
-        _pendingExtensions = new(selected);
-        _totalExtensions = selected.Length;
-        _registeredExtensions.Clear();
-        _verifiedCount = _reviewedCount = _skippedCount = 0;
-        _sequenceActive = true;
-        formatChoicesPanel.IsEnabled = false;
-        selectionButtonsPanel.IsEnabled = false;
-        progressLogBox.Clear();
-        await OpenNextAsync();
+        SetBusy(true);
+        try
+        {
+            // Path normalization and filesystem checks belong on the worker.
+            _executablePath = await Task.Run(DefaultAppAssociationService.GetExecutablePath);
+            _useThisApp = useThisApp;
+            _pendingExtensions = new(selected);
+            _totalExtensions = selected.Length;
+            _registeredExtensions.Clear();
+            _verifiedCount = _reviewedCount = _skippedCount = 0;
+            _sequenceActive = true;
+            formatChoicesPanel.IsEnabled = false;
+            selectionButtonsPanel.IsEnabled = false;
+            progressLogBox.Clear();
+            await OpenNextAsync();
+        }
+        finally { SetBusy(false); }
     }
 
     private async Task OpenNextAsync()
@@ -174,7 +181,7 @@ internal sealed partial class DefaultOpenWithWindow : Window
                             _registeredExtensions.Add(extension);
                             Log(string.Format(LanguageManager.Get("DefaultAppsRegistered"), extension));
                         }
-                        LaunchCurrentSettings(extension);
+                        await LaunchCurrentSettingsAsync(extension);
                         ResetButtons();
                         return; // Wait for the explicit "check/next" button.
                     }
@@ -197,10 +204,12 @@ internal sealed partial class DefaultOpenWithWindow : Window
         finally { SetBusy(false); }
     }
 
-    private void LaunchCurrentSettings(string extension)
+    private async Task LaunchCurrentSettingsAsync(string extension)
     {
-        // Only the explicit choose-any-app workflow launches Settings.
-        DefaultSettingsLaunch launch = DefaultAppAssociationService.OpenWindowsSettings(useThisApp: false);
+        // Only the explicit choose-any-app workflow launches Settings. Shell
+        // handoff can block on another process, so it runs off the UI thread.
+        DefaultSettingsLaunch launch = await Task.Run(() =>
+            DefaultAppAssociationService.OpenWindowsSettings(useThisApp: false));
         foreach (StageException warning in launch.Warnings) Log(FormatError(warning.StageCode, warning));
         string instructionKey = launch.Uri.Contains("registeredAppUser=", StringComparison.Ordinal)
             ? "DefaultAppsAppPageInstruction"
@@ -217,12 +226,17 @@ internal sealed partial class DefaultOpenWithWindow : Window
     {
         if (_currentExtension is not string extension) return;
         if (_useThisApp) throw new InvalidOperationException("Automatic association cannot enter Settings confirmation.");
-        string current = DefaultAppAssociationService.QueryCurrentProgId(extension)
-            ?? LanguageManager.Get("DefaultAppsNoDefault");
-        _reviewedCount++;
-        Log(string.Format(LanguageManager.Get("DefaultAppsReviewed"), extension, current));
-        _currentExtension = null;
-        await OpenNextAsync();
+        SetBusy(true);
+        try
+        {
+            string current = await Task.Run(() => DefaultAppAssociationService.QueryCurrentProgId(extension))
+                ?? LanguageManager.Get("DefaultAppsNoDefault");
+            _reviewedCount++;
+            Log(string.Format(LanguageManager.Get("DefaultAppsReviewed"), extension, current));
+            _currentExtension = null;
+            await OpenNextAsync();
+        }
+        finally { SetBusy(false); }
     }
 
     private void FinishSequence(bool cancelled)

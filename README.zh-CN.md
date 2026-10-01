@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/latest">下载最新版本</a> ·
-  <a href="RELEASE_NOTES_v2.0.0.md">查看 v2.0.0 更新日志</a> ·
+  <a href="RELEASE_NOTES_v2.1.0.md">查看 v2.1.0 更新日志</a> ·
   <a href="dev_doc1/README.md">开发文档</a>
 </p>
 
@@ -25,6 +25,7 @@
 - 执行完整性测试、显示和校验 Hash、从损坏的压缩包中恢复可读文件，并切换文件名编码以处理乱码。
 - 配置 ZIP、7z、RAR 的压缩参数和分卷；在符合条件的 ZIP、7z、TAR 中编辑成员，并保留原包备份。
 - 使用 Windows 11 资源管理器右键菜单、自定义主题配色和鼠标效果，以及 `help`、`compress`、`extract`、`list` 命令。
+- 在**为系统做设置 → 默认打开方式设置**中注册压缩格式、尝试为当前用户自动设置默认程序，或清除本软件的默认关联与注册。受保护的 Windows 版本可能阻止自动修改关联。
 
 部分操作受压缩格式和压缩包内容限制；界面会说明不可用的选项。
 
@@ -64,6 +65,7 @@ dotnet build TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release
 
 ## 文档与许可
 
+- [v2.1.0 更新日志](RELEASE_NOTES_v2.1.0.md)
 - [v2.0.0 更新日志](RELEASE_NOTES_v2.0.0.md)
 - [开发文档和格式说明](dev_doc1/README.md)
 - [命令行手册](dev_doc1/command.md)
