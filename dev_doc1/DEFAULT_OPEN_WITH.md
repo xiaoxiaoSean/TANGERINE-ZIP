@@ -1,5 +1,7 @@
 # 默认打开方式设置（2026-10-01）
 
+本软件的注册和“解除本软件在系统中的注册”操作详见 [file_open.md](file_open.md)；设计决策与验证记录见 [file_open_think.md](file_open_think.md)。
+
 > **自动关联更新：** 第一个按钮按 Windows 实际格式选择经典 SFTA 或 [UserChoiceLatest 实现](USERCHOICE_LATEST.md)，在后台尝试并核验；成功时直接处理下一格式，失败时显示阶段码及重试/跳过/停止，不操作系统设置界面。经典路径见 [SFTA_AUTOMATIC_DEFAULTS.md](SFTA_AUTOMATIC_DEFAULTS.md)。本机 ZIP/RAR 使用 UserChoiceLatest，尚未验证真实已有默认程序的切换。
 
 ## 菜单与窗口

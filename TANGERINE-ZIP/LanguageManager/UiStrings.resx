@@ -967,7 +967,7 @@ Existing file: {1}</value>
     <value>Extension {0} of {1}: {2}</value>
   </data>
   <data name="DefaultAppsDescription" xml:space="preserve">
-    <value>Select archive formats. The first action automatically sets selected formats for TANGERINE ZIP and checks the effective result. The second action opens Windows Settings to choose any app. Keep this executable in its current location; repeat after moving it. ISO and WIM are excluded.</value>
+    <value>Select archive formats. The first action automatically sets selected formats for TANGERINE ZIP and checks the effective result. The second action opens Windows Settings to choose any app. The third removes this app's defaults and registrations for all supported formats. Keep this executable in its current location; repeat after moving it. ISO and WIM are excluded.</value>
   </data>
   <data name="DefaultAppsExecutableMissing" xml:space="preserve">
     <value>The application executable cannot be registered. Launch the application&apos;s EXE, rather than a DLL through dotnet.exe.</value>
@@ -1092,4 +1092,16 @@ Existing file: {1}</value>
   <data name="DefaultAppsLatestWriteFailed" xml:space="preserve"><value>The UserChoiceLatest association could not be installed. The previous association was restored if it had been moved.</value></data>
   <data name="DefaultAppsLatestRejected" xml:space="preserve"><value>Windows did not accept the new UserChoiceLatest association. The previous association was restored.</value></data>
   <data name="DefaultAppsLatestRollbackFailed" xml:space="preserve"><value>Automatic association failed, and restoring the prior UserChoiceLatest key also failed. Inspect the current default before trying again.</value></data>
+  <data name="DefaultAppsUnregisterButton" xml:space="preserve"><value>Remove this app's system registration</value></data>
+  <data name="DefaultAppsUnregisterWorking" xml:space="preserve"><value>Removing this app's defaults and registration for all supported archive types…</value></data>
+  <data name="DefaultAppsUnregisterCompleted" xml:space="preserve"><value>Removed TANGERINE ZIP defaults and registrations for {0} archive extensions.</value></data>
+  <data name="DefaultAppsUnregisterStopped" xml:space="preserve"><value>Removal stopped. Review the log; no handler registration is removed until every default choice has been cleared.</value></data>
+  <data name="DefaultAppsUnregisterBusy" xml:space="preserve"><value>Could not acquire the current-user association lock or identity.</value></data>
+  <data name="DefaultAppsUnregisterChoiceCleared" xml:space="preserve"><value>{0}: this app is no longer the default choice.</value></data>
+  <data name="DefaultAppsUnregisterFormatFailed" xml:space="preserve"><value>{0}: removal failed: {1}</value></data>
+  <data name="DefaultAppsUnregisterChoiceFailed" xml:space="preserve"><value>One or more TANGERINE ZIP default choices could not be cleared. Handler registrations were kept.</value></data>
+  <data name="DefaultAppsUnregisterStillDefault" xml:space="preserve"><value>Windows still reports TANGERINE ZIP as a default application. Handler registrations were kept.</value></data>
+  <data name="DefaultAppsUnregisterFormatRemoved" xml:space="preserve"><value>{0}: this app's handler registration was removed.</value></data>
+  <data name="DefaultAppsUnregisterRegistrationFailed" xml:space="preserve"><value>Some TANGERINE ZIP handler registrations could not be removed. Retry after resolving the reported error.</value></data>
+  <data name="DefaultAppsUnregisterRollbackFailed" xml:space="preserve"><value>Removing a default choice failed, and restoring its previous registry key also failed. Inspect this file type before retrying.</value></data>
 </root>

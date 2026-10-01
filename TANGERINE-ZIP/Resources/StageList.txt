@@ -36,6 +36,7 @@ ZIPPD=ZIP password detection
 DEFAS=DefaultAppAssociationService (per-user candidate registration, Windows Settings, effective Shell association)
 DAPWN=DefaultOpenWithWindow (automatic defaults and sequential Windows Settings workflow)
 SFTAS=SftaUserChoice (MIT SFTA hash, compatibility checks, automatic association and rollback)
+UNRAS=DefaultAppUnregistrationService (remove current-user defaults before unregistering this app)
 
 Temporary workspace codes:
 TMPDR0001=TEMP_D is missing or empty; ask the user to select a directory.
@@ -63,6 +64,7 @@ DAPWN0001=unexpected failure at a default-app button/verification boundary; curr
 DAPWN0002=no archive format was selected; no registration or Settings launch was attempted.
 DAPWN0003=unexpected failure preparing one extension; retry, skip, and stop are offered.
 DAPWN0004=changing all archive format checkboxes failed; selection shortcuts only operate while the sequence is idle.
+DAPWN0005=unexpected failure in the remove-registration button workflow.
 DEFAS0001=unsupported Windows version or archive extension (including excluded ISO/WIM).
 DEFAS0002=the application EXE is missing or the process is hosted through dotnet.exe.
 DEFAS0003=writing/reading back HKCU handler registration failed; completed writes were rolled back.
@@ -86,3 +88,8 @@ LUCAS0003=preparing or renaming a UserChoiceLatest key failed; restoration was a
 LUCAS0004=Windows rejected the new effective UserChoiceLatest association; restoration was attempted.
 LUCAS0005=setting UserChoiceLatest failed and restoring the previous association also failed; both errors are preserved.
 LUCAS0006=waiting for the current-user UserChoiceLatest association mutex failed or timed out.
+UNRAS0001=current-user identity or association mutex was unavailable.
+UNRAS0002=at least one app-owned default choice could not be cleared; handler registration was preserved.
+UNRAS0003=Windows still reports this app as the effective default, so its handler cannot be removed.
+UNRAS0004=one or more app-owned handler registrations could not be removed; the operation can be retried.
+UNRAS0005=choice removal failed and restoring an app-owned choice key also failed.

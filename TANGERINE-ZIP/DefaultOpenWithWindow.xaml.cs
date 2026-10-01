@@ -35,6 +35,7 @@ internal sealed partial class DefaultOpenWithWindow : Window
         permissionHintText.Text = LanguageManager.Get("DefaultAppsPermissionHint");
         selectAllButton.Content = LanguageManager.Get("DefaultAppsSelectAll");
         selectNoneButton.Content = LanguageManager.Get("DefaultAppsSelectNone");
+        unregisterThisAppButton.Content = LanguageManager.Get("DefaultAppsUnregisterButton");
         foreach (AssociationFormat format in DefaultAppAssociationService.Formats)
         {
             // Formats are technical names and extensions, shared across locales.
@@ -87,6 +88,37 @@ internal sealed partial class DefaultOpenWithWindow : Window
             else await StartSequenceAsync(useThisApp: false);
         }
         catch (Exception exception) { ShowError("DAPWN0001", exception); } //DAPWN0001
+    }
+
+    private async void UnregisterThisAppButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_operationBusy || _sequenceActive) return;
+        SetBusy(true);
+        formatChoicesPanel.IsEnabled = false;
+        selectionButtonsPanel.IsEnabled = false;
+        progressLogBox.Clear();
+        currentFormatText.Text = LanguageManager.Get("DefaultAppsUnregisterWorking");
+        try
+        {
+            // This action always covers every supported extension, regardless of
+            // checkbox state. The service finishes all default removals before it
+            // starts removing handler registrations.
+            int count = await Task.Run(() => DefaultAppUnregistrationService.Unregister(message =>
+                Dispatcher.Invoke(() => Log(message))));
+            currentFormatText.Text = string.Format(LanguageManager.Get("DefaultAppsUnregisterCompleted"), count);
+            Log(currentFormatText.Text);
+        }
+        catch (Exception exception)
+        {
+            currentFormatText.Text = LanguageManager.Get("DefaultAppsUnregisterStopped");
+            ShowError("DAPWN0005", exception); //DAPWN0005
+        }
+        finally
+        {
+            formatChoicesPanel.IsEnabled = true;
+            selectionButtonsPanel.IsEnabled = true;
+            SetBusy(false);
+        }
     }
 
     private async Task StartSequenceAsync(bool useThisApp)
@@ -209,12 +241,14 @@ internal sealed partial class DefaultOpenWithWindow : Window
     {
         useThisAppButton.Content = LanguageManager.Get(!_sequenceActive || _useThisApp ? "DefaultAppsUseThisApp" : "DefaultAppsNext");
         chooseDefaultAppButton.Content = LanguageManager.Get(_sequenceActive ? "DefaultAppsStop" : "DefaultAppsChooseApp");
+        unregisterThisAppButton.IsEnabled = !_sequenceActive && !_operationBusy;
     }
 
     private void SetBusy(bool busy)
     {
         _operationBusy = busy;
         useThisAppButton.IsEnabled = chooseDefaultAppButton.IsEnabled = !busy;
+        unregisterThisAppButton.IsEnabled = !busy && !_sequenceActive;
     }
 
     private void Log(string message)
