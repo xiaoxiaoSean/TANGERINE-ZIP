@@ -1108,7 +1108,14 @@ Existing file: {1}</value>
   <data name="DefaultAppsUnregisterRegistrationFailed" xml:space="preserve"><value>Some TANGERINE ZIP handler registrations could not be removed. Retry after resolving the reported error.</value></data>
   <data name="DefaultAppsUnregisterRollbackFailed" xml:space="preserve"><value>Removing a default choice failed, and restoring its previous registry key also failed. Inspect this file type before retrying.</value></data>
   <data name="CreateDroppedArchiveMenu" xml:space="preserve"><value>Create a new archive</value></data>
-  <data name="DroppedFilesReady" xml:space="preserve"><value>{0} source items are ready. Choose Create a new archive.</value></data>
+  <data name="DroppedFilesReady" xml:space="preserve"><value>{0} items are staged. Select and remove items, or create a new archive.</value></data>
+  <data name="OpenDroppedArchiveMenu" xml:space="preserve"><value>Open dropped archive</value></data>
+  <data name="RemovePendingSourcesMenu" xml:space="preserve"><value>Remove selected items</value></data>
+  <data name="PendingSourcesHeader" xml:space="preserve"><value>Files to add to a new archive</value></data>
+  <data name="SearchPendingSources" xml:space="preserve"><value>Search staged files and folders</value></data>
+  <data name="PendingSourcesRemoved" xml:space="preserve"><value>Removed {0} staged items.</value></data>
+  <data name="CheckingPendingSources" xml:space="preserve"><value>Checking source files...</value></data>
+  <data name="MissingPendingSources" xml:space="preserve"><value>These source files or folders are missing or unavailable and were removed from the staged list: {0}</value></data>
   <data name="DragExtractPreparing" xml:space="preserve"><value>Extracting selected items for drag and drop</value></data>
   <data name="DragExtractCompleted" xml:space="preserve"><value>Selected items are ready for the drop target.</value></data>
   <data name="SettingsArchiveSelection" xml:space="preserve"><value>Selected archive item background (COLOR5)</value></data>

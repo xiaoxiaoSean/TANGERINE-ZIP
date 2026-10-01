@@ -26,6 +26,8 @@
             <MenuItem x:Name="aboutMenuItem" Header="About TZIP" Click="AboutMenu_Click" />
             <MenuItem x:Name="openArchiveMenuItem" Header="Open" Click="OpenArchiveMenu_Click" />
             <MenuItem x:Name="createDroppedArchiveMenuItem" Header="Create a new archive" Visibility="Collapsed" Click="CreateDroppedArchiveMenu_Click" />
+            <MenuItem x:Name="openDroppedArchiveMenuItem" Header="Open dropped archive" Visibility="Collapsed" Click="OpenDroppedArchiveMenu_Click" />
+            <MenuItem x:Name="removePendingSourcesMenuItem" Header="Remove selected items" Visibility="Collapsed" Click="RemovePendingSources_Click" />
             <MenuItem x:Name="previewEntryMenuItem" Header="Preview" Visibility="Collapsed" Click="PreviewEntryMenuItem_Click" />
             <MenuItem x:Name="extractMenuItem" Header="Extract">
                 <MenuItem x:Name="extractAllHereMenuItem" Header="Extract all" Click="ExtractAllHereMenu_Click" />
@@ -75,8 +77,9 @@
                              TextChanged="SearchBox_TextChanged" />
                 </Grid>
             </Border>
-            <ListView x:Name="archiveEntriesList" SelectionMode="Extended" MouseDoubleClick="ArchiveEntriesList_MouseDoubleClick"
+            <ListView x:Name="archiveEntriesList" SelectionMode="Extended" SelectionChanged="ArchiveEntriesList_SelectionChanged" MouseDoubleClick="ArchiveEntriesList_MouseDoubleClick"
                       PreviewMouseLeftButtonDown="ArchiveEntriesList_PreviewMouseLeftButtonDown"
+                      PreviewMouseRightButtonDown="ArchiveEntriesList_PreviewMouseRightButtonDown"
                       PreviewMouseMove="ArchiveEntriesList_PreviewMouseMove"
                       PreviewKeyDown="ArchiveEntriesList_PreviewKeyDown"
                       SizeChanged="ArchiveEntriesList_SizeChanged"
@@ -84,7 +87,7 @@
                       Grid.ColumnSpan="2" Grid.Row="1" Margin="0,4,0,0">
                 <ListView.View><GridView>
                     <GridViewColumn x:Name="nameColumn">
-                        <GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="{DynamicResource ForegroundBrush}" /></DataTemplate></GridViewColumn.CellTemplate>
+                        <GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Name}" ToolTip="{Binding Key}" Foreground="{DynamicResource ForegroundBrush}" /></DataTemplate></GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn x:Name="originalSizeColumn">
                         <GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding OriginalSize}" Foreground="{DynamicResource ForegroundBrush}" /></DataTemplate></GridViewColumn.CellTemplate>
@@ -96,11 +99,13 @@
                 <ListView.ContextMenu><ContextMenu Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" BorderBrush="{DynamicResource BorderBrush}">
                     <MenuItem x:Name="extractEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="ExtractEntryContext_Click" />
                     <MenuItem x:Name="entryDetailsContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="EntryDetailsContext_Click" />
-                    <Separator />
+                    <Separator x:Name="archiveContextSeparator" />
                     <MenuItem x:Name="copyEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="CopyEntryContext_Click" />
                     <MenuItem x:Name="cutEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="CutEntryContext_Click" />
                     <MenuItem x:Name="pasteEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="PasteEntryContext_Click" />
                     <MenuItem x:Name="deleteEntryContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Click="DeleteEntryContext_Click" />
+                    <MenuItem x:Name="openDroppedArchiveContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Visibility="Collapsed" Click="OpenDroppedArchiveMenu_Click" />
+                    <MenuItem x:Name="removePendingSourcesContextMenu" Style="{StaticResource ArchiveContextMenuItemStyle}" Visibility="Collapsed" Click="RemovePendingSources_Click" />
                 </ContextMenu></ListView.ContextMenu>
             </ListView>
         </Grid>

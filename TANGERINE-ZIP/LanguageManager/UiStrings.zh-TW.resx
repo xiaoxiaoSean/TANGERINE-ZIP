@@ -1111,7 +1111,14 @@
   <data name="DefaultAppsUnregisterRegistrationFailed" xml:space="preserve"><value>部分 TANGERINE ZIP 處理程式註冊無法撤銷。排除記錄中的錯誤後可重試。</value></data>
   <data name="DefaultAppsUnregisterRollbackFailed" xml:space="preserve"><value>清除預設值失敗，恢復原登錄機碼也失敗。請檢查該檔案類型後再重試。</value></data>
   <data name="CreateDroppedArchiveMenu" xml:space="preserve"><value>建立新的壓縮檔</value></data>
-  <data name="DroppedFilesReady" xml:space="preserve"><value>已準備 {0} 個來源項目，請點選「建立新的壓縮檔」。</value></data>
+  <data name="DroppedFilesReady" xml:space="preserve"><value>待處理清單中有 {0} 個項目。可選取並移除，也可建立新的壓縮檔。</value></data>
+  <data name="OpenDroppedArchiveMenu" xml:space="preserve"><value>開啟拖入的壓縮檔</value></data>
+  <data name="RemovePendingSourcesMenu" xml:space="preserve"><value>移除選取的項目</value></data>
+  <data name="PendingSourcesHeader" xml:space="preserve"><value>待加入新壓縮檔的項目</value></data>
+  <data name="SearchPendingSources" xml:space="preserve"><value>搜尋待處理檔案和資料夾</value></data>
+  <data name="PendingSourcesRemoved" xml:space="preserve"><value>已從待處理清單移除 {0} 個項目。</value></data>
+  <data name="CheckingPendingSources" xml:space="preserve"><value>正在檢查來源檔案……</value></data>
+  <data name="MissingPendingSources" xml:space="preserve"><value>以下檔案或資料夾已不存在或無法存取，已從待處理清單移除：{0}</value></data>
   <data name="DragExtractPreparing" xml:space="preserve"><value>正在解壓縮所選項目以供拖放</value></data>
   <data name="DragExtractCompleted" xml:space="preserve"><value>所選項目已交給拖放目標。</value></data>
   <data name="SettingsArchiveSelection" xml:space="preserve"><value>壓縮檔選取項目背景色（COLOR5）</value></data>

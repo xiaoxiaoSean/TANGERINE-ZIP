@@ -22,12 +22,16 @@ public partial class MainWindow : Window
     private string? _archivePassword;
     private string _archiveCurrentDirectory = string.Empty;
     private bool _isBusy;
+    private bool _stagedActionPreparing;
     private CancellationTokenSource? _searchCancellation;
     private (long Length, DateTime LastWriteUtc)? _loadedArchiveIdentity;
     private ArchiveClipboard? _archiveClipboard;
     private ExplorerArchiveClipboard? _explorerClipboard;
     private string? _clipboardStaging;
     private string[] _pendingCreatePaths = [];
+    private readonly HashSet<string> _pendingDirectories = new(StringComparer.OrdinalIgnoreCase);
+    private string? _pendingOpenPath;
+    private int _pendingRevision;
     private Point? _dragStart;
     private string? _dragStartKey;
     private bool _dragPreparing;
@@ -51,7 +55,11 @@ public partial class MainWindow : Window
         // resources when settings change and before each open so it never keeps
         // brushes from the previous appearance profile.
         AppearanceSettings.Changed += RefreshArchiveContextMenuTheme;
-        archiveEntriesList.ContextMenu!.Opened += (_, _) => RefreshArchiveContextMenuTheme();
+        archiveEntriesList.ContextMenu!.Opened += (_, _) =>
+        {
+            RefreshArchiveContextMenuTheme();
+            RefreshPendingActions();
+        };
         Closed += (_, _) =>
         {
             AppearanceSettings.Changed -= RefreshArchiveContextMenuTheme;
@@ -102,6 +110,10 @@ public partial class MainWindow : Window
         aboutMenuItem.Header = LanguageManager.Get("AboutTzipMenu");
         openArchiveMenuItem.Header = LanguageManager.Get("openText");
         createDroppedArchiveMenuItem.Header = LanguageManager.Get("CreateDroppedArchiveMenu");
+        openDroppedArchiveMenuItem.Header = LanguageManager.Get("OpenDroppedArchiveMenu");
+        removePendingSourcesMenuItem.Header = LanguageManager.Get("RemovePendingSourcesMenu");
+        openDroppedArchiveContextMenu.Header = LanguageManager.Get("OpenDroppedArchiveMenu");
+        removePendingSourcesContextMenu.Header = LanguageManager.Get("RemovePendingSourcesMenu");
         previewEntryMenuItem.Header = LanguageManager.Get("PreviewSelectedEntry");
         extractMenuItem.Header = LanguageManager.Get("extractText");
         compressMenuItem.Header = LanguageManager.Get("compressText");
@@ -223,6 +235,9 @@ public partial class MainWindow : Window
                     // Opening an archive ends any prior empty-window staging;
                     // an old drop must never reappear after unloading it.
                     _pendingCreatePaths = [];
+                    _pendingDirectories.Clear();
+                    _pendingOpenPath = null;
+                    _pendingRevision++;
                     SetArchiveControls(true);
                 });
                 operationProgressBar.Value = 100;
@@ -389,6 +404,7 @@ public partial class MainWindow : Window
     /// </summary>
     private async Task CreateArchiveFromPathsAsync(string[] sourcePaths)
     {
+        if (!await EnsureSourcesAvailableAsync(sourcePaths)) return;
         archiveSaveDialog.FileName = string.Empty;
         archiveSaveDialog.Title = LanguageManager.Get("SelectOutputArchive");
         archiveSaveDialog.Filter = LanguageManager.Get("CreateArchiveFilter");
@@ -400,6 +416,9 @@ public partial class MainWindow : Window
         CompressionOptionsWindow optionsWindow = new(Path.GetFileName(outputPath), type) { Owner = this };
         if (optionsWindow.ShowDialog() != true) return;
         CompressionOptions options = optionsWindow.Options!;
+        // A source can disappear while the user is choosing an output path or
+        // compression options. Check again immediately before starting the worker.
+        if (!await EnsureSourcesAvailableAsync(sourcePaths)) return;
         await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) =>
             _archiveService.CreateAsync(sourcePaths, outputPath, type, progress, token, options.Password, options));
         // Never display completion when the worker returned success but the
@@ -409,20 +428,60 @@ public partial class MainWindow : Window
         operationProgressBar.Value = 100;
         operationStatusText.Text = LanguageManager.Get("CompressionCompleted");
         _pendingCreatePaths = [];
-        createDroppedArchiveMenuItem.Visibility = Visibility.Collapsed;
+        _pendingDirectories.Clear();
+        _pendingOpenPath = null;
+        _pendingRevision++;
+        RefreshPendingSourcesList();
+        SetArchiveControls(!string.IsNullOrEmpty(_archivePath));
+    }
+
+    /// <summary>
+    /// FileDrop supplies paths, not durable handles. Verify them asynchronously
+    /// at both UI decision points and remove stale rows from the staging area.
+    /// The archive worker remains responsible for changes after it starts.
+    /// </summary>
+    private async Task<bool> EnsureSourcesAvailableAsync(string[] sourcePaths)
+    {
+        operationStatusText.Text = LanguageManager.Get("CheckingPendingSources");
+        string[] missing = await Task.Run(() => sourcePaths
+            .Where(path => !File.Exists(path) && !Directory.Exists(path)).ToArray());
+        if (missing.Length == 0)
+        {
+            if (!string.IsNullOrEmpty(_archivePath)) RefreshCurrentDirectoryStatus();
+            else operationStatusText.Text = _pendingCreatePaths.Length > 0
+                ? string.Format(LanguageManager.Get("DroppedFilesReady"), _pendingCreatePaths.Length)
+                : LanguageManager.Get("readytext");
+            return true;
+        }
+
+        HashSet<string> missingSet = missing.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _pendingCreatePaths = _pendingCreatePaths.Where(path => !missingSet.Contains(path)).ToArray();
+        _pendingDirectories.ExceptWith(missingSet);
+        RefreshPendingSourcesList();
+        await ProbePendingArchiveAsync();
+        string names = string.Join(", ", missing.Select(path => Path.GetFileName(path.TrimEnd(
+            Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) is { Length: > 0 } name ? name : path));
+        string message = string.Format(LanguageManager.Get("MissingPendingSources"), names);
+        operationStatusText.Text = message;
+        ThemedPromptWindow.Inform(this, Title, message);
+        return false;
     }
 
     private async void CreateDroppedArchiveMenu_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            if (_isBusy || _stagedActionPreparing) { ShowInformation("AlreadyDoingJob"); return; }
             string[] paths = _pendingCreatePaths;
             if (paths.Length == 0) return;
+            _stagedActionPreparing = true;
+            SetMenuEnabled(false);
+            RefreshPendingActions();
             await CreateArchiveFromPathsAsync(paths);
         }
         catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
         catch (Exception exception) { ShowException("MAINW0027", exception); } //MAINW0027
+        finally { _stagedActionPreparing = false; SetMenuEnabled(!_isBusy); RefreshPendingActions(); }
     }
 
     private async void ExtractNestedTarMenuItem_Click(object? sender, EventArgs e)
@@ -508,8 +567,30 @@ public partial class MainWindow : Window
         .Where(item => !string.IsNullOrEmpty(item) && item != "..")
         .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
+    private void ArchiveEntriesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (removePendingSourcesMenuItem is not null) RefreshPendingActions();
+    }
+
+    private void ArchiveEntriesList_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_archivePath)) return;
+        ListViewItem? row = FindArchiveRow(e.OriginalSource as DependencyObject);
+        if (row is null || row.IsSelected) return;
+        archiveEntriesList.SelectedItems.Clear();
+        row.IsSelected = true;
+    }
+
     private async void ArchiveEntriesList_MouseDoubleClick(object? sender, EventArgs e)
     {
+        if (string.IsNullOrEmpty(_archivePath))
+        {
+            // A staged archive can also be opened by double-clicking its row.
+            if (archiveEntriesList.SelectedItem is ArchiveEntryRow pendingRow &&
+                pendingRow.Key.Equals(_pendingOpenPath, StringComparison.OrdinalIgnoreCase))
+                OpenDroppedArchiveMenu_Click(sender!, new RoutedEventArgs());
+            return;
+        }
         ArchiveEntryRow? row = archiveEntriesList.SelectedItem as ArchiveEntryRow;
         string selected = row?.Name ?? string.Empty;
         if (string.IsNullOrEmpty(selected)) return;
@@ -522,6 +603,117 @@ public partial class MainWindow : Window
             return;
         }
         await PreviewSelectedEntryAsync();
+    }
+
+    /// <summary>
+    /// The empty-window list is a staging area, never an archive entry list.
+    /// Its row keys are full source paths. Filtering changes only the view;
+    /// deletion always removes the selected paths from the complete source set.
+    /// </summary>
+    private void RefreshPendingSourcesList()
+    {
+        if (!string.IsNullOrEmpty(_archivePath)) return;
+        archiveEntriesList.Items.Clear();
+        string query = searchBox.Text ?? string.Empty;
+        foreach (string path in _pendingCreatePaths.Where(path =>
+                     path.Contains(query, StringComparison.CurrentCultureIgnoreCase)))
+        {
+            string name = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrEmpty(name)) name = path;
+            // The path metadata was established during the asynchronous drop;
+            // painting the list must not enumerate a directory or block on disk.
+            archiveEntriesList.Items.Add(new ArchiveEntryRow(name, path, _pendingDirectories.Contains(path), "", ""));
+        }
+        archiveHeaderText.Text = _pendingCreatePaths.Length > 0
+            ? LanguageManager.Get("PendingSourcesHeader") : LanguageManager.Get("ArchiveHeaderText");
+        searchBox.ToolTip = LanguageManager.Get(_pendingCreatePaths.Length > 0 ? "SearchPendingSources" : "SearchEntries");
+    }
+
+    /// <summary>Show archive opening only for one staged, verified archive.</summary>
+    private async Task ProbePendingArchiveAsync()
+    {
+        int revision = ++_pendingRevision;
+        _pendingOpenPath = null;
+        RefreshPendingActions();
+        if (!string.IsNullOrEmpty(_archivePath) || _pendingCreatePaths.Length != 1) return;
+        string candidate = _pendingCreatePaths[0];
+        try
+        {
+            bool canOpen = await Task.Run(() => File.Exists(candidate) &&
+                ArchiveCapabilities.CanOpen(FileDetector.DetectFileType(candidate)));
+            if (revision != _pendingRevision || !string.IsNullOrEmpty(_archivePath)) return;
+            _pendingOpenPath = canOpen ? candidate : null;
+            RefreshPendingActions();
+        }
+        catch (IOException)
+        {
+            // A source may disappear during detection; creation checks it again.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // An inaccessible source cannot be opened as an archive.
+        }
+        catch (Exception exception)
+        {
+            if (revision == _pendingRevision) ShowException("MAINW0032", exception); //MAINW0032
+        }
+    }
+
+    private void RefreshPendingActions()
+    {
+        bool staged = string.IsNullOrEmpty(_archivePath) && _pendingCreatePaths.Length > 0;
+        bool selected = staged && archiveEntriesList.SelectedItems.Count > 0;
+        bool canOpen = staged && _pendingOpenPath is not null;
+        createDroppedArchiveMenuItem.Visibility = staged ? Visibility.Visible : Visibility.Collapsed;
+        openDroppedArchiveMenuItem.Visibility = canOpen ? Visibility.Visible : Visibility.Collapsed;
+        removePendingSourcesMenuItem.Visibility = staged ? Visibility.Visible : Visibility.Collapsed;
+        createDroppedArchiveMenuItem.IsEnabled = !_isBusy && !_stagedActionPreparing && staged;
+        openDroppedArchiveMenuItem.IsEnabled = !_isBusy && !_stagedActionPreparing && canOpen;
+        removePendingSourcesMenuItem.IsEnabled = !_isBusy && !_stagedActionPreparing && selected;
+        openDroppedArchiveContextMenu.Visibility = canOpen ? Visibility.Visible : Visibility.Collapsed;
+        openDroppedArchiveContextMenu.IsEnabled = !_isBusy && !_stagedActionPreparing && canOpen;
+        removePendingSourcesContextMenu.Visibility = staged ? Visibility.Visible : Visibility.Collapsed;
+        removePendingSourcesContextMenu.IsEnabled = !_isBusy && !_stagedActionPreparing && selected;
+        foreach (MenuItem item in new[] { extractEntryContextMenu, entryDetailsContextMenu,
+                     copyEntryContextMenu, cutEntryContextMenu, pasteEntryContextMenu, deleteEntryContextMenu })
+            item.Visibility = staged ? Visibility.Collapsed : Visibility.Visible;
+        archiveContextSeparator.Visibility = staged ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void RemovePendingSources_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isBusy || _stagedActionPreparing) { ShowInformation("AlreadyDoingJob"); return; }
+            if (!string.IsNullOrEmpty(_archivePath)) return;
+            HashSet<string> selected = archiveEntriesList.SelectedItems.OfType<ArchiveEntryRow>()
+                .Select(row => row.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (selected.Count == 0) { ShowInformation("NoSelectedEntries"); return; }
+            _pendingCreatePaths = _pendingCreatePaths.Where(path => !selected.Contains(path)).ToArray();
+            _pendingDirectories.ExceptWith(selected);
+            RefreshPendingSourcesList();
+            _ = ProbePendingArchiveAsync();
+            operationStatusText.Text = string.Format(LanguageManager.Get("PendingSourcesRemoved"), selected.Count);
+        }
+        catch (Exception exception) { ShowException("MAINW0033", exception); } //MAINW0033
+    }
+
+    private async void OpenDroppedArchiveMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isBusy || _stagedActionPreparing) { ShowInformation("AlreadyDoingJob"); return; }
+            string? path = _pendingOpenPath;
+            if (path is null || !string.IsNullOrEmpty(_archivePath) || _pendingCreatePaths.Length != 1 ||
+                !_pendingCreatePaths[0].Equals(path, StringComparison.OrdinalIgnoreCase)) return;
+            _stagedActionPreparing = true;
+            SetMenuEnabled(false);
+            RefreshPendingActions();
+            if (!await EnsureSourcesAvailableAsync([path])) return;
+            await OpenArchiveAsync(path);
+        }
+        catch (Exception exception) { ShowException("MAINW0034", exception); } //MAINW0034
+        finally { _stagedActionPreparing = false; SetMenuEnabled(!_isBusy); RefreshPendingActions(); }
     }
 
     private async void PreviewEntryMenuItem_Click(object sender, RoutedEventArgs e) => await PreviewSelectedEntryAsync();
@@ -577,6 +769,12 @@ public partial class MainWindow : Window
 
     private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
+        if (string.IsNullOrEmpty(_archivePath))
+        {
+            RefreshPendingSourcesList();
+            RefreshPendingActions();
+            return;
+        }
         if (string.IsNullOrWhiteSpace(searchBox.Text))
         {
             _searchCancellation?.Cancel();
@@ -614,6 +812,21 @@ public partial class MainWindow : Window
 
     private void ArchiveEntriesList_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (string.IsNullOrEmpty(_archivePath))
+        {
+            if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Delete)
+            {
+                e.Handled = true;
+                RemovePendingSources_Click(sender, new RoutedEventArgs());
+            }
+            else if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Enter &&
+                     _pendingOpenPath is not null)
+            {
+                e.Handled = true;
+                OpenDroppedArchiveMenu_Click(sender, new RoutedEventArgs());
+            }
+            return;
+        }
         ModifierKeys modifiers = e.KeyboardDevice.Modifiers;
         if (modifiers == ModifierKeys.Control && e.Key is Key.C or Key.X or Key.V)
         {
@@ -1005,7 +1218,7 @@ public partial class MainWindow : Window
         try
         {
             if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0) return;
-            if (_isBusy)
+            if (_isBusy || _stagedActionPreparing)
             {
                 if (File.Exists(files[0]) && ThemedPromptWindow.Ask(this, Title, LanguageManager.Get("DropBusyPrompt"),
                         (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
@@ -1015,15 +1228,33 @@ public partial class MainWindow : Window
             }
             if (string.IsNullOrEmpty(_archivePath))
             {
-                // A fresh window treats all dropped paths as input to a new
-                // archive. Keep them intact until the user confirms compression.
-                string[] sources = await Task.Run(() => files
-                    .Where(path => File.Exists(path) || Directory.Exists(path))
-                    .Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
-                if (sources.Length == 0) return;
-                _pendingCreatePaths = sources;
-                createDroppedArchiveMenuItem.Visibility = Visibility.Visible;
-                operationStatusText.Text = string.Format(LanguageManager.Get("DroppedFilesReady"), sources.Length);
+                // Build the next staging snapshot off the UI thread, then append
+                // distinct paths. Existing rows remain available for removal.
+                operationStatusText.Text = LanguageManager.Get("CheckingPendingSources");
+                (string Path, bool Directory)[] staged = await Task.Run(() => files
+                    .Select(path => (Path: path, Directory: Directory.Exists(path)))
+                    .Where(source => source.Directory || File.Exists(source.Path))
+                    .Select(source => (Path: Path.GetFullPath(source.Path), source.Directory))
+                    .DistinctBy(source => source.Path, StringComparer.OrdinalIgnoreCase).ToArray());
+                if (!string.IsNullOrEmpty(_archivePath)) return;
+                string[] sources = staged.Select(source => source.Path).ToArray();
+                if (sources.Length == 0)
+                {
+                    operationStatusText.Text = _pendingCreatePaths.Length > 0
+                        ? string.Format(LanguageManager.Get("DroppedFilesReady"), _pendingCreatePaths.Length)
+                        : LanguageManager.Get("readytext");
+                    return;
+                }
+                foreach (var source in staged)
+                    if (source.Directory) _pendingDirectories.Add(source.Path);
+                _pendingCreatePaths = _pendingCreatePaths.Concat(sources)
+                    .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                // A previous filter must not hide newly dropped files.
+                searchBox.Clear();
+                RefreshPendingSourcesList();
+                await ProbePendingArchiveAsync();
+                if (!string.IsNullOrEmpty(_archivePath)) return;
+                operationStatusText.Text = string.Format(LanguageManager.Get("DroppedFilesReady"), _pendingCreatePaths.Length);
                 return;
             }
             if (!File.Exists(files[0])) return;
@@ -1072,14 +1303,15 @@ public partial class MainWindow : Window
         extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed;
         extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar
             ? Visibility.Visible : Visibility.Collapsed;
-        createDroppedArchiveMenuItem.Visibility = !loaded && _pendingCreatePaths.Length > 0
-            ? Visibility.Visible : Visibility.Collapsed;
+        RefreshPendingActions();
     }
 
     private void SetMenuEnabled(bool enabled)
     {
         openArchiveMenuItem.IsEnabled = enabled;
         createDroppedArchiveMenuItem.IsEnabled = enabled;
+        openDroppedArchiveMenuItem.IsEnabled = enabled;
+        removePendingSourcesMenuItem.IsEnabled = enabled && archiveEntriesList.SelectedItems.Count > 0;
         previewEntryMenuItem.IsEnabled = enabled;
         extractMenuItem.IsEnabled = enabled;
         compressMenuItem.IsEnabled = enabled;
@@ -1091,7 +1323,7 @@ public partial class MainWindow : Window
     private void UnloadArchive()
     {
         _archivePath = string.Empty; _archivePassword = null; _archiveCurrentDirectory = string.Empty; _nestedTarInfo = NestedTarInfo.None; _loadedArchiveIdentity = null; _archiveClipboard = null; _archiveEntries.Clear(); searchBox.Clear(); archiveEntriesList.Items.Clear();
-        operationProgressBar.Value = 0; operationStatusText.Text = LanguageManager.Get("readytext"); archiveHeaderText.Text = LanguageManager.Get("ArchiveHeaderText"); SetArchiveControls(false);
+        operationProgressBar.Value = 0; operationStatusText.Text = LanguageManager.Get("readytext"); archiveHeaderText.Text = LanguageManager.Get("ArchiveHeaderText"); SetArchiveControls(false); RefreshPendingSourcesList();
     }
 
     private void UnloadArchiveMenu_Click(object sender, EventArgs e) => UnloadArchive();
