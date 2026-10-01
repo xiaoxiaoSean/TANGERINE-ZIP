@@ -47,4 +47,5 @@ gh release create vX.Y.Z out/TANGERINE-ZIP-vX.Y.Z-fd.exe out/TANGERINE-ZIP-vX.Y.
 - Release 编译：零警告、零错误；默认应用探针 `1657` 项通过，注销私有注册表探针通过。两个发布配置成功，EXE 的 FileVersion 与 ProductVersion 均为 `2.1.0`。
 - `TANGERINE-ZIP-v2.1.0-fd.exe`：9,518,290 字节；SHA-256 `8FAC1B1CB3D7F240622C65BD0F2CBCFE10F85F9FCC7EEBE70A804B8585B9BCCF`。
 - `TANGERINE-ZIP-v2.1.0-sc.exe`：83,795,689 字节；SHA-256 `09681EFEDB1DAFF962A51307CBFA8449E121A87239B63BCBA98F08DC9B7C6D87`。
-- 标签和 GitHub Release 链接在发布完成后补充。
+- 注释标签 `v2.1.0` 指向提交 `28f5c8aba167e7f21fa658e6ee71730dc7fa5a97`；[GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.0) 标题为 `TANGERINE-ZIP-V2.1.0`，已发布为正式版本（非草稿、非预发布）。
+- 发布后通过 GitHub Release 元数据核验：附件恰为上述两个 EXE，远端大小与 SHA-256 和本地一致；正文英文在前、中文在后。
