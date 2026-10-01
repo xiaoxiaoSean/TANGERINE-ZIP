@@ -1,6 +1,7 @@
 using TANGERINE_ZIP.Services;
 using TANGERINE_ZIP.Tools;
 using System.Windows.Input;
+using System.Collections.Specialized;
 
 namespace TANGERINE_ZIP;
 
@@ -26,6 +27,11 @@ public partial class MainWindow : Window
     private ArchiveClipboard? _archiveClipboard;
     private ExplorerArchiveClipboard? _explorerClipboard;
     private string? _clipboardStaging;
+    private string[] _pendingCreatePaths = [];
+    private Point? _dragStart;
+    private string? _dragStartKey;
+    private bool _dragPreparing;
+    private readonly List<string> _dragStagingDirectories = [];
 
     private sealed record ArchiveClipboard(string ArchivePath, string[] Keys, bool Cut,
         (long Length, DateTime LastWriteUtc) SourceIdentity);
@@ -52,6 +58,7 @@ public partial class MainWindow : Window
             // The process-owned OLE data object can no longer serve Explorer
             // after this window closes, so its staged payload can be released.
             if (_clipboardStaging is not null) CleanupClipboardStaging(_clipboardStaging);
+            foreach (string staging in _dragStagingDirectories) CleanupClipboardStaging(staging);
         };
         MouseWhiteThickening.Attach(this, MouseWhiteThickenRadius);
         FontSize = SystemFonts.MessageFontSize;
@@ -94,6 +101,7 @@ public partial class MainWindow : Window
         operationStatusText.Text = LanguageManager.Get("readytext");
         aboutMenuItem.Header = LanguageManager.Get("AboutTzipMenu");
         openArchiveMenuItem.Header = LanguageManager.Get("openText");
+        createDroppedArchiveMenuItem.Header = LanguageManager.Get("CreateDroppedArchiveMenu");
         previewEntryMenuItem.Header = LanguageManager.Get("PreviewSelectedEntry");
         extractMenuItem.Header = LanguageManager.Get("extractText");
         compressMenuItem.Header = LanguageManager.Get("compressText");
@@ -212,6 +220,9 @@ public partial class MainWindow : Window
                     searchBox.Clear();
                     archiveHeaderText.Text = LanguageManager.Get($"Format_{type}") + " " + LanguageManager.Get(type is FileDetector.FileType.Iso or FileDetector.FileType.Wim ? "ImageFile" : "CompressFile");
                     RefreshArchiveEntriesList();
+                    // Opening an archive ends any prior empty-window staging;
+                    // an old drop must never reappear after unloading it.
+                    _pendingCreatePaths = [];
                     SetArchiveControls(true);
                 });
                 operationProgressBar.Value = 100;
@@ -365,27 +376,53 @@ public partial class MainWindow : Window
             if (_sourceFilesDialog.ShowDialog(this) != true) return;
             string[] sourcePaths = _sourceFilesDialog.FileNames;
             if (sourcePaths.Length == 0) return;
-            archiveSaveDialog.Title = LanguageManager.Get("SelectOutputArchive");
-            archiveSaveDialog.Filter = LanguageManager.Get("CreateArchiveFilter");
-            archiveSaveDialog.AddExtension = true;
-            archiveSaveDialog.OverwritePrompt = true;
-            if (archiveSaveDialog.ShowDialog(this) != true) return;
-            string outputPath = archiveSaveDialog.FileName;
-            FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(archiveSaveDialog.FilterIndex);
-            CompressionOptionsWindow optionsWindow = new(Path.GetFileName(outputPath), type) { Owner = this };
-            if (optionsWindow.ShowDialog() != true) return;
-            CompressionOptions options = optionsWindow.Options!;
-            await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) =>
-                _archiveService.CreateAsync(sourcePaths, outputPath, type, progress, token, options.Password, options));
-            // Never display completion when the worker returned success but the
-            // expected archive is missing from the exact path chosen by the user.
-            if (!ArchiveOutput.Exists(outputPath))
-                throw new StageException("MAINW0012", string.Format(LanguageManager.Get("CompressionOutputMissing"), outputPath)); //MAINW0012
-            operationProgressBar.Value = 100;
-            operationStatusText.Text = LanguageManager.Get("CompressionCompleted");
+            await CreateArchiveFromPathsAsync(sourcePaths);
         }
         catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
         catch (Exception exception) { ShowException("MAINW0005", exception); } //MAINW0005
+    }
+
+    /// <summary>
+    /// A dropped file or directory is staged as a source path until the user
+    /// chooses the target name and format in the standard Windows save dialog.
+    /// The existing worker owns compression, progress, and cancellation.
+    /// </summary>
+    private async Task CreateArchiveFromPathsAsync(string[] sourcePaths)
+    {
+        archiveSaveDialog.FileName = string.Empty;
+        archiveSaveDialog.Title = LanguageManager.Get("SelectOutputArchive");
+        archiveSaveDialog.Filter = LanguageManager.Get("CreateArchiveFilter");
+        archiveSaveDialog.AddExtension = true;
+        archiveSaveDialog.OverwritePrompt = true;
+        if (archiveSaveDialog.ShowDialog(this) != true) return;
+        string outputPath = archiveSaveDialog.FileName;
+        FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(archiveSaveDialog.FilterIndex);
+        CompressionOptionsWindow optionsWindow = new(Path.GetFileName(outputPath), type) { Owner = this };
+        if (optionsWindow.ShowDialog() != true) return;
+        CompressionOptions options = optionsWindow.Options!;
+        await RunOperationAsync(LanguageManager.Get("CompressingText"), (progress, token) =>
+            _archiveService.CreateAsync(sourcePaths, outputPath, type, progress, token, options.Password, options));
+        // Never display completion when the worker returned success but the
+        // expected archive is missing from the exact path chosen by the user.
+        if (!ArchiveOutput.Exists(outputPath))
+            throw new StageException("MAINW0012", string.Format(LanguageManager.Get("CompressionOutputMissing"), outputPath)); //MAINW0012
+        operationProgressBar.Value = 100;
+        operationStatusText.Text = LanguageManager.Get("CompressionCompleted");
+        _pendingCreatePaths = [];
+        createDroppedArchiveMenuItem.Visibility = Visibility.Collapsed;
+    }
+
+    private async void CreateDroppedArchiveMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            string[] paths = _pendingCreatePaths;
+            if (paths.Length == 0) return;
+            await CreateArchiveFromPathsAsync(paths);
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0027", exception); } //MAINW0027
     }
 
     private async void ExtractNestedTarMenuItem_Click(object? sender, EventArgs e)
@@ -839,6 +876,124 @@ public partial class MainWindow : Window
         if (!string.IsNullOrEmpty(_archivePath)) await OpenArchiveAsync(_archivePath);
     }
 
+    private void ArchiveEntriesList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _dragStart = e.GetPosition(archiveEntriesList);
+        _dragStartKey = FindArchiveRow(e.OriginalSource as DependencyObject)?.DataContext is ArchiveEntryRow row
+            ? row.Key : null;
+    }
+
+    private async void ArchiveEntriesList_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_dragPreparing || _isBusy || string.IsNullOrEmpty(_archivePath) ||
+            e.LeftButton != MouseButtonState.Pressed || _dragStart is null || _dragStartKey is null)
+            return;
+        Point point = e.GetPosition(archiveEntriesList);
+        if (Math.Abs(point.X - _dragStart.Value.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(point.Y - _dragStart.Value.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        _dragStart = null;
+        if (!GetSelectedArchiveEntries().Contains(_dragStartKey, StringComparer.OrdinalIgnoreCase)) return;
+        _dragPreparing = true;
+        try { await DragSelectedEntriesAsync(); }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0028", exception); } //MAINW0028
+        finally { _dragPreparing = false; _dragStartKey = null; }
+    }
+
+    private static ListViewItem? FindArchiveRow(DependencyObject? source)
+    {
+        while (source is not null && source is not ListViewItem)
+            source = source is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(source)
+                : LogicalTreeHelper.GetParent(source);
+        return source as ListViewItem;
+    }
+
+    /// <summary>
+    /// Extract to a private temporary directory before exposing CF_HDROP to
+    /// Explorer. The archive worker reports progress and honors Stop. Staged
+    /// files stay alive until window close because a drop target may consume
+    /// the paths after OLE returns from DoDragDrop.
+    /// </summary>
+    private async Task DragSelectedEntriesAsync()
+    {
+        string[] selected = GetSelectedArchiveEntries().ToArray();
+        if (selected.Length == 0) return;
+        string archive = _archivePath;
+        (long Length, DateTime LastWriteUtc) identity = await Task.Run(() => GetArchiveIdentity(archive));
+        string workspace = await Task.Run(() => TempDirectorySettings.GetDirectory());
+        long bytes = _archiveEntries.Where(entry => !entry.IsDirectory && selected.Any(key =>
+                entry.Key.Equals(key.TrimEnd('/'), StringComparison.OrdinalIgnoreCase) ||
+                entry.Key.StartsWith(key.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)))
+            .Aggregate(0L, (total, entry) => total > long.MaxValue - Math.Max(entry.Size, 0)
+                ? long.MaxValue : total + Math.Max(entry.Size, 0));
+        await Task.Run(() => ResourcePreflight.Check(workspace,
+            bytes > long.MaxValue - 64L * 1024 * 1024 ? long.MaxValue : bytes + 64L * 1024 * 1024,
+            128L * 1024 * 1024));
+        string staging = Path.Combine(workspace, "TangerineZipDrag", Guid.NewGuid().ToString("N"));
+        await Task.Run(() => Directory.CreateDirectory(staging));
+        bool retained = false;
+        try
+        {
+            await RunOperationAsync(LanguageManager.Get("DragExtractPreparing"), (progress, token) =>
+                _nestedTarInfo.FlattenAutomatically
+                    ? _archiveService.ExtractNestedTarsAsync(archive, _nestedTarInfo.TarEntryKeys,
+                        staging, selected, false, OverwritePolicy.SkipAll, progress, token, _archivePassword,
+                        issueResolver: (issue, issueToken) => issue.Kind == ExtractionIssueKind.PathTraversal
+                            ? Task.FromResult(new ExtractionAnswer(ExtractionDecision.Stop))
+                            : ExtractionPrompt.AskAsync(this, issue, issueToken))
+                    : _archiveService.ExtractAsync(archive, staging, selected,
+                        OverwritePolicy.SkipAll, progress, token, _archivePassword,
+                        issueResolver: (issue, issueToken) => issue.Kind == ExtractionIssueKind.PathTraversal
+                            ? Task.FromResult(new ExtractionAnswer(ExtractionDecision.Stop))
+                            : ExtractionPrompt.AskAsync(this, issue, issueToken)));
+            if (identity != await Task.Run(() => GetArchiveIdentity(archive)))
+                throw new StageException("MAINW0029", LanguageManager.Get("ArchiveEditChanged")); //MAINW0029
+            string root = Path.GetFullPath(staging) + Path.DirectorySeparatorChar;
+            string[] stagedPaths = selected.Select(key =>
+            {
+                string full = Path.GetFullPath(Path.Combine(staging,
+                    key.TrimEnd('/').Replace('/', Path.DirectorySeparatorChar)));
+                if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase) ||
+                    (!File.Exists(full) && !Directory.Exists(full)))
+                    throw new StageException("MAINW0030", LanguageManager.Get("ArchiveEditClipboardStageFailed")); //MAINW0030
+                return full;
+            }).ToArray();
+            if (Mouse.LeftButton != MouseButtonState.Pressed)
+            {
+                operationProgressBar.Value = 0;
+                operationStatusText.Text = LanguageManager.Get("DragExtractNoDrop");
+                return;
+            }
+            StringCollection files = new();
+            files.AddRange(stagedPaths);
+            DataObject data = new();
+            data.SetFileDropList(files);
+            _dragStagingDirectories.Add(staging);
+            retained = true;
+            DragDropEffects effect = System.Windows.DragDrop.DoDragDrop(archiveEntriesList, data, DragDropEffects.Copy);
+            if (effect == DragDropEffects.None)
+            {
+                _dragStagingDirectories.Remove(staging);
+                retained = false;
+                operationProgressBar.Value = 0;
+                operationStatusText.Text = LanguageManager.Get("DragExtractNoDrop");
+            }
+            else
+            {
+                operationProgressBar.Value = 100;
+                operationStatusText.Text = LanguageManager.Get("DragExtractCompleted");
+            }
+        }
+        finally
+        {
+            if (!retained) await Task.Run(() =>
+            {
+                if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
+            });
+        }
+    }
+
     private void MainWindow_DragOver(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
@@ -847,17 +1002,32 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Drop(object sender, DragEventArgs e)
     {
-        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0 || !File.Exists(files[0])) return;
-        string path = files[0];
-        if (_isBusy)
+        try
         {
-            if (ThemedPromptWindow.Ask(this, Title, LanguageManager.Get("DropBusyPrompt"),
-                    (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
-                    (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) == MessageBoxResult.Yes) StartAnotherInstance(path);
-            return;
-        }
-        if (!string.IsNullOrEmpty(_archivePath))
-        {
+            if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0) return;
+            if (_isBusy)
+            {
+                if (File.Exists(files[0]) && ThemedPromptWindow.Ask(this, Title, LanguageManager.Get("DropBusyPrompt"),
+                        (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
+                        (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) == MessageBoxResult.Yes)
+                    StartAnotherInstance(files[0]);
+                return;
+            }
+            if (string.IsNullOrEmpty(_archivePath))
+            {
+                // A fresh window treats all dropped paths as input to a new
+                // archive. Keep them intact until the user confirms compression.
+                string[] sources = await Task.Run(() => files
+                    .Where(path => File.Exists(path) || Directory.Exists(path))
+                    .Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
+                if (sources.Length == 0) return;
+                _pendingCreatePaths = sources;
+                createDroppedArchiveMenuItem.Visibility = Visibility.Visible;
+                operationStatusText.Text = string.Format(LanguageManager.Get("DroppedFilesReady"), sources.Length);
+                return;
+            }
+            if (!File.Exists(files[0])) return;
+            string path = files[0];
             MessageBoxResult choice = ThemedPromptWindow.Ask(this, Title, LanguageManager.Get("DropLoadedPrompt"),
                 (LanguageManager.Get("PromptUnload"), MessageBoxResult.Yes),
                 (LanguageManager.Get("PromptNewInstance"), MessageBoxResult.No),
@@ -865,8 +1035,9 @@ public partial class MainWindow : Window
             if (choice == MessageBoxResult.Cancel) return;
             if (choice == MessageBoxResult.No) { StartAnotherInstance(path); return; }
             UnloadArchive();
+            await OpenArchiveAsync(path);
         }
-        await OpenArchiveAsync(path);
+        catch (Exception exception) { ShowException("MAINW0031", exception); } //MAINW0031
     }
 
     private void ArchiveEntriesList_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -894,8 +1065,28 @@ public partial class MainWindow : Window
         start.ArgumentList.Add(path);
         System.Diagnostics.Process.Start(start);
     }
-    private void SetArchiveControls(bool loaded) { unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; previewEntryMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar ? Visibility.Visible : Visibility.Collapsed; }
-    private void SetMenuEnabled(bool enabled) { openArchiveMenuItem.IsEnabled = enabled; previewEntryMenuItem.IsEnabled = enabled; extractMenuItem.IsEnabled = enabled; compressMenuItem.IsEnabled = enabled; unloadArchiveMenuItem.IsEnabled = enabled; extractNestedTarMenuItem.IsEnabled = enabled; systemSettingsMenuItem.IsEnabled = enabled; }
+    private void SetArchiveControls(bool loaded)
+    {
+        unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed;
+        previewEntryMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed;
+        extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed;
+        extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar
+            ? Visibility.Visible : Visibility.Collapsed;
+        createDroppedArchiveMenuItem.Visibility = !loaded && _pendingCreatePaths.Length > 0
+            ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void SetMenuEnabled(bool enabled)
+    {
+        openArchiveMenuItem.IsEnabled = enabled;
+        createDroppedArchiveMenuItem.IsEnabled = enabled;
+        previewEntryMenuItem.IsEnabled = enabled;
+        extractMenuItem.IsEnabled = enabled;
+        compressMenuItem.IsEnabled = enabled;
+        unloadArchiveMenuItem.IsEnabled = enabled;
+        extractNestedTarMenuItem.IsEnabled = enabled;
+        systemSettingsMenuItem.IsEnabled = enabled;
+    }
 
     private void UnloadArchive()
     {

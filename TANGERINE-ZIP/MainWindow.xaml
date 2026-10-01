@@ -25,6 +25,7 @@
             </Menu.ItemsPanel>
             <MenuItem x:Name="aboutMenuItem" Header="About TZIP" Click="AboutMenu_Click" />
             <MenuItem x:Name="openArchiveMenuItem" Header="Open" Click="OpenArchiveMenu_Click" />
+            <MenuItem x:Name="createDroppedArchiveMenuItem" Header="Create a new archive" Visibility="Collapsed" Click="CreateDroppedArchiveMenu_Click" />
             <MenuItem x:Name="previewEntryMenuItem" Header="Preview" Visibility="Collapsed" Click="PreviewEntryMenuItem_Click" />
             <MenuItem x:Name="extractMenuItem" Header="Extract">
                 <MenuItem x:Name="extractAllHereMenuItem" Header="Extract all" Click="ExtractAllHereMenu_Click" />
@@ -61,19 +62,26 @@
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Grid.ColumnSpan="2">
-                <TextBlock x:Name="archiveHeaderText" Text="TZIP" Margin="8" />
+                <Grid Margin="8,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="archiveHeaderText" Text="TZIP" VerticalAlignment="Center" />
+                    <TextBox x:Name="searchBox" Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
+                             TextChanged="SearchBox_TextChanged" />
+                </Grid>
             </Border>
-            <TextBox x:Name="searchBox" Grid.Row="1" Grid.ColumnSpan="2" Margin="4,4,4,0"
-                     VerticalAlignment="Top" TextChanged="SearchBox_TextChanged" />
             <ListView x:Name="archiveEntriesList" SelectionMode="Extended" MouseDoubleClick="ArchiveEntriesList_MouseDoubleClick"
+                      PreviewMouseLeftButtonDown="ArchiveEntriesList_PreviewMouseLeftButtonDown"
+                      PreviewMouseMove="ArchiveEntriesList_PreviewMouseMove"
                       PreviewKeyDown="ArchiveEntriesList_PreviewKeyDown"
                       SizeChanged="ArchiveEntriesList_SizeChanged"
                       Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                      Grid.ColumnSpan="2" Grid.Row="2" Margin="0,4,0,0">
+                      Grid.ColumnSpan="2" Grid.Row="1" Margin="0,4,0,0">
                 <ListView.View><GridView>
                     <GridViewColumn x:Name="nameColumn">
                         <GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="{DynamicResource ForegroundBrush}" /></DataTemplate></GridViewColumn.CellTemplate>

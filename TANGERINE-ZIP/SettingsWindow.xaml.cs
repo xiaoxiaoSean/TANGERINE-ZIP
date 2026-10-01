@@ -40,13 +40,14 @@ internal sealed partial class SettingsWindow : Window
         windowBackgroundLabel.Text = LanguageManager.Get("SettingsWindowBackground");
         progressAccentLabel.Text = LanguageManager.Get("SettingsProgressAccent");
         progressBackgroundLabel.Text = LanguageManager.Get("SettingsProgressBackground");
+        archiveSelectionLabel.Text = LanguageManager.Get("SettingsArchiveSelection");
         textAccentButton.Content = windowBackgroundButton.Content =
-            progressAccentButton.Content = progressBackgroundButton.Content =
+            progressAccentButton.Content = progressBackgroundButton.Content = archiveSelectionButton.Content =
             LanguageManager.Get("SettingsChooseColor");
         mouseEffectResetButton.Content = radiusResetButton.Content =
             thicknessResetButton.Content = textAccentResetButton.Content =
             windowBackgroundResetButton.Content = progressAccentResetButton.Content =
-            progressBackgroundResetButton.Content = LanguageManager.Get("SettingsRestoreDefault");
+            progressBackgroundResetButton.Content = archiveSelectionResetButton.Content = LanguageManager.Get("SettingsRestoreDefault");
         mouseEffectLabel.Text = LanguageManager.Get("SettingsMouseEffect");
         mouseEffectDescription.Text = LanguageManager.Get("SettingsMouseEffectDescription");
         radiusLabel.Text = LanguageManager.Get("SettingsMouseRadius");
@@ -127,6 +128,7 @@ internal sealed partial class SettingsWindow : Window
         windowBackgroundValue.Text = AppearanceSettings.Format(AppearanceSettings.GetColor(1));
         progressAccentValue.Text = AppearanceSettings.Format(AppearanceSettings.GetColor(2));
         progressBackgroundValue.Text = AppearanceSettings.Format(AppearanceSettings.GetColor(3));
+        archiveSelectionValue.Text = AppearanceSettings.Format(AppearanceSettings.GetColor(4));
     }
 
     private async void SelectColor_Click(object sender, RoutedEventArgs e)
@@ -149,15 +151,19 @@ internal sealed partial class SettingsWindow : Window
 
             System.Windows.Media.Color chosen = System.Windows.Media.Color.FromRgb(
                 picker.Color.R, picker.Color.G, picker.Color.B);
+            BeginColorProgress();
             await AppearanceSettings.SetColorAsync(index, chosen);
+            CompleteColorProgress();
         }
         catch (ColorContrastException exception)
         {
+            FailColorProgress();
             ThemedPromptWindow.Inform(this, LanguageManager.Get("SettingsColorInvalidTitle"),
                 MessageTipGenerator.GenerateTip(exception.StageCode, exception.Message)); //COLRS0008
         }
         catch (Exception exception)
         {
+            FailColorProgress();
             ShowSettingError("SETWN0005", exception); //SETWN0005
         }
         finally
@@ -178,6 +184,7 @@ internal sealed partial class SettingsWindow : Window
             int index = ReadColorIndex(sender);
             System.Windows.Media.Color defaultColor = AppearanceSettings.GetDefaultColor(index);
             if (AppearanceSettings.GetColor(index) == defaultColor) return;
+            BeginColorProgress();
 
             try { await AppearanceSettings.SetColorAsync(index, defaultColor); }
             catch (ColorContrastException contrast)
@@ -191,10 +198,18 @@ internal sealed partial class SettingsWindow : Window
                     (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
                     (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) == MessageBoxResult.Yes)
                     await AppearanceSettings.ResetPairAsync(index < 2 ? 0 : 2);
+                else
+                {
+                    colorSaveProgress.Visibility = Visibility.Collapsed;
+                    colorSaveStatus.Text = LanguageManager.Get("SettingsColorUnchanged");
+                    return;
+                }
             }
+            CompleteColorProgress();
         }
         catch (Exception exception)
         {
+            FailColorProgress();
             ShowSettingError("SETWN0006", exception); //SETWN0006
         }
         finally
@@ -209,7 +224,7 @@ internal sealed partial class SettingsWindow : Window
     {
         if (sender is not Button button ||
             !int.TryParse(button.Tag?.ToString(), NumberStyles.None,
-                CultureInfo.InvariantCulture, out int index) || index is < 0 or > 3)
+                CultureInfo.InvariantCulture, out int index) || index is < 0 or > 4)
             throw new StageException("SETWN0004", LanguageManager.Get("SettingsColorInvalidSelection")); //SETWN0004
         return index;
     }
@@ -217,9 +232,32 @@ internal sealed partial class SettingsWindow : Window
     private void SetColorControlsEnabled(bool enabled)
     {
         textAccentButton.IsEnabled = windowBackgroundButton.IsEnabled =
-            progressAccentButton.IsEnabled = progressBackgroundButton.IsEnabled =
+            progressAccentButton.IsEnabled = progressBackgroundButton.IsEnabled = archiveSelectionButton.IsEnabled =
             textAccentResetButton.IsEnabled = windowBackgroundResetButton.IsEnabled =
-            progressAccentResetButton.IsEnabled = progressBackgroundResetButton.IsEnabled = enabled;
+            progressAccentResetButton.IsEnabled = progressBackgroundResetButton.IsEnabled =
+            archiveSelectionResetButton.IsEnabled = enabled;
+    }
+
+    private void BeginColorProgress()
+    {
+        colorSaveStatus.Text = LanguageManager.Get("SettingsColorSaving");
+        colorSaveProgress.Value = 0;
+        colorSaveProgress.IsIndeterminate = true;
+        colorSaveProgress.Visibility = Visibility.Visible;
+    }
+
+    private void CompleteColorProgress()
+    {
+        colorSaveProgress.IsIndeterminate = false;
+        colorSaveProgress.Value = 100;
+        colorSaveStatus.Text = LanguageManager.Get("SettingsColorSaved");
+    }
+
+    private void FailColorProgress()
+    {
+        colorSaveProgress.IsIndeterminate = false;
+        colorSaveProgress.Value = 0;
+        colorSaveStatus.Text = LanguageManager.Get("SettingsColorSaveFailedStatus");
     }
 
     private sealed class ColorDialogOwner(IntPtr handle) : System.Windows.Forms.IWin32Window

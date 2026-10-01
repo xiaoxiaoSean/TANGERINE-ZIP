@@ -1110,4 +1110,29 @@
   <data name="DefaultAppsUnregisterFormatRemoved" xml:space="preserve"><value>{0}：已撤銷本軟體的處理程式註冊。</value></data>
   <data name="DefaultAppsUnregisterRegistrationFailed" xml:space="preserve"><value>部分 TANGERINE ZIP 處理程式註冊無法撤銷。排除記錄中的錯誤後可重試。</value></data>
   <data name="DefaultAppsUnregisterRollbackFailed" xml:space="preserve"><value>清除預設值失敗，恢復原登錄機碼也失敗。請檢查該檔案類型後再重試。</value></data>
+  <data name="CreateDroppedArchiveMenu" xml:space="preserve"><value>建立新的壓縮檔</value></data>
+  <data name="DroppedFilesReady" xml:space="preserve"><value>已準備 {0} 個來源項目，請按「建立新的壓縮檔」。</value></data>
+  <data name="DragExtractPreparing" xml:space="preserve"><value>正在解壓所選項目以供拖放</value></data>
+  <data name="DragExtractCompleted" xml:space="preserve"><value>所選項目已交給拖放目標。</value></data>
+  <data name="SettingsArchiveSelection" xml:space="preserve"><value>壓縮檔選取項目背景色（COLOR5）</value></data>
+  <data name="FirstRunTitle" xml:space="preserve"><value>首次使用設定</value></data>
+  <data name="FirstRunDescription" xml:space="preserve"><value>TANGERINE ZIP 需要在程式同目錄建立設定檔。你同意嗎？</value></data>
+  <data name="FirstRunDeclineAdvice" xml:space="preserve"><value>未同意建立設定檔，程式即將結束。你可以把程式放在獨立資料夾中，日後透過「系統設定」中的右鍵選單和壓縮格式預設開啟方式功能，以可攜方式使用本程式。</value></data>
+  <data name="FirstRunCreating" xml:space="preserve"><value>正在建立設定檔…</value></data>
+  <data name="FirstRunChooseTemp" xml:space="preserve"><value>請選擇可寫入的暫存目錄以完成設定。</value></data>
+  <data name="FirstRunReady" xml:space="preserve"><value>首次使用設定已完成。</value></data>
+  <data name="FirstRunSetSystemPrompt" xml:space="preserve"><value>現在要設定檔案總管右鍵選單和壓縮格式的預設開啟方式嗎？</value></data>
+  <data name="FirstRunSetupTitle" xml:space="preserve"><value>系統整合設定</value></data>
+  <data name="FirstRunSetupDescription" xml:space="preserve"><value>一鍵設定右鍵選單及支援壓縮格式的預設開啟方式。你可以隨時結束設定流程。</value></data>
+  <data name="FirstRunSetupStart" xml:space="preserve"><value>一鍵設定兩項</value></data>
+  <data name="FirstRunSetupSkip" xml:space="preserve"><value>結束設定流程</value></data>
+  <data name="FirstRunSetupContext" xml:space="preserve"><value>正在設定右鍵選單…</value></data>
+  <data name="FirstRunSetupDefaults" xml:space="preserve"><value>正在設定壓縮格式預設程式：{0}/{1} {2}</value></data>
+  <data name="FirstRunSetupCompleted" xml:space="preserve"><value>系統整合設定已完成。</value></data>
+  <data name="FirstRunSetupFailed" xml:space="preserve"><value>系統整合設定未能全部完成，請查看進度詳情。</value></data>
+  <data name="SettingsColorSaving" xml:space="preserve"><value>正在儲存色彩設定…</value></data>
+  <data name="SettingsColorSaved" xml:space="preserve"><value>色彩設定已儲存。</value></data>
+  <data name="SettingsColorSaveFailedStatus" xml:space="preserve"><value>無法儲存色彩設定。</value></data>
+  <data name="SettingsColorUnchanged" xml:space="preserve"><value>色彩設定未變更。</value></data>
+  <data name="DragExtractNoDrop" xml:space="preserve"><value>拖放已取消，解壓的暫存檔案已清理。</value></data>
 </root>

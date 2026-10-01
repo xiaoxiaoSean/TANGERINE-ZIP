@@ -1,5 +1,7 @@
 # TANGERINE ZIP 开发文档
 
+新搜索布局、拖入创建、COLOR5、拖出解压、首次使用引导及横向约定见 [`../dev__doc1`](../dev__doc1/)。
+
 系统设置菜单、默认打开方式注册及 Windows 10/11 兼容流程见 [`DEFAULT_OPEN_WITH.md`](DEFAULT_OPEN_WITH.md)。
 
 v2.0.0 发布流程回顾以及后续版本发布记录见 [`release.md`](release.md)。
@@ -12,7 +14,7 @@ v2.0.0 发布流程回顾以及后续版本发布记录见 [`release.md`](releas
 
 ## 1. 实现概览
 
-项目以 .NET 10 WPF 为 UI。八个窗口由 XAML 和对应的代码文件组成，可在 Visual Studio 的 WPF 设计器中打开。归档逻辑集中在 `Services/ArchiveService.cs`。主窗口只负责选择文件、展示条目、导航、覆盖策略、进度及错误提示。所有耗时操作均通过 `Task`/异步流或后台任务执行，UI 线程不会执行压缩、解压或镜像扫描。
+项目以 .NET 10 WPF 为 UI。各窗口由 XAML 和对应的代码文件组成，可在 Visual Studio 的 WPF 设计器中打开。归档逻辑集中在 `Services/ArchiveService.cs`。主窗口只负责选择文件、展示条目、导航、覆盖策略、进度及错误提示。所有耗时操作均通过 `Task`/异步流或后台任务执行，UI 线程不会执行压缩、解压或镜像扫描。
 
 发布目标为 Windows x64 自包含单文件。`PublishSingleFile`、`SelfContained` 与 `IncludeNativeLibrariesForSelfExtract` 已写入项目文件；XZ 和 WIM 的原生库由 .NET 单文件宿主解出后按 `NATIVE_DLL_SEARCH_DIRECTORIES` 定位。
 

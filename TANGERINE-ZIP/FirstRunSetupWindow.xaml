@@ -1,0 +1,44 @@
+<Window x:Class="TANGERINE_ZIP.FirstRunSetupWindow" x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="System integration setup" Icon="Resources/TZIP.png" WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
+        FontFamily="Microsoft YaHei UI" ResizeMode="CanResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock x:Name="descriptionText" />
+            <TextBlock x:Name="permissionHintText" Margin="0,8,0,0" />
+        </StackPanel>
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <TextBlock x:Name="statusText" Margin="0,0,0,8" />
+            <ProgressBar x:Name="setupProgress" Minimum="0" Maximum="100" />
+        </StackPanel>
+        <ListBox x:Name="progressLog" Grid.Row="2" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+            <ListBox.ItemTemplate>
+                <DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button x:Name="startButton" Grid.Column="0" Click="StartButton_Click" />
+            <Button x:Name="exitButton" Grid.Column="1" Click="ExitButton_Click" />
+        </Grid>
+    </Grid>
+</Window>

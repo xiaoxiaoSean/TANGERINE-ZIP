@@ -1109,4 +1109,29 @@
   <data name="DefaultAppsUnregisterFormatRemoved" xml:space="preserve"><value>{0}：已撤销本软件的处理程序注册。</value></data>
   <data name="DefaultAppsUnregisterRegistrationFailed" xml:space="preserve"><value>部分 TANGERINE ZIP 处理程序注册无法撤销。排除日志中的错误后可重试。</value></data>
   <data name="DefaultAppsUnregisterRollbackFailed" xml:space="preserve"><value>清除默认值失败，恢复原注册表键也失败。请检查该文件类型后再重试。</value></data>
+  <data name="CreateDroppedArchiveMenu" xml:space="preserve"><value>创建一个新压缩文件</value></data>
+  <data name="DroppedFilesReady" xml:space="preserve"><value>已准备 {0} 个源对象，请点击“创建一个新压缩文件”。</value></data>
+  <data name="DragExtractPreparing" xml:space="preserve"><value>正在解压所选对象以供拖放</value></data>
+  <data name="DragExtractCompleted" xml:space="preserve"><value>所选对象已交给拖放目标。</value></data>
+  <data name="SettingsArchiveSelection" xml:space="preserve"><value>压缩包选中项背景色（COLOR5）</value></data>
+  <data name="FirstRunTitle" xml:space="preserve"><value>首次使用设置</value></data>
+  <data name="FirstRunDescription" xml:space="preserve"><value>TANGERINE ZIP 需要在程序同目录创建配置文件。你同意吗？</value></data>
+  <data name="FirstRunDeclineAdvice" xml:space="preserve"><value>未同意创建配置文件，程序即将退出。你可以把程序放在单独文件夹中，日后通过“为系统做设置”中的右键菜单和压缩格式默认打开方式功能便携地使用本程序。</value></data>
+  <data name="FirstRunCreating" xml:space="preserve"><value>正在创建配置文件…</value></data>
+  <data name="FirstRunChooseTemp" xml:space="preserve"><value>请选择可写的临时目录以完成设置。</value></data>
+  <data name="FirstRunReady" xml:space="preserve"><value>首次使用设置已完成。</value></data>
+  <data name="FirstRunSetSystemPrompt" xml:space="preserve"><value>现在要设置资源管理器右键菜单和压缩格式的默认打开方式吗？</value></data>
+  <data name="FirstRunSetupTitle" xml:space="preserve"><value>系统集成设置</value></data>
+  <data name="FirstRunSetupDescription" xml:space="preserve"><value>一键设置右键菜单及受支持压缩格式的默认打开方式。你可以随时退出设置流程。</value></data>
+  <data name="FirstRunSetupStart" xml:space="preserve"><value>一键设置两项</value></data>
+  <data name="FirstRunSetupSkip" xml:space="preserve"><value>退出设置流程</value></data>
+  <data name="FirstRunSetupContext" xml:space="preserve"><value>正在设置右键菜单…</value></data>
+  <data name="FirstRunSetupDefaults" xml:space="preserve"><value>正在设置压缩格式默认程序：{0}/{1} {2}</value></data>
+  <data name="FirstRunSetupCompleted" xml:space="preserve"><value>系统集成设置已完成。</value></data>
+  <data name="FirstRunSetupFailed" xml:space="preserve"><value>系统集成设置未能全部完成，请查看进度详情。</value></data>
+  <data name="SettingsColorSaving" xml:space="preserve"><value>正在保存颜色设置…</value></data>
+  <data name="SettingsColorSaved" xml:space="preserve"><value>颜色设置已保存。</value></data>
+  <data name="SettingsColorSaveFailedStatus" xml:space="preserve"><value>颜色设置未能保存。</value></data>
+  <data name="SettingsColorUnchanged" xml:space="preserve"><value>颜色设置未改变。</value></data>
+  <data name="DragExtractNoDrop" xml:space="preserve"><value>拖放已取消，解压出的临时文件已清理。</value></data>
 </root>

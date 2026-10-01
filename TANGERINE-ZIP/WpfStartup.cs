@@ -39,11 +39,48 @@ namespace TANGERINE_ZIP
             application.ShutdownMode = isContextCommand
                     ? System.Windows.ShutdownMode.OnExplicitShutdown
                     : System.Windows.ShutdownMode.OnLastWindowClose;
+            bool firstRun;
             try
             {
-                // Read the marker before creating any WPF window. A present
-                // NO_MOUSE_EFFECT file means the effect is OFF.
-                Services.MouseEffectSettings.Initialize();
+                // Inspect every persistent marker before any initializer can
+                // create a missing file. A partial configuration follows the
+                // existing recovery path instead of pretending to be new.
+                firstRun = !await Task.Run(HasAnyConfigurationFile);
+            }
+            catch (Exception exception)
+            {
+                ShowStartupError("PROGM0011", exception); //PROGM0011
+                Environment.ExitCode = 1;
+                return false;
+            }
+            if (firstRun)
+            {
+                Services.AppearanceSettings.ApplyDefaultBrushesForStartup();
+                System.Windows.ShutdownMode previousMode = application.ShutdownMode;
+                application.ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
+                try
+                {
+                    if (new FirstRunWindow().ShowDialog() != true)
+                    {
+                        Environment.ExitCode = 1;
+                        return false;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ShowStartupError("PROGM0013", exception); //PROGM0013
+                    Environment.ExitCode = 1;
+                    return false;
+                }
+                finally { application.ShutdownMode = previousMode; }
+            }
+            if (!firstRun)
+            {
+            try
+            {
+                // Existing installations read the marker before the main
+                // window. A present file means the mouse effect is OFF.
+                await Task.Run(Services.MouseEffectSettings.Initialize);
             }
             catch (Exception exception)
             {
@@ -61,7 +98,7 @@ namespace TANGERINE_ZIP
                 {
                     // Both numeric files must be valid before any window is
                     // created, otherwise the shader could receive unsafe data.
-                    Services.MouseEffectSettings.InitializeParameters();
+                    await Task.Run(Services.MouseEffectSettings.InitializeParameters);
                     break;
                 }
                 catch (Services.InvalidMouseEffectConfigurationException invalid)
@@ -86,7 +123,7 @@ namespace TANGERINE_ZIP
                         // The next loop recreates only this missing file with
                         // its documented default; another invalid file gets
                         // its own separate confirmation.
-                        Services.MouseEffectSettings.DeleteInvalidConfiguration(invalid);
+                        await Task.Run(() => Services.MouseEffectSettings.DeleteInvalidConfiguration(invalid));
                     }
                     catch (Exception exception)
                     {
@@ -102,15 +139,16 @@ namespace TANGERINE_ZIP
                     return false;
                 }
             }
-            if (!InitializeAppearance())
+            if (!await InitializeAppearanceAsync())
             {
                 Environment.ExitCode = 1;
                 return false;
             }
-            if (!InitializeTempDirectory(application))
+            if (!await InitializeTempDirectoryAsync(application))
             {
                 Environment.ExitCode = 1;
                 return false;
+            }
             }
             if (isContextCommand)
             {
@@ -118,7 +156,7 @@ namespace TANGERINE_ZIP
                 finally { application.Shutdown(); }
                 return false;
             }
-            try { Services.TempDirectorySettings.ClearOnFirstInstanceStartup(); }
+            try { await Task.Run(Services.TempDirectorySettings.ClearOnFirstInstanceStartup); }
             catch (Exception exception)
             {
                 ShowStartupError("PROGM0009", exception); //PROGM0009
@@ -132,6 +170,21 @@ namespace TANGERINE_ZIP
                 // prompt must not remain the application's main-window identity.
                 application.MainWindow = new MainWindow(args.Length == 1 && File.Exists(args[0]) ? args[0] : null);
                 application.MainWindow.Show();
+                if (firstRun)
+                    _ = application.Dispatcher.BeginInvoke(() =>
+                    {
+                        try
+                        {
+                            if (application.MainWindow is not Window owner || !owner.IsVisible) return;
+                            if (ThemedPromptWindow.Ask(owner, LanguageManager.Get("FirstRunSetupTitle"),
+                                LanguageManager.Get("FirstRunSetSystemPrompt"),
+                                (LanguageManager.Get("PromptYes"), System.Windows.MessageBoxResult.Yes),
+                                (LanguageManager.Get("PromptNo"), System.Windows.MessageBoxResult.No)) ==
+                                System.Windows.MessageBoxResult.Yes)
+                                new FirstRunSetupWindow { Owner = owner }.ShowDialog();
+                        }
+                        catch (Exception exception) { ShowStartupError("PROGM0012", exception); } //PROGM0012
+                    });
                 return true;
             }
             catch (Exception exception)
@@ -142,24 +195,32 @@ namespace TANGERINE_ZIP
             }
         }
 
-        private static bool InitializeAppearance()
+        private static bool HasAnyConfigurationFile()
+        {
+            string[] names = [.. Services.AppearanceSettings.FileNames,
+                "TEMP_D", "MOUSE_EFFECT_CONFIG1", "MOUSE_EFFECT_CONFIG2", "NO_MOUSE_EFFECT",
+                "ADVANCED_MENU_ON", "DONT_CHECK_RAR_EXE_AT_START"];
+            return names.Any(name => File.Exists(Path.Combine(AppContext.BaseDirectory, name)));
+        }
+
+        private static async Task<bool> InitializeAppearanceAsync()
         {
             while (true)
             {
                 try
                 {
-                    Services.AppearanceSettings.Initialize();
+                    await Services.AppearanceSettings.InitializeAsync();
                     return true;
                 }
                 catch (Services.InvalidColorConfigurationException invalid)
                 {
                     string prompt = string.Format(LanguageManager.Get("SettingsColorInvalidPrompt"), invalid.FileName);
-                    string message = Tools.MessageTipGenerator.GenerateTip(invalid.StageCode, prompt); //COLRS0001-COLRS0004
+                    string message = Tools.MessageTipGenerator.GenerateTip(invalid.StageCode, prompt); //COLRS0001-COLRS0004/COLRS0018
                     if (System.Windows.MessageBox.Show(message, LanguageManager.Get("SettingsColorInvalidTitle"),
                         System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning,
                         System.Windows.MessageBoxResult.No) != System.Windows.MessageBoxResult.Yes)
                         return false;
-                    try { Services.AppearanceSettings.DeleteInvalidConfiguration(invalid); }
+                    try { await Task.Run(() => Services.AppearanceSettings.DeleteInvalidConfiguration(invalid)); }
                     catch (Exception exception)
                     {
                         ShowStartupError("PROGM0004", exception); //PROGM0004
@@ -188,8 +249,9 @@ namespace TANGERINE_ZIP
                             FullOpen = true
                         };
                         if (picker.ShowDialog() != System.Windows.Forms.DialogResult.OK) return false;
-                        Services.AppearanceSettings.SetColorAtStartup(accentIndex,
-                            System.Windows.Media.Color.FromRgb(picker.Color.R, picker.Color.G, picker.Color.B));
+                        System.Windows.Media.Color selectedColor = System.Windows.Media.Color.FromRgb(
+                            picker.Color.R, picker.Color.G, picker.Color.B);
+                        await Task.Run(() => Services.AppearanceSettings.SetColorAtStartup(accentIndex, selectedColor));
                     }
                     catch (Services.ColorContrastException)
                     {
@@ -210,7 +272,7 @@ namespace TANGERINE_ZIP
             }
         }
 
-        private static bool InitializeTempDirectory(System.Windows.Application application)
+        private static async Task<bool> InitializeTempDirectoryAsync(System.Windows.Application application)
         {
             System.Windows.ShutdownMode previous = application.ShutdownMode;
             // The startup chooser is a WPF window shown before MainWindow.
@@ -220,7 +282,7 @@ namespace TANGERINE_ZIP
             {
                 while (true)
                 {
-                    try { Services.TempDirectorySettings.Initialize(); return true; }
+                    try { await Task.Run(Services.TempDirectorySettings.Initialize); return true; }
                     catch (Exception exception)
                     {
                         string stageCode = exception is Services.StageException stage
@@ -233,7 +295,7 @@ namespace TANGERINE_ZIP
                             Title = LanguageManager.Get("TempDirectoryChoosePrompt")
                         };
                         if (folder.ShowDialog() != true) return false;
-                        try { Services.TempDirectorySettings.SetAsync(folder.FolderName).GetAwaiter().GetResult(); }
+                        try { await Task.Run(() => Services.TempDirectorySettings.SetAsync(folder.FolderName)); }
                         catch (Exception saveError)
                         {
                             string saveCode = saveError is Services.StageException saveStage

@@ -1109,4 +1109,29 @@ Existing file: {1}</value>
   <data name="DefaultAppsUnregisterFormatRemoved" xml:space="preserve"><value>{0}: this app's handler registration was removed.</value></data>
   <data name="DefaultAppsUnregisterRegistrationFailed" xml:space="preserve"><value>Some TANGERINE ZIP handler registrations could not be removed. Retry after resolving the reported error.</value></data>
   <data name="DefaultAppsUnregisterRollbackFailed" xml:space="preserve"><value>Removing a default choice failed, and restoring its previous registry key also failed. Inspect this file type before retrying.</value></data>
+  <data name="CreateDroppedArchiveMenu" xml:space="preserve"><value>Create a new archive</value></data>
+  <data name="DroppedFilesReady" xml:space="preserve"><value>{0} source items are ready. Choose Create a new archive.</value></data>
+  <data name="DragExtractPreparing" xml:space="preserve"><value>Extracting selected items for drag and drop</value></data>
+  <data name="DragExtractCompleted" xml:space="preserve"><value>Selected items are ready for the drop target.</value></data>
+  <data name="SettingsArchiveSelection" xml:space="preserve"><value>Selected archive item background (COLOR5)</value></data>
+  <data name="FirstRunTitle" xml:space="preserve"><value>First-run setup</value></data>
+  <data name="FirstRunDescription" xml:space="preserve"><value>TANGERINE ZIP needs to create configuration files beside the application. Do you agree?</value></data>
+  <data name="FirstRunDeclineAdvice" xml:space="preserve"><value>Setup was declined, so the application will close. You can keep this program in its own folder and later use System settings to set its context menu and archive default apps portably.</value></data>
+  <data name="FirstRunCreating" xml:space="preserve"><value>Creating configuration files...</value></data>
+  <data name="FirstRunChooseTemp" xml:space="preserve"><value>Choose a writable temporary directory to finish setup.</value></data>
+  <data name="FirstRunReady" xml:space="preserve"><value>First-run setup is complete.</value></data>
+  <data name="FirstRunSetSystemPrompt" xml:space="preserve"><value>Would you like to set up the Explorer context menu and archive default apps now?</value></data>
+  <data name="FirstRunSetupTitle" xml:space="preserve"><value>System integration setup</value></data>
+  <data name="FirstRunSetupDescription" xml:space="preserve"><value>Apply the Explorer context menu and supported archive defaults in one step. You may exit this setup at any time.</value></data>
+  <data name="FirstRunSetupStart" xml:space="preserve"><value>Set up both</value></data>
+  <data name="FirstRunSetupSkip" xml:space="preserve"><value>Exit setup</value></data>
+  <data name="FirstRunSetupContext" xml:space="preserve"><value>Setting up the context menu...</value></data>
+  <data name="FirstRunSetupDefaults" xml:space="preserve"><value>Setting archive defaults: {0}/{1} {2}</value></data>
+  <data name="FirstRunSetupCompleted" xml:space="preserve"><value>System integration setup completed.</value></data>
+  <data name="FirstRunSetupFailed" xml:space="preserve"><value>System integration setup could not finish. Review the progress details.</value></data>
+  <data name="SettingsColorSaving" xml:space="preserve"><value>Saving color settings...</value></data>
+  <data name="SettingsColorSaved" xml:space="preserve"><value>Color settings saved.</value></data>
+  <data name="SettingsColorSaveFailedStatus" xml:space="preserve"><value>Could not save color settings.</value></data>
+  <data name="SettingsColorUnchanged" xml:space="preserve"><value>Color settings were not changed.</value></data>
+  <data name="DragExtractNoDrop" xml:space="preserve"><value>Drag was cancelled; extracted temporary files were removed.</value></data>
 </root>

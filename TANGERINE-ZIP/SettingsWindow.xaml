@@ -162,6 +162,16 @@
                             <Button x:Name="progressBackgroundButton" Grid.Column="2" Tag="3" Click="SelectColor_Click" />
                             <Button x:Name="progressBackgroundResetButton" Grid.Column="3" Tag="3" Click="ResetColor_Click" />
                         </Grid>
+                        <Separator Margin="0,16" />
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock x:Name="archiveSelectionLabel" Grid.Column="0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="archiveSelectionValue" Grid.Column="1" Margin="8,0" VerticalAlignment="Center" />
+                            <Button x:Name="archiveSelectionButton" Grid.Column="2" Tag="4" Click="SelectColor_Click" />
+                            <Button x:Name="archiveSelectionResetButton" Grid.Column="3" Tag="4" Click="ResetColor_Click" />
+                        </Grid>
+                        <TextBlock x:Name="colorSaveStatus" Margin="0,16,0,6" />
+                        <ProgressBar x:Name="colorSaveProgress" Minimum="0" Maximum="100" Visibility="Collapsed" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
