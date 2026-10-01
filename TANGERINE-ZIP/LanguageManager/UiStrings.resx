@@ -1097,10 +1097,10 @@ Existing file: {1}</value>
   <data name="DefaultAppsUnregisterCompleted" xml:space="preserve"><value>Removed TANGERINE ZIP defaults and registrations for {0} archive extensions.</value></data>
   <data name="DefaultAppsUnregisterStopped" xml:space="preserve"><value>Removal stopped. Review the log; no handler registration is removed until every default choice has been cleared.</value></data>
   <data name="DefaultAppsUnregisterBusy" xml:space="preserve"><value>Could not acquire the current-user association lock or identity.</value></data>
-  <data name="DefaultAppsUnregisterChoiceCleared" xml:space="preserve"><value>{0}: this app is no longer the default choice.</value></data>
+  <data name="DefaultAppsUnregisterChoiceCleared" xml:space="preserve"><value>{0}: this app's explicit default choice was cleared; the effective default will be checked after registration removal.</value></data>
   <data name="DefaultAppsUnregisterFormatFailed" xml:space="preserve"><value>{0}: removal failed: {1}</value></data>
   <data name="DefaultAppsUnregisterChoiceFailed" xml:space="preserve"><value>One or more TANGERINE ZIP default choices could not be cleared. Handler registrations were kept.</value></data>
-  <data name="DefaultAppsUnregisterStillDefault" xml:space="preserve"><value>Windows still reports TANGERINE ZIP as a default application. Handler registrations were kept.</value></data>
+  <data name="DefaultAppsUnregisterStillDefault" xml:space="preserve"><value>Windows still reports TANGERINE ZIP as the default after registration removal. Inspect remaining associations.</value></data>
   <data name="DefaultAppsUnregisterFormatRemoved" xml:space="preserve"><value>{0}: this app's handler registration was removed.</value></data>
   <data name="DefaultAppsUnregisterRegistrationFailed" xml:space="preserve"><value>Some TANGERINE ZIP handler registrations could not be removed. Retry after resolving the reported error.</value></data>
   <data name="DefaultAppsUnregisterRollbackFailed" xml:space="preserve"><value>Removing a default choice failed, and restoring its previous registry key also failed. Inspect this file type before retrying.</value></data>

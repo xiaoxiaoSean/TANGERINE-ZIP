@@ -23,8 +23,8 @@
 
 `Unregister` 分为两阶段：
 
-1. **清默认选择。** 对每个扩展名读取 `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.<格式>\UserChoiceLatest\ProgId\ProgId` 和旧格式 `UserChoice\ProgId`。仅当值是该格式对应的 `TangerineZip.Archive.*` 时，改名为私有备份。通知 Shell、查询实际默认 ProgID；若仍为本软件或查询抛错，恢复已移动的键并停止该格式。核验成功后删除备份。之前中断留下、名称及 ProgID 都符合本软件规则的私有备份，也会在重试时删除。任何格式失败都会阻止第二阶段。
-2. **撤销注册。** 再核对全部格式均未以本软件为实际默认。逐项删除本软件的 `OpenWithProgids` 值、确认描述属于本软件的 ProgID 树、匹配的 Capabilities 文件关联。全部格式完成后移除应用登记和本软件 Capabilities 元数据，最后删除已知格式的 SHA-256 命名图标缓存，通知 Shell。每步可重试；外来值与不认识的注册项保留并报告错误。
+1. **清显式默认选择。** 对每个扩展名读取 `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.<格式>\UserChoiceLatest\ProgId\ProgId` 和旧格式 `UserChoice\ProgId`。仅当值是该格式对应的 `TangerineZip.Archive.*` 时，改名为私有备份。再次读取显式选择；若仍指向本软件或读取失败，恢复已移动的键并停止该格式。确认后删除备份。之前中断留下、名称及 ProgID 都符合本软件规则的私有备份，也会在重试时删除。任何格式失败都会阻止第二阶段。此时 Shell 仍可能把已注册的本软件当作回退默认程序，不据此误判失败。
+2. **撤销注册并核验。** 逐项删除本软件的 `OpenWithProgids` 值、属于本软件的直接扩展名默认值、确认描述属于本软件的 ProgID 树、匹配的 Capabilities 文件关联。全部格式完成后移除应用登记和本软件 Capabilities 元数据，最后删除已知格式的 SHA-256 命名图标缓存，通知 Shell。此后再查询全部格式的实际默认 ProgID；若仍为本软件，报告失败。每步可重试；外来值与不认识的注册项保留并报告错误。
 
 这里“默认打开方式设置为空”是删除**本软件拥有的用户默认选择**。Windows 若有其他已注册程序或系统回退关联，Shell 可能立即显示那个程序；程序不能承诺有效 ProgID 一定是空字符串。也不会为其他软件生成新的默认值。
 
@@ -34,8 +34,8 @@
 | --- | --- |
 | `UNRAS0001` | 当前用户身份或互斥锁不可用 |
 | `UNRAS0002` | 至少一个默认选择无法清除，未撤销处理程序注册 |
-| `UNRAS0003` | Shell 仍报告本软件是默认程序，未撤销处理程序注册 |
-| `UNRAS0004` | 部分处理程序注册或图标缓存未能撤销，可重试 |
+| `UNRAS0003` | 清理后仍发现本软件的显式用户默认选择，已尝试恢复移动的键 |
+| `UNRAS0004` | 部分处理程序注册或图标缓存未能撤销，或注销后 Shell 仍报告本软件为默认；可重试 |
 | `UNRAS0005` | 清默认失败且回滚旧选择键也失败 |
 | `DAPWN0005` | 窗口注销操作边界出现未分类异常 |
 
@@ -43,4 +43,4 @@ Windows 受保护关联可能拒绝注册表改名或删除。此时不会跳过
 
 ## 开发验证
 
-Release 编译零警告、零错误。隔离注册表测试覆盖作用域、所有权校验、保留其他程序的 OpenWith 值、重复执行，以及 UserChoiceLatest 清理和 UserChoice 回滚。未修改测试机器上的真实 ZIP/RAR 默认设置。设计记录见 [file_open_think.md](file_open_think.md)。
+Release 编译零警告、零错误。隔离注册表测试覆盖作用域、所有权校验、保留其他程序的 OpenWith 值、直接扩展名回退值、重复执行，以及 UserChoiceLatest 清理和 UserChoice 回滚。针对用户报告的 `UNRAS0002`，已在当前 Windows 账户运行修正版完整注销：10 个受支持扩展名均成功，重复运行也成功；只读复核未见本软件的对应 ProgID 或 Capabilities 文件关联。设计记录见 [file_open_think.md](file_open_think.md)。

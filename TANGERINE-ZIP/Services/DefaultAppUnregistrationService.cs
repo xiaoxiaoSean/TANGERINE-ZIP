@@ -43,7 +43,7 @@ internal static class DefaultAppUnregistrationService
             {
                 try
                 {
-                    ClearOurChoices(Registry.CurrentUser, extension, IsOurEffectiveDefaultWithRetry);
+                    ClearOurChoices(Registry.CurrentUser, extension, HasOurExplicitChoice);
                     report(string.Format(LanguageManager.Get("DefaultAppsUnregisterChoiceCleared"), extension));
                 }
                 catch (Exception error)
@@ -55,11 +55,6 @@ internal static class DefaultAppUnregistrationService
             if (choiceErrors.Count != 0)
                 throw new StageException("UNRAS0002", LanguageManager.Get("DefaultAppsUnregisterChoiceFailed"),
                     new AggregateException(choiceErrors)); //UNRAS0002
-
-            // A fresh Shell query guards against a concurrent external change.
-            foreach (string extension in extensions)
-                if (IsOurEffectiveDefault(extension))
-                    throw new StageException("UNRAS0003", LanguageManager.Get("DefaultAppsUnregisterStillDefault")); //UNRAS0003
 
             removingRegistration = true;
             List<Exception> registrationErrors = [];
@@ -81,12 +76,31 @@ internal static class DefaultAppUnregistrationService
                 try { RemoveApplicationRegistration(Registry.CurrentUser); }
                 catch (Exception error) { registrationErrors.Add(error); }
             }
+            NotifyShell();
+            // With no explicit app-owned choice left, the Shell can still select
+            // our registered handler as a fallback. Only after withdrawing that
+            // handler can the effective default be checked meaningfully.
+            if (registrationErrors.Count == 0)
+                foreach (string extension in extensions)
+                    try
+                    {
+                        if (IsOurEffectiveDefaultWithRetry(extension))
+                        {
+                            string message = LanguageManager.Get("DefaultAppsUnregisterStillDefault");
+                            registrationErrors.Add(new InvalidOperationException(extension + ": " + message));
+                            report(string.Format(LanguageManager.Get("DefaultAppsUnregisterFormatFailed"), extension, message));
+                        }
+                    }
+                    catch (Exception error)
+                    {
+                        registrationErrors.Add(new InvalidOperationException(extension, error));
+                        report(string.Format(LanguageManager.Get("DefaultAppsUnregisterFormatFailed"), extension, error.Message));
+                    }
             if (registrationErrors.Count == 0)
             {
                 try { RemoveCachedIcons(); }
                 catch (Exception error) { registrationErrors.Add(error); }
             }
-            NotifyShell();
             if (registrationErrors.Count != 0)
                 throw new StageException("UNRAS0004", LanguageManager.Get("DefaultAppsUnregisterRegistrationFailed"),
                     new AggregateException(registrationErrors)); //UNRAS0004
@@ -101,17 +115,17 @@ internal static class DefaultAppUnregistrationService
         finally { if (acquired) gate.ReleaseMutex(); }
     }
 
-    // The root and effective-default probe can be substituted with disposable
-    // registry/test probes. Production passes HKCU and the real Shell query.
+    // The root and explicit-choice probe can be substituted with disposable
+    // registry/test probes. Production passes HKCU and reads both choice formats.
     internal static void ClearOurChoices(RegistryKey root, string extension,
-        Func<string, bool> isOurEffective, bool notifyShell = true)
+        Func<string, bool> hasOurExplicitChoice, bool notifyShell = true)
     {
         string progId = DefaultAppAssociationService.GetProgId(extension);
         using RegistryKey? association = root.OpenSubKey(FileExtsPath + extension, writable: true);
         if (association == null)
         {
-            if (isOurEffective(extension))
-                throw new StageException("UNRAS0003", LanguageManager.Get("DefaultAppsUnregisterStillDefault")); //UNRAS0003
+            if (hasOurExplicitChoice(extension))
+                throw new StageException("UNRAS0003", LanguageManager.Get("DefaultAppsUnregisterChoiceFailed")); //UNRAS0003
             return;
         }
         List<(string Original, string Backup)> moved = [];
@@ -130,8 +144,8 @@ internal static class DefaultAppUnregistrationService
                 moved.Add((name, backup));
             }
             if (notifyShell) NotifyShell();
-            if (isOurEffective(extension))
-                throw new StageException("UNRAS0003", LanguageManager.Get("DefaultAppsUnregisterStillDefault")); //UNRAS0003
+            if (hasOurExplicitChoice(extension))
+                throw new StageException("UNRAS0003", LanguageManager.Get("DefaultAppsUnregisterChoiceFailed")); //UNRAS0003
         }
         catch (Exception operationError)
         {
@@ -181,6 +195,16 @@ internal static class DefaultAppUnregistrationService
         using (nested) return nested.GetValue(name) as string;
     }
 
+    private static bool HasOurExplicitChoice(string extension)
+    {
+        string progId = DefaultAppAssociationService.GetProgId(extension);
+        using RegistryKey? parent = Registry.CurrentUser.OpenSubKey(FileExtsPath + extension);
+        using RegistryKey? latest = parent?.OpenSubKey(@"UserChoiceLatest\ProgId");
+        using RegistryKey? classic = parent?.OpenSubKey("UserChoice");
+        return string.Equals(latest?.GetValue("ProgId") as string, progId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(classic?.GetValue("ProgId") as string, progId, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsOurEffectiveDefault(string extension) =>
         string.Equals(DefaultAppAssociationService.QueryCurrentProgId(extension),
             DefaultAppAssociationService.GetProgId(extension), StringComparison.OrdinalIgnoreCase);
@@ -207,6 +231,11 @@ internal static class DefaultAppUnregistrationService
                 throw new InvalidDataException("ProgID is no longer owned by TANGERINE ZIP: " + progId);
         using (RegistryKey? openWith = root.OpenSubKey(ClassesPath + extension + @"\OpenWithProgids", true))
             openWith?.DeleteValue(progId, throwOnMissingValue: false);
+        // Older installs or manual registration may have written this direct
+        // extension fallback. Remove only an exact self-owned value.
+        using (RegistryKey? extensionKey = root.OpenSubKey(ClassesPath + extension, true))
+            if (string.Equals(extensionKey?.GetValue("") as string, progId, StringComparison.OrdinalIgnoreCase))
+                extensionKey!.DeleteValue("", false);
         root.DeleteSubKeyTree(handlerPath, throwOnMissingSubKey: false);
         using (RegistryKey? associations = root.OpenSubKey(CapabilitiesPath + @"\FileAssociations", true))
             if (string.Equals(associations?.GetValue(extension) as string, progId,

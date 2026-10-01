@@ -1099,10 +1099,10 @@
   <data name="DefaultAppsUnregisterCompleted" xml:space="preserve"><value>已清除 {0} 个压缩扩展名的本软件默认关联和注册。</value></data>
   <data name="DefaultAppsUnregisterStopped" xml:space="preserve"><value>清理已中止。请查看日志；只有全部默认值清除后才会撤销处理程序注册。</value></data>
   <data name="DefaultAppsUnregisterBusy" xml:space="preserve"><value>无法取得当前用户的关联锁或账户身份。</value></data>
-  <data name="DefaultAppsUnregisterChoiceCleared" xml:space="preserve"><value>{0}：本软件已不再是默认打开程序。</value></data>
+  <data name="DefaultAppsUnregisterChoiceCleared" xml:space="preserve"><value>{0}：已清除本软件的显式默认选择；撤销注册后再核验实际默认程序。</value></data>
   <data name="DefaultAppsUnregisterFormatFailed" xml:space="preserve"><value>{0}：清理失败：{1}</value></data>
   <data name="DefaultAppsUnregisterChoiceFailed" xml:space="preserve"><value>部分 TANGERINE ZIP 默认关联无法清除，因此保留了处理程序注册。</value></data>
-  <data name="DefaultAppsUnregisterStillDefault" xml:space="preserve"><value>Windows 仍将 TANGERINE ZIP 报告为默认应用，因此保留了处理程序注册。</value></data>
+  <data name="DefaultAppsUnregisterStillDefault" xml:space="preserve"><value>撤销注册后 Windows 仍将 TANGERINE ZIP 报告为默认应用，请检查剩余关联。</value></data>
   <data name="DefaultAppsUnregisterFormatRemoved" xml:space="preserve"><value>{0}：已撤销本软件的处理程序注册。</value></data>
   <data name="DefaultAppsUnregisterRegistrationFailed" xml:space="preserve"><value>部分 TANGERINE ZIP 处理程序注册无法撤销。排除日志中的错误后可重试。</value></data>
   <data name="DefaultAppsUnregisterRollbackFailed" xml:space="preserve"><value>清除默认值失败，恢复原注册表键也失败。请检查该文件类型后再重试。</value></data>
