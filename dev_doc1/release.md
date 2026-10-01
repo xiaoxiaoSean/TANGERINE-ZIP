@@ -49,3 +49,12 @@ gh release create vX.Y.Z out/TANGERINE-ZIP-vX.Y.Z-fd.exe out/TANGERINE-ZIP-vX.Y.
 - `TANGERINE-ZIP-v2.1.0-sc.exe`：83,795,689 字节；SHA-256 `09681EFEDB1DAFF962A51307CBFA8449E121A87239B63BCBA98F08DC9B7C6D87`。
 - 注释标签 `v2.1.0` 指向提交 `28f5c8aba167e7f21fa658e6ee71730dc7fa5a97`；[GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.0) 标题为 `TANGERINE-ZIP-V2.1.0`，已发布为正式版本（非草稿、非预发布）。
 - 发布后通过 GitHub Release 元数据核验：附件恰为上述两个 EXE，远端大小与 SHA-256 和本地一致；正文英文在前、中文在后。
+
+## v2.1.1 发布记录
+
+- 基线：`v2.1.0`。修复主菜单“关于 TZIP”未随界面语言切换的问题，六份本地化资源均加入 `AboutTzipMenu`；更新日志为 [`RELEASE_NOTES_v2.1.1.md`](../RELEASE_NOTES_v2.1.1.md)，英文在前、中文在后。
+- 主程序版本：`2.1.1`。英文 [`README.md`](../README.md) 和简中 [`README.zh-CN.md`](../README.zh-CN.md) 的当前版本链接均已更新。
+- 使用已有依赖执行 Release 编译（`--no-restore`），结果为零警告、零错误；`FolderProfile1` 和 `FolderProfile` 均成功发布。两个 EXE 的 FileVersion、ProductVersion 均为 `2.1.1`。
+- `TANGERINE-ZIP-v2.1.1-fd.exe`：9,518,290 字节；SHA-256 `7B9FDBF83E21AA3EABF89D531F2009B38D63E13BBF6FB0F830E3327E179BF1DA`。
+- `TANGERINE-ZIP-v2.1.1-sc.exe`：83,794,728 字节；SHA-256 `F3AEBBDC8DD3860A59A233601DFEB28B8BDAA6E6A6FAA0D990BB874D9B247D29`。
+- 标签 `v2.1.1` 指向源码提交 `4f25130`；[GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.1) 标题为 `TANGERINE-ZIP-V2.1.1`，已发布为正式版本。远端两个附件的大小和 SHA-256 与本地一致。
