@@ -92,6 +92,7 @@ public partial class MainWindow : Window
     private void ApplyLocalizedText()
     {
         operationStatusText.Text = LanguageManager.Get("readytext");
+        aboutMenuItem.Header = LanguageManager.Get("AboutTzipMenu");
         openArchiveMenuItem.Header = LanguageManager.Get("openText");
         previewEntryMenuItem.Header = LanguageManager.Get("PreviewSelectedEntry");
         extractMenuItem.Header = LanguageManager.Get("extractText");

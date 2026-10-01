@@ -275,6 +275,9 @@
   <data name="ApplicationTitle" xml:space="preserve">
     <value>TANGERINE ZIP</value>
   </data>
+  <data name="AboutTzipMenu" xml:space="preserve">
+    <value>關於 TZIP</value>
+  </data>
     <data name="SelectFilesToCompress" xml:space="preserve">
     <value>選取要壓縮的檔案</value>
   </data>

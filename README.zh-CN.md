@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/latest">下载最新版本</a> ·
-  <a href="RELEASE_NOTES_v2.1.0.md">查看 v2.1.0 更新日志</a> ·
+  <a href="RELEASE_NOTES_v2.1.1.md">查看 v2.1.1 更新日志</a> ·
   <a href="dev_doc1/README.md">开发文档</a>
 </p>
 
@@ -65,6 +65,7 @@ dotnet build TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release
 
 ## 文档与许可
 
+- [v2.1.1 更新日志](RELEASE_NOTES_v2.1.1.md)
 - [v2.1.0 更新日志](RELEASE_NOTES_v2.1.0.md)
 - [v2.0.0 更新日志](RELEASE_NOTES_v2.0.0.md)
 - [开发文档和格式说明](dev_doc1/README.md)

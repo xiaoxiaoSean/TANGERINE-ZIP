@@ -274,6 +274,9 @@ Stage Code is :
   <data name="ApplicationTitle" xml:space="preserve">
     <value>TANGERINE ZIP</value>
   </data>
+  <data name="AboutTzipMenu" xml:space="preserve">
+    <value>About TZIP</value>
+  </data>
     <data name="SelectFilesToCompress" xml:space="preserve">
     <value>Select files to compress</value>
   </data>

@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/latest">Download the latest release</a> ·
-  <a href="RELEASE_NOTES_v2.1.0.md">What's new in v2.1.0</a> ·
+  <a href="RELEASE_NOTES_v2.1.1.md">What's new in v2.1.1</a> ·
   <a href="dev_doc1/README.md">Developer documentation</a>
 </p>
 
@@ -65,6 +65,7 @@ The project includes two publish profiles: `FolderProfile` for the self-containe
 
 ## Documentation and license
 
+- [v2.1.1 release notes](RELEASE_NOTES_v2.1.1.md)
 - [v2.1.0 release notes](RELEASE_NOTES_v2.1.0.md)
 - [v2.0.0 release notes](RELEASE_NOTES_v2.0.0.md)
 - [Developer documentation and format details](dev_doc1/README.md)
