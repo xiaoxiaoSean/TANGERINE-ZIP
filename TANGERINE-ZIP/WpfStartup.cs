@@ -1,48 +1,44 @@
 using System.Globalization;
-using System.Runtime.InteropServices;
 
 namespace TANGERINE_ZIP
 {
-    internal static class Program
+    internal static class WpfStartup
     {
         /// <summary>
-        ///  The main entry point for the application.
+        /// Prepare the standard WPF application, or finish a noninteractive helper.
+        /// Return true only after showing the real main window; all other paths
+        /// let App shut down with the existing command/helper exit code.
         /// </summary>
-        [STAThread]
-        static void Main(string[] args)
+        internal static async Task<bool> StartAsync(System.Windows.Application application, string[] args)
         {
             if ((args.Length is 2 or 3) &&
                 (args[0] is Services.ContextMenuCertificateHelper.InstallSwitch or Services.ContextMenuCertificateHelper.RemoveSwitch))
             {
                 Environment.ExitCode = Services.ContextMenuCertificateHelper.Execute(args);
-                return;
+                return false;
             }
             if (args.Length == 1 && args[0] == Services.ArchiveWorker.Switch)
             {
-                Environment.ExitCode = Services.ArchiveWorker.ExecuteAsync().GetAwaiter().GetResult();
-                return;
+                // App.Startup runs on the dispatcher. Await pipe/archive work so
+                // its continuations can complete without blocking that dispatcher.
+                Environment.ExitCode = await Services.ArchiveWorker.ExecuteAsync();
+                return false;
             }
             // Console commands must run before WPF startup and its interactive configuration dialogs.
             if (Services.CommandLine.IsCommand(args))
             {
-                Environment.ExitCode = Services.CommandLine.RunAsync(args).GetAwaiter().GetResult();
-                return;
+                Environment.ExitCode = await Services.CommandLine.RunAsync(args);
+                return false;
             }
-            // Console-subsystem apphosts make CLI output and exit codes work in scripts.
-            // Detach before any GUI window so Explorer launches do not retain a console.
-            FreeConsole();
             bool isContextCommand = args.Length >= 2 &&
                 args[0].StartsWith("--context-", StringComparison.Ordinal);
-            var application = new System.Windows.Application
-            {
-                // Context commands display several modal windows in sequence.
-                // The password window may be the first and only open WPF window;
-                // the default OnLastWindowClose would shut down the dispatcher
-                // as soon as the user confirms it, before compression starts.
-                ShutdownMode = isContextCommand
+            // Context commands display several modal windows in sequence.
+            // The password window may be the first and only open WPF window;
+            // the default OnLastWindowClose would shut down the dispatcher
+            // as soon as the user confirms it, before compression starts.
+            application.ShutdownMode = isContextCommand
                     ? System.Windows.ShutdownMode.OnExplicitShutdown
-                    : System.Windows.ShutdownMode.OnLastWindowClose
-            };
+                    : System.Windows.ShutdownMode.OnLastWindowClose;
             try
             {
                 // Read the marker before creating any WPF window. A present
@@ -82,7 +78,7 @@ namespace TANGERINE_ZIP
                         // No means the user keeps the invalid file. Continuing
                         // would contradict the chosen configuration and is unsafe.
                         Environment.ExitCode = 1;
-                        return;
+                        return false;
                     }
                     try
                     {
@@ -96,47 +92,53 @@ namespace TANGERINE_ZIP
                     {
                         ShowStartupError("PROGM0002", exception); //PROGM0002
                         Environment.ExitCode = 1;
-                        return;
+                        return false;
                     }
                 }
                 catch (Exception exception)
                 {
                     ShowStartupError("PROGM0003", exception); //PROGM0003
                     Environment.ExitCode = 1;
-                    return;
+                    return false;
                 }
             }
             if (!InitializeAppearance())
             {
                 Environment.ExitCode = 1;
-                return;
+                return false;
             }
             if (!InitializeTempDirectory(application))
             {
                 Environment.ExitCode = 1;
-                return;
+                return false;
             }
             if (isContextCommand)
             {
                 try { Services.ContextMenuCommandHandler.Run(args[0], args[1..]); }
                 finally { application.Shutdown(); }
-                return;
+                return false;
             }
             try { Services.TempDirectorySettings.ClearOnFirstInstanceStartup(); }
             catch (Exception exception)
             {
                 ShowStartupError("PROGM0009", exception); //PROGM0009
                 Environment.ExitCode = 1;
-                return;
+                return false;
             }
             try
             {
-                application.Run(new MainWindow(args.Length == 1 && File.Exists(args[0]) ? args[0] : null));
+                // App.xaml's generated entry point already owns Application.Run.
+                // Assign the main window explicitly: an earlier configuration
+                // prompt must not remain the application's main-window identity.
+                application.MainWindow = new MainWindow(args.Length == 1 && File.Exists(args[0]) ? args[0] : null);
+                application.MainWindow.Show();
+                return true;
             }
             catch (Exception exception)
             {
                 ShowStartupError("PROGM0010", exception); //PROGM0010
                 Environment.ExitCode = 1;
+                return false;
             }
         }
 
@@ -258,8 +260,5 @@ namespace TANGERINE_ZIP
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error); //PROGM0002/PROGM0003
         }
 
-        [DllImport("kernel32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool FreeConsole();
     }
 }

@@ -13,6 +13,8 @@ internal sealed partial class CompressionOptionsWindow : Window
     public CompressionOptionsWindow(string archiveName, FileDetector.FileType type)
     {
         InitializeComponent();
+        WpfUi.SizeWindow(this, 0.6, 0.8);
+        FontSize = SystemFonts.MessageFontSize;
         MouseWhiteThickening.Attach(this, 105);
         _supportsAdvanced = type is FileDetector.FileType.Zip or FileDetector.FileType.SevenZip or FileDetector.FileType.Rar;
         _supportsPassword = ArchiveCapabilities.CanCreateWithPassword(type);

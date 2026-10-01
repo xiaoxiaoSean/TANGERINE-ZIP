@@ -21,7 +21,12 @@ internal static class CommandLine
 
     public static async Task<int> RunAsync(string[] args)
     {
-        AttachConsole(unchecked((uint)-1));
+        // Attaching can replace the standard handles supplied by a script. Keep
+        // redirected pipe/file handles intact; only attach for interactive output.
+        // Failure simply means there is no caller console (e.g. Explorer launch).
+        // Never fall back to AllocConsole, a terminal, cmd.exe, or PowerShell.
+        if (!IsRedirected(GetStdHandle(-11)) && !IsRedirected(GetStdHandle(-12)))
+            AttachConsole(unchecked((uint)-1));
         using StreamWriter standardOutput = new(Console.OpenStandardOutput(), new UTF8Encoding(false)) { AutoFlush = true };
         using StreamWriter standardError = new(Console.OpenStandardError(), new UTF8Encoding(false)) { AutoFlush = true };
         Console.SetOut(standardOutput);
@@ -272,4 +277,13 @@ internal static class CommandLine
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool AttachConsole(uint processId);
+
+    private static bool IsRedirected(IntPtr handle) =>
+        handle != IntPtr.Zero && handle != new IntPtr(-1) && GetFileType(handle) is 1 or 3; // FILE_TYPE_DISK / PIPE
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetStdHandle(int standardHandle);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetFileType(IntPtr handle);
 }

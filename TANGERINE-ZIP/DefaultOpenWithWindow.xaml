@@ -6,23 +6,44 @@
         FontFamily="Microsoft YaHei UI" Closing="DefaultOpenWithWindow_Closing">
     <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Theme.xaml" />
-    </ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
-    <Grid Margin="14">
+    </ResourceDictionary.MergedDictionaries>
+        <Style TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
+            <Setter Property="MaxWidth" Value="{Binding ActualWidth, ElementName=layoutRoot}" />
+            <Setter Property="ContentTemplate"><Setter.Value><DataTemplate>
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" />
+            </DataTemplate></Setter.Value></Setter>
+        </Style>
+    </ResourceDictionary></Window.Resources>
+    <Grid x:Name="layoutRoot" Margin="14">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="3*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock x:Name="descriptionText" Margin="4" />
-        <TextBlock x:Name="permissionHintText" Grid.Row="1" Margin="4" />
-        <ScrollViewer Grid.Row="2" MaxHeight="180" VerticalScrollBarVisibility="Auto" Margin="4">
-            <WrapPanel x:Name="formatChoicesPanel" />
+        <!-- A bounded star-sized region keeps long translations and larger system
+             fonts scrollable without pushing the footer outside the window. -->
+        <ScrollViewer x:Name="selectionRegion" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <TextBlock x:Name="descriptionText" Margin="4" />
+                <TextBlock x:Name="permissionHintText" Margin="4" />
+                <WrapPanel x:Name="selectionButtonsPanel">
+                    <Button x:Name="selectAllButton" Click="SelectAllButton_Click" />
+                    <Button x:Name="selectNoneButton" Click="SelectNoneButton_Click" />
+                </WrapPanel>
+                <!-- Choices wrap at the available viewport width; neither the
+                     checkboxes nor their container have pixel dimensions. -->
+                <WrapPanel x:Name="formatChoicesPanel" Margin="4" />
+            </StackPanel>
         </ScrollViewer>
-        <TextBlock x:Name="currentFormatText" Grid.Row="3" Margin="4" />
-        <TextBox x:Name="progressLogBox" Grid.Row="4" IsReadOnly="True" TextWrapping="Wrap"
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      MaxHeight="{Binding ActualHeight, ElementName=selectionRegion}">
+            <TextBlock x:Name="currentFormatText" Margin="4" VerticalAlignment="Top" />
+        </ScrollViewer>
+        <TextBox x:Name="progressLogBox" Grid.Row="2" IsReadOnly="True" TextWrapping="Wrap"
                  VerticalScrollBarVisibility="Auto" Margin="4"
                  Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" />
-        <WrapPanel Grid.Row="5" HorizontalAlignment="Right">
+        <WrapPanel Grid.Row="3" HorizontalAlignment="Right">
             <Button x:Name="useThisAppButton" Click="UseThisAppButton_Click" />
             <Button x:Name="chooseDefaultAppButton" Click="ChooseDefaultAppButton_Click" />
         </WrapPanel>

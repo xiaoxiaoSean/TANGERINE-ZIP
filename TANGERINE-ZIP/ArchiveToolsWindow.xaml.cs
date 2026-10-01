@@ -14,6 +14,8 @@ internal sealed partial class ArchiveToolsWindow : Window
     public ArchiveToolsWindow(ArchiveToolKind kind, string? currentArchive, string? currentPassword = null)
     {
         InitializeComponent();
+        WpfUi.SizeWindow(this, 0.6, 0.7);
+        FontSize = SystemFonts.MessageFontSize;
         MouseWhiteThickening.Attach(this, 105);
         _kind = kind;
         Title = LanguageManager.Get(kind switch { ArchiveToolKind.Integrity => "IntegrityMenu",

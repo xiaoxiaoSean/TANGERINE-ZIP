@@ -5,9 +5,9 @@ using TANGERINE_ZIP.Tools;
 namespace TANGERINE_ZIP;
 
 // Stage head: DAPWN (DefaultOpenWithWindow).
-// Settings has no supported "user finished" callback. Use an explicit, resumable
-// one-extension-at-a-time workflow; never launch a burst of Settings windows or
-// report a Process.Start handoff as a successful change of default application.
+// The first action chooses the detected hash implementation and verifies each
+// effective result without a per-format Settings interaction. The second
+// action remains the explicit, user-directed Windows Settings workflow.
 internal sealed partial class DefaultOpenWithWindow : Window
 {
     private const double MouseWhiteThickenRadius = 130;
@@ -33,6 +33,8 @@ internal sealed partial class DefaultOpenWithWindow : Window
         descriptionText.Text = LanguageManager.Get("DefaultAppsDescription") + Environment.NewLine +
             LanguageManager.Get("DefaultAppsIconHint");
         permissionHintText.Text = LanguageManager.Get("DefaultAppsPermissionHint");
+        selectAllButton.Content = LanguageManager.Get("DefaultAppsSelectAll");
+        selectNoneButton.Content = LanguageManager.Get("DefaultAppsSelectNone");
         foreach (AssociationFormat format in DefaultAppAssociationService.Formats)
         {
             // Formats are technical names and extensions, shared across locales.
@@ -46,12 +48,31 @@ internal sealed partial class DefaultOpenWithWindow : Window
         ResetButtons();
     }
 
+    private void SelectAllButton_Click(object sender, RoutedEventArgs e) => SetSelection(true);
+
+    private void SelectNoneButton_Click(object sender, RoutedEventArgs e) => SetSelection(false);
+
+    private void SetSelection(bool selected)
+    {
+        // The running sequence is a snapshot. Lock both shortcuts and individual
+        // choices until it ends, so changing the visible selection cannot imply
+        // that queued default-association operations have been added or removed.
+        if (_sequenceActive || _operationBusy) return;
+        try
+        {
+            foreach (CheckBox choice in formatChoicesPanel.Children.OfType<CheckBox>())
+                choice.IsChecked = selected;
+        }
+        catch (Exception exception) { ShowError("DAPWN0004", exception); } //DAPWN0004
+    }
+
     private async void UseThisAppButton_Click(object sender, RoutedEventArgs e)
     {
         if (_operationBusy) return;
         try
         {
             if (!_sequenceActive) await StartSequenceAsync(useThisApp: true);
+            else if (_useThisApp) FinishSequence(cancelled: true);
             else await CompleteCurrentAsync();
         }
         catch (Exception exception) { ShowError("DAPWN0001", exception); } //DAPWN0001
@@ -83,6 +104,7 @@ internal sealed partial class DefaultOpenWithWindow : Window
         _verifiedCount = _reviewedCount = _skippedCount = 0;
         _sequenceActive = true;
         formatChoicesPanel.IsEnabled = false;
+        selectionButtonsPanel.IsEnabled = false;
         progressLogBox.Clear();
         await OpenNextAsync();
     }
@@ -102,6 +124,15 @@ internal sealed partial class DefaultOpenWithWindow : Window
                     try
                     {
                         currentFormatText.Text = string.Format(LanguageManager.Get("DefaultAppsPreparing"), extension);
+                        if (_useThisApp)
+                        {
+                            currentFormatText.Text = string.Format(LanguageManager.Get("DefaultAppsAutomaticSetting"),
+                                _totalExtensions - _pendingExtensions.Count, _totalExtensions, extension);
+                            await Task.Run(() => DefaultAppAssociationService.SetThisAppDefault(extension, _executablePath));
+                            _verifiedCount++;
+                            Log(string.Format(LanguageManager.Get("DefaultAppsVerified"), extension));
+                            break; // Continue automatically when Windows accepts the result.
+                        }
                         if (!_registeredExtensions.Contains(extension))
                         {
                             // Registry registration can be slow under security software.
@@ -110,12 +141,6 @@ internal sealed partial class DefaultOpenWithWindow : Window
                             await Task.Run(() => DefaultAppAssociationService.RegisterHandler(extension, _executablePath));
                             _registeredExtensions.Add(extension);
                             Log(string.Format(LanguageManager.Get("DefaultAppsRegistered"), extension));
-                        }
-                        if (_useThisApp && IsThisAppDefault(extension))
-                        {
-                            _verifiedCount++;
-                            Log(string.Format(LanguageManager.Get("DefaultAppsVerified"), extension));
-                            break; // Already effective: no system confirmation needed.
                         }
                         LaunchCurrentSettings(extension);
                         ResetButtons();
@@ -140,13 +165,10 @@ internal sealed partial class DefaultOpenWithWindow : Window
         finally { SetBusy(false); }
     }
 
-    private bool IsThisAppDefault(string extension) =>
-        string.Equals(DefaultAppAssociationService.QueryCurrentProgId(extension),
-            DefaultAppAssociationService.GetProgId(extension), StringComparison.OrdinalIgnoreCase);
-
     private void LaunchCurrentSettings(string extension)
     {
-        DefaultSettingsLaunch launch = DefaultAppAssociationService.OpenWindowsSettings(_useThisApp);
+        // Only the explicit choose-any-app workflow launches Settings.
+        DefaultSettingsLaunch launch = DefaultAppAssociationService.OpenWindowsSettings(useThisApp: false);
         foreach (StageException warning in launch.Warnings) Log(FormatError(warning.StageCode, warning));
         string instructionKey = launch.Uri.Contains("registeredAppUser=", StringComparison.Ordinal)
             ? "DefaultAppsAppPageInstruction"
@@ -155,44 +177,18 @@ internal sealed partial class DefaultOpenWithWindow : Window
         currentFormatText.Text = string.Format(LanguageManager.Get("DefaultAppsCurrentFormat"),
             _totalExtensions - _pendingExtensions.Count, _totalExtensions, extension) + Environment.NewLine +
             string.Format(LanguageManager.Get(instructionKey), extension) + Environment.NewLine +
-            LanguageManager.Get(_useThisApp ? "DefaultAppsTargetHint" : "DefaultAppsAnyAppHint");
+            LanguageManager.Get("DefaultAppsAnyAppHint");
         Log(string.Format(LanguageManager.Get("DefaultAppsSettingsOpened"), extension));
     }
 
     private async Task CompleteCurrentAsync()
     {
         if (_currentExtension is not string extension) return;
-        if (_useThisApp)
-        {
-            if (IsThisAppDefault(extension))
-            {
-                _verifiedCount++;
-                Log(string.Format(LanguageManager.Get("DefaultAppsVerified"), extension));
-            }
-            else
-            {
-                // Cancelling Settings or choosing another app is a normal outcome,
-                // not an access-denied error and never a reason to request UAC.
-                MessageBoxResult choice = ThemedPromptWindow.Ask(this, Title,
-                    string.Format(LanguageManager.Get("DefaultAppsNotYetDefault"), extension),
-                    (LanguageManager.Get("DefaultAppsReopen"), MessageBoxResult.Yes),
-                    (LanguageManager.Get("DefaultAppsSkip"), MessageBoxResult.No),
-                    (LanguageManager.Get("DefaultAppsStop"), MessageBoxResult.Cancel));
-                if (choice == MessageBoxResult.Yes) { LaunchCurrentSettings(extension); return; }
-                if (choice == MessageBoxResult.Cancel) { FinishSequence(cancelled: true); return; }
-                _skippedCount++;
-                Log(string.Format(LanguageManager.Get("DefaultAppsSkipped"), extension));
-            }
-        }
-        else
-        {
-            // The generic flow accepts any user-selected app. Record the effective
-            // ProgID for diagnostics, but count this as reviewed, not "set to TZIP".
-            string current = DefaultAppAssociationService.QueryCurrentProgId(extension)
-                ?? LanguageManager.Get("DefaultAppsNoDefault");
-            _reviewedCount++;
-            Log(string.Format(LanguageManager.Get("DefaultAppsReviewed"), extension, current));
-        }
+        if (_useThisApp) throw new InvalidOperationException("Automatic association cannot enter Settings confirmation.");
+        string current = DefaultAppAssociationService.QueryCurrentProgId(extension)
+            ?? LanguageManager.Get("DefaultAppsNoDefault");
+        _reviewedCount++;
+        Log(string.Format(LanguageManager.Get("DefaultAppsReviewed"), extension, current));
         _currentExtension = null;
         await OpenNextAsync();
     }
@@ -203,6 +199,7 @@ internal sealed partial class DefaultOpenWithWindow : Window
         _currentExtension = null;
         _pendingExtensions.Clear();
         formatChoicesPanel.IsEnabled = true;
+        selectionButtonsPanel.IsEnabled = true;
         currentFormatText.Text = LanguageManager.Get(cancelled ? "DefaultAppsStopped" : "DefaultAppsCompleted");
         Log(string.Format(LanguageManager.Get("DefaultAppsSummary"), _verifiedCount, _reviewedCount, _skippedCount));
         ResetButtons();
@@ -210,8 +207,7 @@ internal sealed partial class DefaultOpenWithWindow : Window
 
     private void ResetButtons()
     {
-        useThisAppButton.Content = LanguageManager.Get(!_sequenceActive ? "DefaultAppsUseThisApp" :
-            _useThisApp ? "DefaultAppsCheckNext" : "DefaultAppsNext");
+        useThisAppButton.Content = LanguageManager.Get(!_sequenceActive || _useThisApp ? "DefaultAppsUseThisApp" : "DefaultAppsNext");
         chooseDefaultAppButton.Content = LanguageManager.Get(_sequenceActive ? "DefaultAppsStop" : "DefaultAppsChooseApp");
     }
 

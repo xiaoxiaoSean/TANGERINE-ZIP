@@ -2,6 +2,8 @@
 
 本文对应当前仓库中的 `TANGERINE-ZIP.exe`。同一个程序同时支持图形界面和命令行：**无参数**时打开主窗口；只传入**一个已经存在的文件路径**时在主窗口打开该文件；第一个参数是 `help`、`compress`、`extract` 或 `list` 时在终端执行命令，不打开主窗口。资源管理器右键菜单和内部归档工作进程使用保留参数，不属于公开命令行接口。
 
+EXE 使用 Windows GUI 子系统，启动时不会新建命令行窗口。CLI 沿用已有终端或重定向管道；没有终端时不创建替代窗口。脚本需要可靠等待结束和读取退出码时，请显式等待，例如 `Start-Process -Wait -PassThru -NoNewWindow`，完整说明见 [`WINDOW_LAYOUT_AND_PROCESS_STARTUP.md`](WINDOW_LAYOUT_AND_PROCESS_STARTUP.md)。
+
 下文以 PowerShell 为例。在 exe 所在目录执行时，可以写 `./TANGERINE-ZIP.exe`；在其他目录调用时，建议写完整路径并使用调用运算符 `&`：
 
 ```powershell

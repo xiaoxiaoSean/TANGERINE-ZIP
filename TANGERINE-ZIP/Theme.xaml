@@ -5,7 +5,7 @@
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <Style TargetType="Button">
+    <Style x:Key="ThemedButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource ButtonBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
@@ -28,6 +28,10 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <!-- Give scoped adaptive button styles an explicit base resource. Resolving
+         the implicit Button key from another Button style can select itself or
+         the system fallback instead of this merged dictionary's live palette. -->
+    <Style TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}" />
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
@@ -49,10 +53,14 @@
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
                     <StackPanel Orientation="Horizontal">
-                        <Grid Width="17" Height="17" VerticalAlignment="Center">
+                        <!-- Scale the check glyph with the actual control font,
+                             including Windows text scaling and app font changes. -->
+                        <Grid Width="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}}"
+                              Height="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}}"
+                              VerticalAlignment="Center">
                             <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" />
                             <Path x:Name="checkMark" Data="M 3,8 L 7,12 L 14,4" Stroke="{DynamicResource ForegroundBrush}"
-                                  StrokeThickness="2" Visibility="Collapsed" />
+                                  StrokeThickness="2" Stretch="Uniform" Margin="2" Visibility="Collapsed" />
                         </Grid>
                         <ContentPresenter ContentSource="Content" Margin="8,0,0,0" VerticalAlignment="Center"
                                           TextElement.Foreground="{DynamicResource ForegroundBrush}" />
@@ -105,7 +113,9 @@
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
                                         <Path Data="M 0,0 L 5,5 L 10,0 Z" Fill="{DynamicResource ForegroundBrush}"
-                                              Width="10" Height="5" Stretch="Fill" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,9,0" />
+                                              Width="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Height="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Stretch="Uniform" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,9,0" />
                                     </Border>
                                 </ControlTemplate>
                             </ToggleButton.Template>
@@ -118,7 +128,7 @@
                                IsOpen="{TemplateBinding IsDropDownOpen}">
                             <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
-                                <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                                <ScrollViewer MaxHeight="{TemplateBinding MaxDropDownHeight}" VerticalScrollBarVisibility="Auto">
                                     <ItemsPresenter />
                                 </ScrollViewer>
                             </Border>
@@ -188,6 +198,9 @@
         </Setter>
     </Style>
     <Style TargetType="GridViewColumnHeader">
+        <Setter Property="ContentTemplate"><Setter.Value><DataTemplate>
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="{DynamicResource ForegroundBrush}" />
+        </DataTemplate></Setter.Value></Setter>
         <Setter Property="Background" Value="{DynamicResource ButtonBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
@@ -220,7 +233,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Separator">
-                    <Border Background="{TemplateBinding Background}" Height="1" Margin="4,3" />
+                    <Border BorderBrush="{TemplateBinding Background}" BorderThickness="0,0,0,1" Margin="4,3" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -318,7 +331,9 @@
                                 <ContentPresenter Grid.Column="0" ContentSource="Header" RecognizesAccessKey="True"
                                                   TextElement.Foreground="{DynamicResource ForegroundBrush}" />
                                 <Path x:Name="submenuArrow" Grid.Column="1" Data="M 0,0 L 4,4 L 0,8 Z"
-                                      Fill="{DynamicResource ForegroundBrush}" Width="4" Height="8"
+                                      Fill="{DynamicResource ForegroundBrush}"
+                                      Width="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}}"
+                                      Height="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}}" Stretch="Uniform"
                                       Margin="18,0,0,0" VerticalAlignment="Center" Visibility="Collapsed" />
                             </Grid>
                         </Border>

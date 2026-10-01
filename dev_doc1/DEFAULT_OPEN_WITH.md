@@ -1,5 +1,7 @@
 # 默认打开方式设置（2026-10-01）
 
+> **自动关联更新：** 第一个按钮按 Windows 实际格式选择经典 SFTA 或 [UserChoiceLatest 实现](USERCHOICE_LATEST.md)，在后台尝试并核验；成功时直接处理下一格式，失败时显示阶段码及重试/跳过/停止，不操作系统设置界面。经典路径见 [SFTA_AUTOMATIC_DEFAULTS.md](SFTA_AUTOMATIC_DEFAULTS.md)。本机 ZIP/RAR 使用 UserChoiceLatest，尚未验证真实已有默认程序的切换。
+
 ## 菜单与窗口
 
 原菜单栏“右键菜单”改为“为系统做设置”。XAML 对象及代码字段改为 `systemSettingsMenuItem`，本地化键改为 `SystemSettingsMenu`，原来的创建/删除右键菜单入口继续保留其明确的对象名和键名。新增 `defaultOpenWithMenuItem` 和 `DefaultOpenWithMenu_Click`，打开 `DefaultOpenWithWindow`。
@@ -8,23 +10,25 @@
 
 窗口底部初始提供两个按钮：
 
-- **这些格式用本软件打开**：将本软件注册为当前用户的可选打开程序，逐一引导用户在系统设置中选择 TANGERINE ZIP。已有正确关联直接核实后继续；未关联项打开系统设置。用户完成后点“检查并继续”，程序查询实际生效的 ProgID；只有确实指向本软件的项才计为成功。
+- **这些格式用本软件打开**：将本软件注册为当前用户的可选打开程序，按检测到的哈希格式自动尝试设置，并核验实际生效的 ProgID。已正确关联或自动设置成功的项直接继续；失败项提供重试/跳过/停止，不要求用户逐一手动设置。
 - **为这些格式设置打开方式**：同样注册本软件供用户选择，但打开通用默认应用设置页，用户可为当前扩展名选择任何软件。完成后点“下一格式”，日志记录实际打开程序标识，此流程统计“已查看设置”，不宣称本软件成为默认应用或宣称用户修改了关联。
 
-流程中底部按钮分别变为“检查并继续”/“下一格式”和“停止流程”。不同时打开多个设置窗口，也不使用定时器猜测用户何时完成。当前扩展名和总进度始终可见。未选择任何格式时报告 `DAPWN0002`。取消系统设置、选择其他软件或保留原默认值均是正常结果；本软件确认流程会提供重新打开、跳过、停止选项。关闭窗口时，等待用户选择的序列可直接结束；后台注册正在写入时暂缓关闭，待写入或回滚完成，避免异步操作继续访问已关闭窗口。
+格式选择区新增 **全选** / **全不选**，只改变九个格式复选框，不修改关联或立即启动系统设置。九个格式仍初始不勾选；流程开始后快捷按钮和复选框同时禁用，停止或完成后恢复，避免界面选择与已排队的扩展名不一致。`DefaultAppsSelectAll` / `DefaultAppsSelectNone` 覆盖六套资源，选择异常使用 `DAPWN0004`。
+
+窗口采用 Grid 的 `Auto` / 星号比例行、可换行按钮和复选框、可滚动说明及日志区域。删除格式区固定的 `MaxHeight=180`；当前操作说明的最大高度由选择区实际可用高度决定。按钮内容按可用宽度换行，控件没有固定像素宽高；共用复选框的标记尺寸绑定实际 FontSize。相关窗口布局和禁止控制台闪窗的实现详见 [`WINDOW_LAYOUT_AND_PROCESS_STARTUP.md`](WINDOW_LAYOUT_AND_PROCESS_STARTUP.md)。
+
+第一个按钮的序列连续处理所选扩展名；只有错误时提供重试/跳过/停止。第二个按钮的序列显示“下一格式”和“停止流程”，等待用户完成系统设置。不同时打开多个设置窗口，也不使用定时器猜测用户何时完成。当前扩展名和总进度始终可见。未选择任何格式时报告 `DAPWN0002`。取消系统设置、选择其他软件或保留原默认值均是第二按钮的正常结果。关闭窗口时，等待用户选择的序列可直接结束；后台注册正在写入时暂缓关闭，待写入或回滚完成，避免异步操作继续访问已关闭窗口。
 
 ## Windows 默认应用限制与兼容
 
-Windows 8 起，不允许应用通过官方 API 自行覆盖用户默认选择。Windows 10/11 的 `SHOpenWithDialog` 不再具备设置默认应用的功能，注册相关标志会被忽略。`IApplicationAssociationRegistration.SetAppAsDefault/SetAppAsDefaultAll` 也不适用于这些系统。第一个按钮因此提供注册、系统确认、结果核验的完整流程；不能无提示自动替换用户选择。
+Windows 8 起，不允许应用通过官方 API 自行覆盖用户默认选择。Windows 10/11 的 `SHOpenWithDialog` 不再具备设置默认应用的功能，注册相关标志会被忽略。`IApplicationAssociationRegistration.SetAppAsDefault/SetAppAsDefaultAll` 也不适用于这些系统。第一个按钮尝试非官方哈希机制并核验；管理员权限不能保证绕过系统保护，也不能把仅写入注册表误报为设置完成。参见[微软默认应用平台文档](https://learn.microsoft.com/en-us/windows/apps/develop/windows-integration/default-apps-platform)。
 
-| 系统 | 为本软件设置默认应用 | 选择任意软件 |
+| 系统 | 第一按钮自动路径 | 第二按钮选择任意软件 |
 | --- | --- | --- |
-| Windows 10 | `ms-settings:defaultapps`；指引用户进入按文件类型指定默认应用，找到当前扩展名 | 同一通用设置页，允许选择其他程序 |
-| Windows 11 初版 21H2、未安装相应更新的 22H2 | 通用设置页；指引用户搜索当前文件类型 | 同一通用设置页 |
-| Windows 11 21H2 `22000.1817` 起、22H2 `22621.1555` 起 | `ms-settings:defaultapps?registeredAppUser=TANGERINE%20ZIP`，直接进入本软件页面 | 通用设置页 |
-| Windows 11 23H2（`22631`）及之后 | 本软件专属设置页 | 通用设置页 |
+| Windows 10 | 经典 SFTA，核验实际生效的 ProgID | `ms-settings:defaultapps` 通用页 |
+| Windows 11 初版及后续版本 | 检查当前用户 HashVersion 与键格式，选择经典 SFTA 或 UserChoiceLatest；逐项核验 | `ms-settings:defaultapps` 通用页 |
 
-21H2/22H2 读取 `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion` 的 `UBR` 确定累计更新修订号。读取失败时记录 `DEFAS0004` 并回退通用设置页，缺失修订号按 0 处理。专属页启动失败时记录 `DEFAS0005` 并尝试通用页；通用页仍失败时呈现错误与重试/跳过/停止。调用 `Process.Start` 只表示把请求交给 Windows；系统可能复用已存在的设置进程，因此空进程返回值不能用来判断默认选择成败。
+`OpenWindowsSettings` 仍保存 Win11 专属应用页 URI 的兼容计算：21H2/22H2 读取 `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion` 的 `UBR` 确定累计更新修订号，读取失败记录 `DEFAS0004`；启动失败记录 `DEFAS0005` 并回退通用页。当前第一按钮不调用它，第二按钮只请求通用页。调用 `Process.Start` 只表示把请求交给 Windows；系统可能复用已存在的设置进程，因此空进程返回值不能用来判断默认选择成败。
 
 当前没有使用未在官方文档中提供的逐扩展名 Settings URI 参数；通用页内的扩展名定位由用户完成，程序显示对应 Win10/Win11 操作说明。机器策略可能限制设置，程序不会将策略阻止或启动成功误报为设置完成。
 
@@ -85,6 +89,7 @@ dotnet run --project tools/ArchiveIconDesigner -- "C:\Users\Sean\source\repos\TA
 | `DAPWN0001` | 按钮或结果核验出现未预料错误，当前扩展名保持等待 |
 | `DAPWN0002` | 未选择格式，不进行注册或打开系统设置 |
 | `DAPWN0003` | 当前扩展名准备失败，提供重试/跳过/停止 |
+| `DAPWN0004` | 批量修改复选框失败；设置流程进行中不接受批量修改 |
 | `DEFAS0001` | 不支持的系统或扩展名，包括 ISO/WIM |
 | `DEFAS0002` | EXE 缺失或由 dotnet.exe 托管 |
 | `DEFAS0003` | 注册写入/回读失败，已写入值回滚 |
@@ -118,4 +123,6 @@ dotnet run --project tools/ArchiveIconDesigner -- "C:\Users\Sean\source\repos\TA
 - 在新建的 GUID 专属 `HKCU\Software\TangerineZip\Verification\DefaultApps_<GUID>` 子树内重定向注册计划，验证写入和回读；在完成前序写入后注入注册错误，确认 Binary/DWord 原值和数据类型恢复、无关值保留、新值清除、原扩展名默认值未被覆盖。测试后删除该专属子树；没有写入实际 Classes、RegisteredApplications 或真实默认应用选择。
 - 用隔离 WPF 预览程序打开真实 `DefaultOpenWithWindow`，查看简中布局、九个默认未勾选的格式及两个操作按钮；点击未选格式的第一按钮，确认出现带 `DAPWN0002` 的本地化主题提示。预览窗口已关闭。
 - 图标接入后再次打开隔离的简中窗口，确认新增图标说明完整显示，复选框、日志区和按钮布局正常；已关闭窗口并移除预览启动标记。
+- 布局及快捷按钮更新后的验证共通过 1368 项检查；在五种 UI 文化下验证全选/全不选、流程进行时不修改选择，使用 360×300、640×420、1200×720 的可用布局区域及 12/24 字号验证底部按钮无越界且保持自适应尺寸。这里的尺寸是测试输入，不是产品控件固定尺寸。两种单文件发布的 Windows GUI 子系统、原生 CLI/worker 重定向及 ZIP 创建/列出/解压往返也通过验证。
+- 实际简中窗口点击全选后九项全部出现勾选标记，点击全不选后全部清除；按钮保持共用主题的颜色及内边距。预览窗口已关闭，启动标记已删除。
 - 没有在测试中更改真实用户默认应用；也未在 Win10、初代 Win11 虚拟机或实机中完成全流程切换、组织策略阻止、互斥锁竞争、注册回滚失败及设置应用启动失败的人工回归。上述 Windows 版本兼容判断已按官方接口说明和分支验证覆盖，不计为这些系统的实机测试。

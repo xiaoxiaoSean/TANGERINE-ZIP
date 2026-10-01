@@ -1,26 +1,28 @@
 <Window x:Class="TANGERINE_ZIP.ArchiveToolsWindow" x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Width="730" Height="570"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStartupLocation="CenterOwner" Background="{DynamicResource BackgroundBrush}"
         Foreground="{DynamicResource ForegroundBrush}" FontFamily="Microsoft YaHei UI">
     <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Theme.xaml" />
     </ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
     <Grid Margin="14">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <Button x:Name="chooseButton" Grid.Row="0" HorizontalAlignment="Left" Click="Choose_Click" />
-        <TextBox x:Name="pathsBox" Grid.Row="1" Height="70" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" Margin="4" />
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="4">
+        <TextBox x:Name="pathsBox" Grid.Row="1" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" Margin="4" />
+        <Grid Grid.Row="2" Margin="4">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <TextBlock x:Name="modeLabel" Margin="0,0,8,0" />
-            <ComboBox x:Name="modeCombo" Width="155" SelectedIndex="0">
+            <ComboBox x:Name="modeCombo" Grid.Column="1" SelectedIndex="0">
                 <ComboBoxItem Content="CRC"/><ComboBoxItem Content="HASH (SHA-256)"/><ComboBoxItem x:Name="blocksOption" Content="Data blocks"/>
             </ComboBox>
-            <TextBlock x:Name="algorithmLabel" Margin="16,0,8,0" />
-            <ComboBox x:Name="algorithmCombo" Width="105" SelectedIndex="0">
+            <TextBlock x:Name="algorithmLabel" Grid.Column="2" Margin="16,0,8,0" />
+            <ComboBox x:Name="algorithmCombo" Grid.Column="3" SelectedIndex="0">
                 <ComboBoxItem Content="SHA256"/><ComboBoxItem Content="SHA512"/><ComboBoxItem Content="MD5"/>
             </ComboBox>
-        </StackPanel>
+        </Grid>
         <StackPanel Grid.Row="3" Margin="4">
             <TextBlock x:Name="expectedLabel" />
             <TextBox x:Name="expectedBox" Margin="0,4,0,8" />

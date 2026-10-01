@@ -969,7 +969,7 @@
     <value>扩展名 {0}/{1}：{2}</value>
   </data>
   <data name="DefaultAppsDescription" xml:space="preserve">
-    <value>选择需要设置的压缩格式，程序会逐个扩展名处理。Windows 要求您在系统默认应用设置中确认。第一个操作引导您选择 TANGERINE ZIP；第二个操作允许选择任意软件。请保留程序当前位置；移动程序后需要重新注册。ISO 和 WIM 不参与设置。</value>
+    <value>选择压缩格式。第一个按钮自动尝试将所选格式设为 TANGERINE ZIP，并核验实际结果；第二个按钮打开 Windows 设置，可选择任意软件。请保持本程序的位置不变，移动后需重新设置。ISO 和 WIM 不参与。</value>
   </data>
   <data name="DefaultAppsExecutableMissing" xml:space="preserve">
     <value>无法注册程序的可执行文件。请运行本软件的 EXE，不要通过 dotnet.exe 运行 DLL。</value>
@@ -993,7 +993,7 @@
     <value>{0} 当前尚未以 TANGERINE ZIP 为默认应用。可以重新打开系统设置、跳过此扩展名或停止流程。</value>
   </data>
   <data name="DefaultAppsPermissionHint" xml:space="preserve">
-    <value>无需管理员权限：关联注册只作用于当前 Windows 用户。最终默认应用由 Windows 控制，提权不能绕过用户确认。若组织策略阻止注册，程序会报告错误，不请求 UAC。</value>
+    <value>设置仅作用于当前 Windows 账户。软件根据 Windows 状态选择旧版或 UserChoiceLatest 哈希方案，并逐项核验实际生效的默认程序。这些方案并非 Windows 官方 API；自动设置失败不会计为成功。</value>
   </data>
   <data name="DefaultAppsPreparing" xml:space="preserve">
     <value>正在准备 {0}…</value>
@@ -1076,4 +1076,22 @@
   <data name="DefaultAppsIconHint" xml:space="preserve">
     <value>TANGERINE ZIP 成为默认应用后，文件显示带橙色格式字母和白色描边的 logo 图标。Windows 刷新图标可能需要片刻。</value>
   </data>
+  <data name="DefaultAppsSelectAll" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="DefaultAppsSelectNone" xml:space="preserve">
+    <value>全不选</value>
+  </data>
+  <data name="DefaultAppsAutomaticUnsupported" xml:space="preserve"><value>此 Windows 文件关联使用不支持的保护机制或哈希格式，未能自动设置此扩展名。</value></data>
+  <data name="DefaultAppsAutomaticSetting" xml:space="preserve"><value>正在自动设置第 {0}/{1} 个扩展名：{2}</value></data>
+  <data name="DefaultAppsAutomaticRejected" xml:space="preserve"><value>Windows 未接受指定的默认打开方式，此扩展名不会计为设置成功。</value></data>
+  <data name="DefaultAppsAutomaticRollbackFailed" xml:space="preserve"><value>自动设置失败，恢复原默认打开方式也失败。请在 Windows 设置中检查此扩展名，两项错误均已记录。</value></data>
+  <data name="DefaultAppsHashFailed" xml:space="preserve"><value>无法获取账户身份或生成 SFTA 文件关联校验哈希。</value></data>
+  <data name="DefaultAppsAutomaticWriteFailed" xml:space="preserve"><value>自动设置默认打开方式失败。Windows 保护机制、账户权限或组织策略可能阻止此操作，不会请求管理员权限。</value></data>
+  <data name="DefaultAppsAutomaticFallback" xml:space="preserve"><value>{0} 无法自动设置。请在 Windows 设置中确认使用 TANGERINE ZIP，然后返回此窗口点击“检查并继续”。</value></data>
+  <data name="DefaultAppsLatestUnsupported" xml:space="preserve"><value>无法验证当前 Windows 的 UserChoiceLatest 哈希格式，未覆盖现有默认程序。</value></data>
+  <data name="DefaultAppsLatestHashFailed" xml:space="preserve"><value>无法取得 Windows UserChoiceLatest 哈希所需数据，或无法加载本地计算组件。</value></data>
+  <data name="DefaultAppsLatestWriteFailed" xml:space="preserve"><value>无法写入 UserChoiceLatest 关联；若原关联已被移动，程序已尝试恢复。</value></data>
+  <data name="DefaultAppsLatestRejected" xml:space="preserve"><value>Windows 未接受新的 UserChoiceLatest 关联，程序已尝试恢复原关联。</value></data>
+  <data name="DefaultAppsLatestRollbackFailed" xml:space="preserve"><value>自动设置失败，恢复原 UserChoiceLatest 关联也失败。请先检查当前默认程序再重试。</value></data>
 </root>

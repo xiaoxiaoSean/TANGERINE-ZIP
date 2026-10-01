@@ -868,9 +868,28 @@ public partial class MainWindow : Window
         await OpenArchiveAsync(path);
     }
 
+    private void ArchiveEntriesList_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        // Empty GridViews can retain the initial, untranslated header's measured
+        // width. Allocate columns from the live viewport so headers and entries
+        // remain visible without fixed pixel widths or search-box spacer offsets.
+        if (nameColumn is null || originalSizeColumn is null || compressedSizeColumn is null) return;
+        double available = Math.Max(0, e.NewSize.Width - SystemParameters.VerticalScrollBarWidth -
+            archiveEntriesList.BorderThickness.Left - archiveEntriesList.BorderThickness.Right);
+        nameColumn.Width = available * 0.5;
+        originalSizeColumn.Width = available * 0.25;
+        compressedSizeColumn.Width = available * 0.25;
+    }
+
     private static void StartAnotherInstance(string path)
     {
-        System.Diagnostics.ProcessStartInfo start = new(Environment.ProcessPath!) { UseShellExecute = false };
+        // Do not allocate a console when opening another archive in its own GUI
+        // instance. CreateNoWindow does not hide Windows-subsystem WPF windows.
+        System.Diagnostics.ProcessStartInfo start = new(Environment.ProcessPath!)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
         start.ArgumentList.Add(path);
         System.Diagnostics.Process.Start(start);
     }

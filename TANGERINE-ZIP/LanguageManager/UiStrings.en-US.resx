@@ -969,7 +969,7 @@ Existing file: {1}</value>
     <value>Extension {0} of {1}: {2}</value>
   </data>
   <data name="DefaultAppsDescription" xml:space="preserve">
-    <value>Select archive formats to configure, one extension at a time. Windows requires your confirmation in its Default apps settings. The first action guides you to TANGERINE ZIP; the second lets you choose any app. Keep this executable in its current location; repeat registration after moving it. ISO and WIM are excluded.</value>
+    <value>Select archive formats. The first action automatically sets selected formats for TANGERINE ZIP and checks the effective result. The second action opens Windows Settings to choose any app. Keep this executable in its current location; repeat after moving it. ISO and WIM are excluded.</value>
   </data>
   <data name="DefaultAppsExecutableMissing" xml:space="preserve">
     <value>The application executable cannot be registered. Launch the application&apos;s EXE, rather than a DLL through dotnet.exe.</value>
@@ -993,7 +993,7 @@ Existing file: {1}</value>
     <value>{0} is not currently associated with TANGERINE ZIP. Reopen Windows settings, skip this extension, or stop the sequence.</value>
   </data>
   <data name="DefaultAppsPermissionHint" xml:space="preserve">
-    <value>No administrator permission is required: registration applies only to your Windows account. Windows controls the final default choice; elevation cannot bypass that confirmation. If organizational policy blocks registration, an error is shown without requesting UAC.</value>
+    <value>Changes apply to your Windows account. The app chooses the classic or UserChoiceLatest hash method according to Windows and verifies each effective default. These methods are not official Windows APIs. A failed automatic setting is reported, not counted as success.</value>
   </data>
   <data name="DefaultAppsPreparing" xml:space="preserve">
     <value>Preparing {0}…</value>
@@ -1076,4 +1076,22 @@ Existing file: {1}</value>
   <data name="DefaultAppsIconHint" xml:space="preserve">
     <value>When TANGERINE ZIP is the default app, files show the logo with orange format letters and a white outline. Windows may take a moment to refresh icons.</value>
   </data>
+  <data name="DefaultAppsSelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="DefaultAppsSelectNone" xml:space="preserve">
+    <value>Select none</value>
+  </data>
+  <data name="DefaultAppsAutomaticUnsupported" xml:space="preserve"><value>This Windows association uses an unsupported protection or hash format. Automatic setting was not completed for this extension.</value></data>
+  <data name="DefaultAppsAutomaticSetting" xml:space="preserve"><value>Automatically setting extension {0} of {1}: {2}</value></data>
+  <data name="DefaultAppsAutomaticRejected" xml:space="preserve"><value>Windows did not accept the requested default association. The extension is not counted as successfully set.</value></data>
+  <data name="DefaultAppsAutomaticRollbackFailed" xml:space="preserve"><value>Automatic setting failed, and restoring the previous default also failed. Check this extension in Windows settings. Both errors are recorded.</value></data>
+  <data name="DefaultAppsHashFailed" xml:space="preserve"><value>Could not obtain the account identity or generate the SFTA association hash.</value></data>
+  <data name="DefaultAppsAutomaticWriteFailed" xml:space="preserve"><value>Automatic default association failed. Windows protections, account permissions, or organizational policy may prevent it. Administrator permission is not requested.</value></data>
+  <data name="DefaultAppsAutomaticFallback" xml:space="preserve"><value>Automatic setting is unavailable for {0}. Confirm TANGERINE ZIP in Windows Settings, then return here to check and continue.</value></data>
+  <data name="DefaultAppsLatestUnsupported" xml:space="preserve"><value>The current Windows UserChoiceLatest hash format could not be validated. No existing default was overwritten.</value></data>
+  <data name="DefaultAppsLatestHashFailed" xml:space="preserve"><value>The Windows UserChoiceLatest hash inputs or native codec could not be loaded.</value></data>
+  <data name="DefaultAppsLatestWriteFailed" xml:space="preserve"><value>The UserChoiceLatest association could not be installed. The previous association was restored if it had been moved.</value></data>
+  <data name="DefaultAppsLatestRejected" xml:space="preserve"><value>Windows did not accept the new UserChoiceLatest association. The previous association was restored.</value></data>
+  <data name="DefaultAppsLatestRollbackFailed" xml:space="preserve"><value>Automatic association failed, and restoring the prior UserChoiceLatest key also failed. Inspect the current default before trying again.</value></data>
 </root>

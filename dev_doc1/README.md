@@ -2,6 +2,8 @@
 
 系统设置菜单、默认打开方式注册及 Windows 10/11 兼容流程见 [`DEFAULT_OPEN_WITH.md`](DEFAULT_OPEN_WITH.md)。
 
+全选/全不选、自适应窗口布局与禁止控制台闪窗见 [`WINDOW_LAYOUT_AND_PROCESS_STARTUP.md`](WINDOW_LAYOUT_AND_PROCESS_STARTUP.md)。
+
 2026-09-27 新增功能与修复见 [`change20260927/README.md`](change20260927/README.md)。
 
 密码压缩、解压、加密封装与安全清理的详细设计见 [`PASSWORD_ARCHIVES.md`](PASSWORD_ARCHIVES.md)。
@@ -184,6 +186,8 @@ dotnet publish TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release --no-restore -p:ENA
 2026-09-24 本次发布结果的可运行文件为 `artifacts/single-file-context-menu-dual/TANGERINE-ZIP.exe`。PDB 仅用于调试，可不随软件分发；Win11 右键菜单宿主、MSIX 和公开证书均嵌入此 EXE，安装时释放到系统管理的位置。只有创建 RAR 时需要应用程序目录中的可选 `rar.exe`。
 
 ## 7. 维护注意事项
+
+自动默认关联的经典 SFTA 路径见 [SFTA_AUTOMATIC_DEFAULTS.md](SFTA_AUTOMATIC_DEFAULTS.md)，新 Win11 的哈希路径见 [USERCHOICE_LATEST.md](USERCHOICE_LATEST.md)。第一个按钮自动尝试并核验，不操作系统设置界面；第二个按钮保留选择任意程序的官方入口。本机 build 26200 的 ZIP/RAR 使用新保护格式，真实已有默认程序的切换尚未验证。管理员权限无法保证绕过该限制。
 
 压缩包内文字/图片预览与“解压到压缩文件所在文件夹”的设计、内存限制、例外格式及阶段码见 [PREVIEW_20260924.md](PREVIEW_20260924.md)。
 

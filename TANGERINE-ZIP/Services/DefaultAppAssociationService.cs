@@ -10,18 +10,16 @@ internal sealed record AssociationRegistrationValue(string KeyPath, string Name,
 internal sealed record DefaultSettingsLaunch(string Uri, IReadOnlyList<StageException> Warnings);
 
 // Stage head: DEFAS (DefaultAppAssociationService).
-// Windows 8 and later reserve default selection for the user. This service only
-// registers a candidate handler in HKCU, launches the supported Settings UI, and
-// queries the effective Shell association. Never write/delete Explorer UserChoice,
-// generate a UserChoice hash, call deprecated SetAppAsDefault, or elevate to try
-// to override that protection. HKCU registration needs no administrator rights.
+// Candidate registration and the explicit Settings handoff live here. The
+// automatic action picks classic SFTA or UserChoiceLatest according to the
+// current user's Windows hash version and verifies the effective association.
 internal static class DefaultAppAssociationService
 {
     internal const string RegisteredApplicationName = "TANGERINE ZIP";
     private const string CapabilitiesPath = @"Software\TangerineZip\DefaultApps\Capabilities";
 
     // One checkbox per supported archive format. Zstandard has two public suffixes;
-    // each suffix needs its own Windows confirmation. Disk images ISO/WIM are
+    // each suffix needs its own default association. Disk images ISO/WIM are
     // deliberately excluded, as are unadvertised aliases and generic .001 volumes.
     internal static IReadOnlyList<AssociationFormat> Formats { get; } = Array.AsReadOnly(new[]
     {
@@ -47,6 +45,18 @@ internal static class DefaultAppAssociationService
     {
         ValidateExtension(extension);
         return "TangerineZip.Archive." + extension[1..];
+    }
+
+    internal static void SetThisAppDefault(string extension, string executablePath)
+    {
+        ValidateExtension(extension);
+        RegisterHandler(extension, executablePath);
+        string progId = GetProgId(extension);
+        if (string.Equals(QueryCurrentProgId(extension), progId, StringComparison.OrdinalIgnoreCase)) return;
+        if (LatestUserChoice.IsLatestFormatActive(extension))
+            LatestUserChoice.SetDefault(extension, progId, () => QueryCurrentProgId(extension));
+        else
+            SftaUserChoice.SetDefault(extension, progId, () => QueryCurrentProgId(extension));
     }
 
     internal static string GetExecutablePath()

@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<OutputType>Exe</OutputType>
+		<!-- Standard WPF Windows application. App.xaml supplies the STA entry point;
+		     the Windows GUI subsystem prevents automatic console allocation. -->
+		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0-windows</TargetFramework>
 
 		<RootNamespace>TANGERINE_ZIP</RootNamespace>
@@ -68,6 +70,9 @@
 		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.msix" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix" />
 		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.cer" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.cer" />
 		<EmbeddedResource Include="..\third_party\ContextMenuForWindows11\LICENSE" LogicalName="TANGERINE_ZIP.ContextMenu.LGPL-3.0.txt" />
+		<EmbeddedResource Include="..\third_party\SFTA\LICENSE" LogicalName="TANGERINE_ZIP.SFTA.MIT.txt" />
+		<EmbeddedResource Include="..\third_party\UserChoiceLatestHash\LICENSE" LogicalName="TANGERINE_ZIP.UserChoiceLatestHash.MIT.txt" />
+		<EmbeddedResource Include="..\third_party\UserChoiceLatestHash\TzipLatestHash.dll" LogicalName="TANGERINE_ZIP.TzipLatestHash.dll" />
 		<EmbeddedResource Include="Embedded\SevenZip\7z.exe" LogicalName="TANGERINE_ZIP.SevenZip.7z.exe" />
 		<EmbeddedResource Include="Embedded\SevenZip\7z.dll" LogicalName="TANGERINE_ZIP.SevenZip.7z.dll" />
 		<EmbeddedResource Include="Embedded\SevenZip\License.txt" LogicalName="TANGERINE_ZIP.SevenZip.License.txt" />

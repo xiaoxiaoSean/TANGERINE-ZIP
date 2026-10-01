@@ -970,7 +970,7 @@
     <value>副檔名 {0}/{1}：{2}</value>
   </data>
   <data name="DefaultAppsDescription" xml:space="preserve">
-    <value>選擇需要設定的壓縮格式，程式會逐個副檔名處理。Windows 要求您在系統預設應用程式設定中確認。第一個操作引導您選擇 TANGERINE ZIP；第二個操作允許選擇任意軟體。請保留程式目前位置；移動程式後需要重新註冊。ISO 和 WIM 不參與設定。</value>
+    <value>選擇壓縮格式。第一個按鈕自動嘗試將所選格式設為 TANGERINE ZIP，並核驗實際結果；第二個按鈕開啟 Windows 設定，可選擇任意軟體。請保持本程式的位置不變，移動後需重新設定。ISO 和 WIM 不參與。</value>
   </data>
   <data name="DefaultAppsExecutableMissing" xml:space="preserve">
     <value>無法註冊程式的可執行檔。請執行本軟體的 EXE，不要透過 dotnet.exe 執行 DLL。</value>
@@ -994,7 +994,7 @@
     <value>{0} 目前尚未以 TANGERINE ZIP 為預設應用程式。可以重新開啟系統設定、略過此副檔名或停止流程。</value>
   </data>
   <data name="DefaultAppsPermissionHint" xml:space="preserve">
-    <value>無需系統管理員權限：關聯註冊只作用於目前 Windows 使用者。最終預設應用程式由 Windows 控制，提升權限不能繞過使用者確認。若組織原則阻止註冊，程式會報告錯誤，不要求 UAC。</value>
+    <value>設定僅作用於目前 Windows 帳戶。軟體依 Windows 狀態選擇舊版或 UserChoiceLatest 雜湊方案，並逐項核驗實際生效的預設程式。這些方案並非 Windows 官方 API；自動設定失敗不會計為成功。</value>
   </data>
   <data name="DefaultAppsPreparing" xml:space="preserve">
     <value>正在準備 {0}…</value>
@@ -1077,4 +1077,22 @@
   <data name="DefaultAppsIconHint" xml:space="preserve">
     <value>TANGERINE ZIP 成為預設應用程式後，檔案顯示帶橙色格式字母和白色外框的 logo 圖示。Windows 更新圖示可能需要片刻。</value>
   </data>
+  <data name="DefaultAppsSelectAll" xml:space="preserve">
+    <value>全選</value>
+  </data>
+  <data name="DefaultAppsSelectNone" xml:space="preserve">
+    <value>全不選</value>
+  </data>
+  <data name="DefaultAppsAutomaticUnsupported" xml:space="preserve"><value>此 Windows 檔案關聯使用不支援的保護機制或雜湊格式，未能自動設定此副檔名。</value></data>
+  <data name="DefaultAppsAutomaticSetting" xml:space="preserve"><value>正在自動設定第 {0}/{1} 個副檔名：{2}</value></data>
+  <data name="DefaultAppsAutomaticRejected" xml:space="preserve"><value>Windows 未接受指定的預設開啟方式，此副檔名不會計為設定成功。</value></data>
+  <data name="DefaultAppsAutomaticRollbackFailed" xml:space="preserve"><value>自動設定失敗，還原原預設開啟方式也失敗。請在 Windows 設定中檢查此副檔名，兩項錯誤均已記錄。</value></data>
+  <data name="DefaultAppsHashFailed" xml:space="preserve"><value>無法取得帳戶身分或產生 SFTA 檔案關聯校驗雜湊。</value></data>
+  <data name="DefaultAppsAutomaticWriteFailed" xml:space="preserve"><value>自動設定預設開啟方式失敗。Windows 保護機制、帳戶權限或組織原則可能阻止此操作，不會要求管理員權限。</value></data>
+  <data name="DefaultAppsAutomaticFallback" xml:space="preserve"><value>{0} 無法自動設定。請在 Windows 設定中確認使用 TANGERINE ZIP，然後返回此視窗點選「檢查並繼續」。</value></data>
+  <data name="DefaultAppsLatestUnsupported" xml:space="preserve"><value>無法驗證目前 Windows 的 UserChoiceLatest 雜湊格式，未覆蓋現有預設程式。</value></data>
+  <data name="DefaultAppsLatestHashFailed" xml:space="preserve"><value>無法取得 Windows UserChoiceLatest 雜湊所需資料，或無法載入本機計算元件。</value></data>
+  <data name="DefaultAppsLatestWriteFailed" xml:space="preserve"><value>無法寫入 UserChoiceLatest 關聯；若原關聯已被移動，程式已嘗試復原。</value></data>
+  <data name="DefaultAppsLatestRejected" xml:space="preserve"><value>Windows 未接受新的 UserChoiceLatest 關聯，程式已嘗試復原原關聯。</value></data>
+  <data name="DefaultAppsLatestRollbackFailed" xml:space="preserve"><value>自動設定失敗，復原原 UserChoiceLatest 關聯也失敗。請先檢查目前預設程式再重試。</value></data>
 </root>

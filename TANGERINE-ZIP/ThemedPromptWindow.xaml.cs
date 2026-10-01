@@ -10,6 +10,8 @@ internal sealed partial class ThemedPromptWindow : Window
         (string Label, MessageBoxResult Result)[] choices)
     {
         InitializeComponent();
+        WpfUi.SizeWindow(this, 0.4, 0.4);
+        FontSize = SystemFonts.MessageFontSize;
         MouseWhiteThickening.Attach(this, 105);
         Title = title;
         messageText.Text = message;
@@ -19,7 +21,7 @@ internal sealed partial class ThemedPromptWindow : Window
         ShowInTaskbar = owner is null;
         foreach ((string label, MessageBoxResult result) in choices)
         {
-            Button button = new() { Content = label, MinWidth = 78 };
+            Button button = new() { Content = label };
             button.Click += (_, _) => { _choice = result; DialogResult = true; };
             buttonsPanel.Children.Add(button);
         }

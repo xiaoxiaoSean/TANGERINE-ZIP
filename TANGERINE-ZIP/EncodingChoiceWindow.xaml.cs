@@ -7,6 +7,8 @@ internal sealed partial class EncodingChoiceWindow : Window
     public EncodingChoiceWindow()
     {
         InitializeComponent();
+        WpfUi.SizeWindow(this, 0.4, 0.3);
+        FontSize = SystemFonts.MessageFontSize;
         MouseWhiteThickening.Attach(this, 105);
         Title = LanguageManager.Get("EncodingMenu");
         descriptionText.Text = LanguageManager.Get("ToolSelectEncoding");
