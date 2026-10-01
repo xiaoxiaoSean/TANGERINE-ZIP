@@ -47,9 +47,11 @@
             <MenuItem x:Name="settingsMenuItem" Header="Settings" Click="SettingsMenu_Click" />
             <MenuItem x:Name="unloadArchiveMenuItem" Header="Unload" Click="UnloadArchiveMenu_Click" />
             <MenuItem x:Name="stopWorkMenuItem" Header="Stop" Visibility="Collapsed" Click="StopWorkMenuItem_Click" />
-            <MenuItem x:Name="contextMenuItem" Header="Context menu">
+            <MenuItem x:Name="systemSettingsMenuItem" Header="System settings">
                 <MenuItem x:Name="createContextMenuItem" Header="Create" Click="CreateContextMenu_Click" />
                 <MenuItem x:Name="deleteContextMenuItem" Header="Delete" Click="DeleteContextMenu_Click" />
+                <Separator />
+                <MenuItem x:Name="defaultOpenWithMenuItem" Header="Default apps" Click="DefaultOpenWithMenu_Click" />
             </MenuItem>
         </Menu>
         <Grid Grid.Row="1">

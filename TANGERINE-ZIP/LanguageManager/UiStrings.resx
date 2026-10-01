@@ -410,8 +410,8 @@ Stage Code is :</value>
   <data name="SelectAtLeastOneFile" xml:space="preserve">
     <value>Please select at least one file.</value>
   </data>
-  <data name="ContextMenu" xml:space="preserve">
-    <value>Context menu</value>
+  <data name="SystemSettingsMenu" xml:space="preserve">
+    <value>System settings</value>
   </data>
   <data name="CreateContextMenu" xml:space="preserve">
     <value>Create context menu</value>
@@ -942,4 +942,136 @@ Existing file: {1}</value>
   <data name="CliCreated" xml:space="preserve"><value>Created: {0}</value></data>
   <data name="CliExtracted" xml:space="preserve"><value>Extracted to: {0}</value></data>
   <data name="CliListHeader" xml:space="preserve"><value>Path&#9;Original bytes&#9;Compressed bytes&#9;Method</value></data>
+  <data name="DefaultAppsAnyAppHint" xml:space="preserve">
+    <value>Choose any app and confirm in Windows, then click “Next format” here. Registration alone does not confirm your selection.</value>
+  </data>
+  <data name="DefaultAppsApplicationDescription" xml:space="preserve">
+    <value>TANGERINE ZIP archive manager</value>
+  </data>
+  <data name="DefaultAppsAppPageInstruction" xml:space="preserve">
+    <value>In the TANGERINE ZIP page in Windows Settings, find {0} and confirm the app for that extension. Return here after finishing.</value>
+  </data>
+  <data name="DefaultAppsCheckNext" xml:space="preserve">
+    <value>Check and continue</value>
+  </data>
+  <data name="DefaultAppsChooseApp" xml:space="preserve">
+    <value>Choose default apps for these formats</value>
+  </data>
+  <data name="DefaultAppsChooseFormats" xml:space="preserve">
+    <value>Select at least one archive format.</value>
+  </data>
+  <data name="DefaultAppsCompleted" xml:space="preserve">
+    <value>All selected extensions have been processed. Only verified choices are counted as TANGERINE ZIP defaults.</value>
+  </data>
+  <data name="DefaultAppsCurrentFormat" xml:space="preserve">
+    <value>Extension {0} of {1}: {2}</value>
+  </data>
+  <data name="DefaultAppsDescription" xml:space="preserve">
+    <value>Select archive formats to configure, one extension at a time. Windows requires your confirmation in its Default apps settings. The first action guides you to TANGERINE ZIP; the second lets you choose any app. Keep this executable in its current location; repeat registration after moving it. ISO and WIM are excluded.</value>
+  </data>
+  <data name="DefaultAppsExecutableMissing" xml:space="preserve">
+    <value>The application executable cannot be registered. Launch the application&apos;s EXE, rather than a DLL through dotnet.exe.</value>
+  </data>
+  <data name="DefaultAppsLaunchFailed" xml:space="preserve">
+    <value>Windows Default apps settings could not be opened. You can open Settings manually and then retry, or skip this extension.</value>
+  </data>
+  <data name="DefaultAppsLaunchFallback" xml:space="preserve">
+    <value>The app-specific settings page could not be opened. The general Default apps page is used instead.</value>
+  </data>
+  <data name="DefaultAppsNext" xml:space="preserve">
+    <value>Next format</value>
+  </data>
+  <data name="DefaultAppsNoDefault" xml:space="preserve">
+    <value>No default association</value>
+  </data>
+  <data name="DefaultAppsNotifyFailed" xml:space="preserve">
+    <value>Registration was written, but Explorer could not be notified. Retry to refresh the available handlers.</value>
+  </data>
+  <data name="DefaultAppsNotYetDefault" xml:space="preserve">
+    <value>{0} is not currently associated with TANGERINE ZIP. Reopen Windows settings, skip this extension, or stop the sequence.</value>
+  </data>
+  <data name="DefaultAppsPermissionHint" xml:space="preserve">
+    <value>No administrator permission is required: registration applies only to your Windows account. Windows controls the final default choice; elevation cannot bypass that confirmation. If organizational policy blocks registration, an error is shown without requesting UAC.</value>
+  </data>
+  <data name="DefaultAppsPreparing" xml:space="preserve">
+    <value>Preparing {0}…</value>
+  </data>
+  <data name="DefaultAppsQueryFailed" xml:space="preserve">
+    <value>The effective default application could not be queried. The format has not been reported as successfully changed.</value>
+  </data>
+  <data name="DefaultAppsRegistered" xml:space="preserve">
+    <value>{0}: TANGERINE ZIP is registered as an available handler; this does not change the default.</value>
+  </data>
+  <data name="DefaultAppsRegistrationFailed" xml:space="preserve">
+    <value>Failed to register the candidate handler for this user. Check registry permissions or organizational policy. Default selections were not overwritten.</value>
+  </data>
+  <data name="DefaultAppsReopen" xml:space="preserve">
+    <value>Reopen settings</value>
+  </data>
+  <data name="DefaultAppsRetry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="DefaultAppsReviewed" xml:space="preserve">
+    <value>{0}: reviewed; effective handler: {1}</value>
+  </data>
+  <data name="DefaultAppsRollbackFailed" xml:space="preserve">
+    <value>Registration failed and some registration values could not be restored. Candidate registration may be incomplete; retry after resolving registry permissions. Existing default choices were not overwritten.</value>
+  </data>
+  <data name="DefaultAppsSettingsOpened" xml:space="preserve">
+    <value>{0}: Windows settings opened; waiting for your choice.</value>
+  </data>
+  <data name="DefaultAppsSkip" xml:space="preserve">
+    <value>Skip this extension</value>
+  </data>
+  <data name="DefaultAppsSkipped" xml:space="preserve">
+    <value>{0}: skipped; not reported as changed.</value>
+  </data>
+  <data name="DefaultAppsStop" xml:space="preserve">
+    <value>Stop sequence</value>
+  </data>
+  <data name="DefaultAppsStopped" xml:space="preserve">
+    <value>Sequence stopped. Remaining extensions were not processed. Completed Windows choices remain in effect.</value>
+  </data>
+  <data name="DefaultAppsSummary" xml:space="preserve">
+    <value>Verified TANGERINE ZIP defaults: {0}; reviewed in the choose-any-app flow: {1}; skipped: {2}.</value>
+  </data>
+  <data name="DefaultAppsTargetHint" xml:space="preserve">
+    <value>Choose TANGERINE ZIP and confirm in Windows, then click “Check and continue” here.</value>
+  </data>
+  <data name="DefaultAppsUnsupported" xml:space="preserve">
+    <value>This feature requires Windows 10 or Windows 11 and a supported archive extension.</value>
+  </data>
+  <data name="DefaultAppsUseThisApp" xml:space="preserve">
+    <value>Open these formats with this app</value>
+  </data>
+  <data name="DefaultAppsVerified" xml:space="preserve">
+    <value>{0}: verified that TANGERINE ZIP is the effective default.</value>
+  </data>
+  <data name="DefaultAppsVersionFallback" xml:space="preserve">
+    <value>The Windows update revision could not be read. The general Default apps page is used instead.</value>
+  </data>
+  <data name="DefaultAppsWaitForRegistration" xml:space="preserve">
+    <value>Please wait for the current registration to finish before closing.</value>
+  </data>
+  <data name="DefaultAppsWindows10Instruction" xml:space="preserve">
+    <value>In Windows Settings → Default apps, choose defaults by file type, locate {0}, and choose the app. Return here after finishing.</value>
+  </data>
+  <data name="DefaultAppsWindows11Instruction" xml:space="preserve">
+    <value>In Windows Settings → Default apps, search for the file type {0}, open its result, and choose the app. Return here after finishing.</value>
+  </data>
+  <data name="DefaultOpenWithMenu" xml:space="preserve">
+    <value>Default app settings</value>
+  </data>
+  <data name="DefaultAppsRegistrationBusy" xml:space="preserve">
+    <value>Another instance may be registering default-app handlers, or the registration lock is unavailable. Wait and retry.</value>
+  </data>
+  <data name="DefaultAppsIconCleanupFailed" xml:space="preserve">
+    <value>Saving the file format icon failed, and its incomplete temporary file could not be removed. Check access to your local app data folder, then retry.</value>
+  </data>
+  <data name="DefaultAppsIconFailed" xml:space="preserve">
+    <value>The file format icon could not be loaded, saved, or verified in your local app data folder. No new handler registration was written. Check access and free space, then retry.</value>
+  </data>
+  <data name="DefaultAppsIconHint" xml:space="preserve">
+    <value>When TANGERINE ZIP is the default app, files show the logo with orange format letters and a white outline. Windows may take a moment to refresh icons.</value>
+  </data>
 </root>

@@ -1,0 +1,30 @@
+<Window x:Class="TANGERINE_ZIP.DefaultOpenWithWindow" x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="Resources/TZIP.png" WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
+        FontFamily="Microsoft YaHei UI" Closing="DefaultOpenWithWindow_Closing">
+    <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Theme.xaml" />
+    </ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock x:Name="descriptionText" Margin="4" />
+        <TextBlock x:Name="permissionHintText" Grid.Row="1" Margin="4" />
+        <ScrollViewer Grid.Row="2" MaxHeight="180" VerticalScrollBarVisibility="Auto" Margin="4">
+            <WrapPanel x:Name="formatChoicesPanel" />
+        </ScrollViewer>
+        <TextBlock x:Name="currentFormatText" Grid.Row="3" Margin="4" />
+        <TextBox x:Name="progressLogBox" Grid.Row="4" IsReadOnly="True" TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto" Margin="4"
+                 Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" />
+        <WrapPanel Grid.Row="5" HorizontalAlignment="Right">
+            <Button x:Name="useThisAppButton" Click="UseThisAppButton_Click" />
+            <Button x:Name="chooseDefaultAppButton" Click="ChooseDefaultAppButton_Click" />
+        </WrapPanel>
+    </Grid>
+</Window>

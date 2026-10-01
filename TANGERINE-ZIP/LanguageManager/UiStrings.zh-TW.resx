@@ -413,8 +413,8 @@
   <data name="SelectAtLeastOneFile" xml:space="preserve">
     <value>請至少選取一個檔案。</value>
   </data>
-  <data name="ContextMenu" xml:space="preserve">
-    <value>右鍵選單</value>
+  <data name="SystemSettingsMenu" xml:space="preserve">
+    <value>為系統做設定</value>
   </data>
   <data name="CreateContextMenu" xml:space="preserve">
     <value>建立右鍵選單</value>
@@ -945,4 +945,136 @@
   <data name="CliCreated" xml:space="preserve"><value>已创建：{0}</value></data>
   <data name="CliExtracted" xml:space="preserve"><value>已解壓到：{0}</value></data>
   <data name="CliListHeader" xml:space="preserve"><value>路徑&#9;原始位元組数&#9;壓縮后位元組数&#9;壓縮方式</value></data>
+  <data name="DefaultAppsAnyAppHint" xml:space="preserve">
+    <value>請在 Windows 中選擇任意軟體並確認，然後按此視窗的「下一格式」。僅註冊程式不代表已確認您的選擇。</value>
+  </data>
+  <data name="DefaultAppsApplicationDescription" xml:space="preserve">
+    <value>TANGERINE ZIP 壓縮檔管理工具</value>
+  </data>
+  <data name="DefaultAppsAppPageInstruction" xml:space="preserve">
+    <value>在 Windows 設定的 TANGERINE ZIP 頁面中找到 {0}，確認該副檔名的預設應用程式，完成後返回此視窗。</value>
+  </data>
+  <data name="DefaultAppsCheckNext" xml:space="preserve">
+    <value>檢查並繼續</value>
+  </data>
+  <data name="DefaultAppsChooseApp" xml:space="preserve">
+    <value>為這些格式設定開啟方式</value>
+  </data>
+  <data name="DefaultAppsChooseFormats" xml:space="preserve">
+    <value>請至少勾選一種壓縮格式。</value>
+  </data>
+  <data name="DefaultAppsCompleted" xml:space="preserve">
+    <value>所選副檔名已處理完畢。只有核實成功的項才計為 TANGERINE ZIP 預設關聯。</value>
+  </data>
+  <data name="DefaultAppsCurrentFormat" xml:space="preserve">
+    <value>副檔名 {0}/{1}：{2}</value>
+  </data>
+  <data name="DefaultAppsDescription" xml:space="preserve">
+    <value>選擇需要設定的壓縮格式，程式會逐個副檔名處理。Windows 要求您在系統預設應用程式設定中確認。第一個操作引導您選擇 TANGERINE ZIP；第二個操作允許選擇任意軟體。請保留程式目前位置；移動程式後需要重新註冊。ISO 和 WIM 不參與設定。</value>
+  </data>
+  <data name="DefaultAppsExecutableMissing" xml:space="preserve">
+    <value>無法註冊程式的可執行檔。請執行本軟體的 EXE，不要透過 dotnet.exe 執行 DLL。</value>
+  </data>
+  <data name="DefaultAppsLaunchFailed" xml:space="preserve">
+    <value>無法開啟 Windows 預設應用程式設定。您可以手動開啟系統設定後重試，或略過此副檔名。</value>
+  </data>
+  <data name="DefaultAppsLaunchFallback" xml:space="preserve">
+    <value>無法開啟本軟體專屬設定頁，改用通用預設應用程式設定頁。</value>
+  </data>
+  <data name="DefaultAppsNext" xml:space="preserve">
+    <value>下一格式</value>
+  </data>
+  <data name="DefaultAppsNoDefault" xml:space="preserve">
+    <value>尚無預設關聯</value>
+  </data>
+  <data name="DefaultAppsNotifyFailed" xml:space="preserve">
+    <value>註冊已寫入，但無法通知檔案總管。請重試以重新整理可用開啟程式。</value>
+  </data>
+  <data name="DefaultAppsNotYetDefault" xml:space="preserve">
+    <value>{0} 目前尚未以 TANGERINE ZIP 為預設應用程式。可以重新開啟系統設定、略過此副檔名或停止流程。</value>
+  </data>
+  <data name="DefaultAppsPermissionHint" xml:space="preserve">
+    <value>無需系統管理員權限：關聯註冊只作用於目前 Windows 使用者。最終預設應用程式由 Windows 控制，提升權限不能繞過使用者確認。若組織原則阻止註冊，程式會報告錯誤，不要求 UAC。</value>
+  </data>
+  <data name="DefaultAppsPreparing" xml:space="preserve">
+    <value>正在準備 {0}…</value>
+  </data>
+  <data name="DefaultAppsQueryFailed" xml:space="preserve">
+    <value>無法查詢實際生效的預設應用程式。此格式不會被報告為設定成功。</value>
+  </data>
+  <data name="DefaultAppsRegistered" xml:space="preserve">
+    <value>{0}：已將 TANGERINE ZIP 註冊為可選開啟程式；這一步不會變更預設應用程式。</value>
+  </data>
+  <data name="DefaultAppsRegistrationFailed" xml:space="preserve">
+    <value>為目前使用者註冊可選開啟程式失敗。請檢查登錄權限或組織原則。原有預設選擇未被覆寫。</value>
+  </data>
+  <data name="DefaultAppsReopen" xml:space="preserve">
+    <value>重新開啟系統設定</value>
+  </data>
+  <data name="DefaultAppsRetry" xml:space="preserve">
+    <value>重試</value>
+  </data>
+  <data name="DefaultAppsReviewed" xml:space="preserve">
+    <value>{0}：已檢視設定；實際開啟程式識別碼：{1}</value>
+  </data>
+  <data name="DefaultAppsRollbackFailed" xml:space="preserve">
+    <value>註冊失敗，部分註冊值無法還原。可選程式註冊可能不完整；解決登錄權限問題後請重試。原有預設選擇未被覆寫。</value>
+  </data>
+  <data name="DefaultAppsSettingsOpened" xml:space="preserve">
+    <value>{0}：已開啟系統設定，等待您的選擇。</value>
+  </data>
+  <data name="DefaultAppsSkip" xml:space="preserve">
+    <value>略過此副檔名</value>
+  </data>
+  <data name="DefaultAppsSkipped" xml:space="preserve">
+    <value>{0}：已略過，不計為已變更。</value>
+  </data>
+  <data name="DefaultAppsStop" xml:space="preserve">
+    <value>停止流程</value>
+  </data>
+  <data name="DefaultAppsStopped" xml:space="preserve">
+    <value>流程已停止，其餘副檔名未處理。已經在 Windows 中完成的選擇仍然生效。</value>
+  </data>
+  <data name="DefaultAppsSummary" xml:space="preserve">
+    <value>已核實 TANGERINE ZIP 預設關聯：{0}；任意軟體流程中已檢視設定：{1}；已略過：{2}。</value>
+  </data>
+  <data name="DefaultAppsTargetHint" xml:space="preserve">
+    <value>請在 Windows 中選擇 TANGERINE ZIP 並確認，然後按此視窗的「檢查並繼續」。</value>
+  </data>
+  <data name="DefaultAppsUnsupported" xml:space="preserve">
+    <value>此功能需要 Windows 10 或 Windows 11，以及支援的壓縮副檔名。</value>
+  </data>
+  <data name="DefaultAppsUseThisApp" xml:space="preserve">
+    <value>這些格式用本軟體開啟</value>
+  </data>
+  <data name="DefaultAppsVerified" xml:space="preserve">
+    <value>{0}：已核實實際預設應用程式為 TANGERINE ZIP。</value>
+  </data>
+  <data name="DefaultAppsVersionFallback" xml:space="preserve">
+    <value>無法讀取 Windows 更新修訂號，改用通用預設應用程式設定頁。</value>
+  </data>
+  <data name="DefaultAppsWaitForRegistration" xml:space="preserve">
+    <value>請等待目前註冊操作完成後再關閉視窗。</value>
+  </data>
+  <data name="DefaultAppsWindows10Instruction" xml:space="preserve">
+    <value>在 Windows 設定 → 預設應用程式中選擇依檔案類型指定預設應用程式，找到 {0} 並選擇軟體，完成後返回此視窗。</value>
+  </data>
+  <data name="DefaultAppsWindows11Instruction" xml:space="preserve">
+    <value>在 Windows 設定 → 預設應用程式中搜尋檔案類型 {0}，開啟搜尋結果並選擇軟體，完成後返回此視窗。</value>
+  </data>
+  <data name="DefaultOpenWithMenu" xml:space="preserve">
+    <value>預設開啟方式設定</value>
+  </data>
+  <data name="DefaultAppsRegistrationBusy" xml:space="preserve">
+    <value>其他執行個體可能正在註冊預設開啟程式，或註冊鎖無法使用。請稍後重試。</value>
+  </data>
+  <data name="DefaultAppsIconCleanupFailed" xml:space="preserve">
+    <value>儲存格式圖示失敗，且無法清理未完成的暫存檔案。請檢查目前使用者的本機應用程式資料資料夾存取權限後重試。</value>
+  </data>
+  <data name="DefaultAppsIconFailed" xml:space="preserve">
+    <value>無法在目前使用者的本機應用程式資料資料夾中載入、儲存或驗證格式圖示。尚未寫入新的開啟程式登錄。請檢查存取權限和剩餘空間後重試。</value>
+  </data>
+  <data name="DefaultAppsIconHint" xml:space="preserve">
+    <value>TANGERINE ZIP 成為預設應用程式後，檔案顯示帶橙色格式字母和白色外框的 logo 圖示。Windows 更新圖示可能需要片刻。</value>
+  </data>
 </root>

@@ -109,7 +109,8 @@ public partial class MainWindow : Window
         _sourceFilesDialog.Filter = LanguageManager.Get("AllFilesFilter");
         extractNestedTarMenuItem.Header = LanguageManager.Get("ExtractNestedTar");
         stopWorkMenuItem.Header = LanguageManager.Get("StopWork");
-        contextMenuItem.Header = LanguageManager.Get("ContextMenu");
+        systemSettingsMenuItem.Header = LanguageManager.Get("SystemSettingsMenu");
+        defaultOpenWithMenuItem.Header = LanguageManager.Get("DefaultOpenWithMenu");
         createContextMenuItem.Header = LanguageManager.Get("CreateContextMenu");
         deleteContextMenuItem.Header = LanguageManager.Get("DeleteContextMenu");
         archiveOpenDialog.Title = LanguageManager.Get("SelectArchive");
@@ -240,6 +241,18 @@ public partial class MainWindow : Window
             wizard.ShowDialog();
         }
         catch (Exception exception) { ShowException("MAINW0009", exception); } //MAINW0009
+    }
+
+    private void DefaultOpenWithMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Keep system integration separate from archive processing. Registration
+            // applies to this Windows account; Windows owns the final default choice.
+            DefaultOpenWithWindow window = new() { Owner = this };
+            window.ShowDialog();
+        }
+        catch (Exception exception) { ShowException("MAINW0026", exception); } //MAINW0026
     }
 
     private void DeleteContextMenu_Click(object? sender, EventArgs e)
@@ -862,7 +875,7 @@ public partial class MainWindow : Window
         System.Diagnostics.Process.Start(start);
     }
     private void SetArchiveControls(bool loaded) { unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; previewEntryMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed; extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar ? Visibility.Visible : Visibility.Collapsed; }
-    private void SetMenuEnabled(bool enabled) { openArchiveMenuItem.IsEnabled = enabled; previewEntryMenuItem.IsEnabled = enabled; extractMenuItem.IsEnabled = enabled; compressMenuItem.IsEnabled = enabled; unloadArchiveMenuItem.IsEnabled = enabled; extractNestedTarMenuItem.IsEnabled = enabled; contextMenuItem.IsEnabled = enabled; }
+    private void SetMenuEnabled(bool enabled) { openArchiveMenuItem.IsEnabled = enabled; previewEntryMenuItem.IsEnabled = enabled; extractMenuItem.IsEnabled = enabled; compressMenuItem.IsEnabled = enabled; unloadArchiveMenuItem.IsEnabled = enabled; extractNestedTarMenuItem.IsEnabled = enabled; systemSettingsMenuItem.IsEnabled = enabled; }
 
     private void UnloadArchive()
     {

@@ -33,6 +33,8 @@ TMPDR=TEMP_D and temporary workspace management
 TXPVW=TextPreviewWindow
 WORKR=archive worker process and IPC
 ZIPPD=ZIP password detection
+DEFAS=DefaultAppAssociationService (per-user candidate registration, Windows Settings, effective Shell association)
+DAPWN=DefaultOpenWithWindow (selection and sequential confirmation workflow)
 
 Temporary workspace codes:
 TMPDR0001=TEMP_D is missing or empty; ask the user to select a directory.
@@ -53,3 +55,20 @@ CLINE0005=the command-line input is not a supported archive format.
 CLINE0006=the specified password environment variable is missing or empty.
 CLINE0007=command-line arguments are invalid; command usage is shown.
 CLINE0008=the supplied command-line archive password contains characters unsupported by the archive writer.
+
+Default application settings codes:
+MAINW0026=constructing or displaying the default app settings window failed.
+DAPWN0001=unexpected failure at a default-app button/verification boundary; current extension remains pending.
+DAPWN0002=no archive format was selected; no registration or Settings launch was attempted.
+DAPWN0003=unexpected failure preparing one extension; retry, skip, and stop are offered.
+DEFAS0001=unsupported Windows version or archive extension (including excluded ISO/WIM).
+DEFAS0002=the application EXE is missing or the process is hosted through dotnet.exe.
+DEFAS0003=writing/reading back HKCU handler registration failed; completed writes were rolled back.
+DEFAS0004=Windows cumulative update revision could not be read; general Settings fallback is logged.
+DEFAS0005=launching Windows Default apps settings failed; app-page failures attempt the general page.
+DEFAS0006=querying the effective Shell ProgID failed; never report this as successful default selection.
+DEFAS0007=registration rollback also failed; some candidate registration values may remain incomplete.
+DEFAS0008=registration completed but notifying Explorer of available handlers failed; retry is allowed.
+DEFAS0009=per-user registration mutex could not be acquired; another instance may be registering handlers.
+DEFAS0010=loading, publishing, or verifying a persistent format icon failed; candidate registration was not started.
+DEFAS0011=format icon publication failed and removing its private partial file also failed; both errors are preserved.

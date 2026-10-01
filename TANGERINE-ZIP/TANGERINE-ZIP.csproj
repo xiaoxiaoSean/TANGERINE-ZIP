@@ -18,6 +18,8 @@
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 		<AssemblyTitle>TANGERINE ZIP Main Program</AssemblyTitle>
 		<Product>TANGERINE ZIP</Product>
+		<!-- The executable identity uses the plain logo; archive ProgIDs use the labeled ICOs below. -->
+		<ApplicationIcon>Resources\FileTypeIcons\tzip.ico</ApplicationIcon>
 		<Copyright>None</Copyright>
 		<UserSecretsId>655049f4-4e69-449c-824a-293a9573c864</UserSecretsId>
 
@@ -57,6 +59,10 @@
 
 
 	<ItemGroup>
+		<!-- Manifest streams survive both framework-dependent and self-contained single-file publishing. -->
+		<!-- The editable drawing masters are development assets, not runtime WPF pages. -->
+		<Page Remove="Resources\FileTypeIcons\*.xaml" />
+		<EmbeddedResource Include="Resources\FileTypeIcons\*.ico" LogicalName="TANGERINE_ZIP.FileTypeIcons.%(Filename)%(Extension)" />
 		<Resource Include="Resources\Kiro.png;Resources\TZIP.png" />
 		<Resource Include="Shaders\MouseWhiteThicken.ps" />
 		<EmbeddedResource Include="Embedded\TangerineZipContextMenu.msix" LogicalName="TANGERINE_ZIP.ContextMenu.TangerineZipContextMenu.msix" />

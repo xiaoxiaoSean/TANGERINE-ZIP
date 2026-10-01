@@ -412,8 +412,8 @@
   <data name="SelectAtLeastOneFile" xml:space="preserve">
     <value>请至少选择一个文件。</value>
   </data>
-  <data name="ContextMenu" xml:space="preserve">
-    <value>右键菜单</value>
+  <data name="SystemSettingsMenu" xml:space="preserve">
+    <value>为系统做设置</value>
   </data>
   <data name="CreateContextMenu" xml:space="preserve">
     <value>建立右键菜单</value>
@@ -944,4 +944,136 @@
   <data name="CliCreated" xml:space="preserve"><value>已创建：{0}</value></data>
   <data name="CliExtracted" xml:space="preserve"><value>已解压到：{0}</value></data>
   <data name="CliListHeader" xml:space="preserve"><value>路径&#9;原始字节数&#9;压缩后字节数&#9;压缩方式</value></data>
+  <data name="DefaultAppsAnyAppHint" xml:space="preserve">
+    <value>请在 Windows 中选择任意软件并确认，然后点击此窗口的“下一格式”。仅注册程序不代表已确认您的选择。</value>
+  </data>
+  <data name="DefaultAppsApplicationDescription" xml:space="preserve">
+    <value>TANGERINE ZIP 压缩包管理工具</value>
+  </data>
+  <data name="DefaultAppsAppPageInstruction" xml:space="preserve">
+    <value>在 Windows 设置的 TANGERINE ZIP 页面中找到 {0}，确认该扩展名的默认应用，完成后返回此窗口。</value>
+  </data>
+  <data name="DefaultAppsCheckNext" xml:space="preserve">
+    <value>检查并继续</value>
+  </data>
+  <data name="DefaultAppsChooseApp" xml:space="preserve">
+    <value>为这些格式设置打开方式</value>
+  </data>
+  <data name="DefaultAppsChooseFormats" xml:space="preserve">
+    <value>请至少勾选一种压缩格式。</value>
+  </data>
+  <data name="DefaultAppsCompleted" xml:space="preserve">
+    <value>所选扩展名已处理完毕。只有核实成功的项才计为 TANGERINE ZIP 默认关联。</value>
+  </data>
+  <data name="DefaultAppsCurrentFormat" xml:space="preserve">
+    <value>扩展名 {0}/{1}：{2}</value>
+  </data>
+  <data name="DefaultAppsDescription" xml:space="preserve">
+    <value>选择需要设置的压缩格式，程序会逐个扩展名处理。Windows 要求您在系统默认应用设置中确认。第一个操作引导您选择 TANGERINE ZIP；第二个操作允许选择任意软件。请保留程序当前位置；移动程序后需要重新注册。ISO 和 WIM 不参与设置。</value>
+  </data>
+  <data name="DefaultAppsExecutableMissing" xml:space="preserve">
+    <value>无法注册程序的可执行文件。请运行本软件的 EXE，不要通过 dotnet.exe 运行 DLL。</value>
+  </data>
+  <data name="DefaultAppsLaunchFailed" xml:space="preserve">
+    <value>无法打开 Windows 默认应用设置。您可以手动打开系统设置后重试，或跳过此扩展名。</value>
+  </data>
+  <data name="DefaultAppsLaunchFallback" xml:space="preserve">
+    <value>无法打开本软件专属设置页，改用通用默认应用设置页。</value>
+  </data>
+  <data name="DefaultAppsNext" xml:space="preserve">
+    <value>下一格式</value>
+  </data>
+  <data name="DefaultAppsNoDefault" xml:space="preserve">
+    <value>尚无默认关联</value>
+  </data>
+  <data name="DefaultAppsNotifyFailed" xml:space="preserve">
+    <value>注册已写入，但无法通知资源管理器。请重试以刷新可用打开程序。</value>
+  </data>
+  <data name="DefaultAppsNotYetDefault" xml:space="preserve">
+    <value>{0} 当前尚未以 TANGERINE ZIP 为默认应用。可以重新打开系统设置、跳过此扩展名或停止流程。</value>
+  </data>
+  <data name="DefaultAppsPermissionHint" xml:space="preserve">
+    <value>无需管理员权限：关联注册只作用于当前 Windows 用户。最终默认应用由 Windows 控制，提权不能绕过用户确认。若组织策略阻止注册，程序会报告错误，不请求 UAC。</value>
+  </data>
+  <data name="DefaultAppsPreparing" xml:space="preserve">
+    <value>正在准备 {0}…</value>
+  </data>
+  <data name="DefaultAppsQueryFailed" xml:space="preserve">
+    <value>无法查询实际生效的默认应用。此格式不会被报告为设置成功。</value>
+  </data>
+  <data name="DefaultAppsRegistered" xml:space="preserve">
+    <value>{0}：已将 TANGERINE ZIP 注册为可选打开程序；这一步不会更改默认应用。</value>
+  </data>
+  <data name="DefaultAppsRegistrationFailed" xml:space="preserve">
+    <value>为当前用户注册可选打开程序失败。请检查注册表权限或组织策略。原有默认选择未被覆盖。</value>
+  </data>
+  <data name="DefaultAppsReopen" xml:space="preserve">
+    <value>重新打开系统设置</value>
+  </data>
+  <data name="DefaultAppsRetry" xml:space="preserve">
+    <value>重试</value>
+  </data>
+  <data name="DefaultAppsReviewed" xml:space="preserve">
+    <value>{0}：已查看设置；实际打开程序标识：{1}</value>
+  </data>
+  <data name="DefaultAppsRollbackFailed" xml:space="preserve">
+    <value>注册失败，部分注册值无法恢复。可选程序注册可能不完整；解决注册表权限问题后请重试。原有默认选择未被覆盖。</value>
+  </data>
+  <data name="DefaultAppsSettingsOpened" xml:space="preserve">
+    <value>{0}：已打开系统设置，等待您的选择。</value>
+  </data>
+  <data name="DefaultAppsSkip" xml:space="preserve">
+    <value>跳过此扩展名</value>
+  </data>
+  <data name="DefaultAppsSkipped" xml:space="preserve">
+    <value>{0}：已跳过，不计为已更改。</value>
+  </data>
+  <data name="DefaultAppsStop" xml:space="preserve">
+    <value>停止流程</value>
+  </data>
+  <data name="DefaultAppsStopped" xml:space="preserve">
+    <value>流程已停止，其余扩展名未处理。已经在 Windows 中完成的选择仍然生效。</value>
+  </data>
+  <data name="DefaultAppsSummary" xml:space="preserve">
+    <value>已核实 TANGERINE ZIP 默认关联：{0}；任意软件流程中已查看设置：{1}；已跳过：{2}。</value>
+  </data>
+  <data name="DefaultAppsTargetHint" xml:space="preserve">
+    <value>请在 Windows 中选择 TANGERINE ZIP 并确认，然后点击此窗口的“检查并继续”。</value>
+  </data>
+  <data name="DefaultAppsUnsupported" xml:space="preserve">
+    <value>此功能需要 Windows 10 或 Windows 11，以及受支持的压缩扩展名。</value>
+  </data>
+  <data name="DefaultAppsUseThisApp" xml:space="preserve">
+    <value>这些格式用本软件打开</value>
+  </data>
+  <data name="DefaultAppsVerified" xml:space="preserve">
+    <value>{0}：已核实实际默认应用为 TANGERINE ZIP。</value>
+  </data>
+  <data name="DefaultAppsVersionFallback" xml:space="preserve">
+    <value>无法读取 Windows 更新修订号，改用通用默认应用设置页。</value>
+  </data>
+  <data name="DefaultAppsWaitForRegistration" xml:space="preserve">
+    <value>请等待当前注册操作完成后再关闭窗口。</value>
+  </data>
+  <data name="DefaultAppsWindows10Instruction" xml:space="preserve">
+    <value>在 Windows 设置 → 默认应用中选择“按文件类型指定默认应用”，找到 {0} 并选择软件，完成后返回此窗口。</value>
+  </data>
+  <data name="DefaultAppsWindows11Instruction" xml:space="preserve">
+    <value>在 Windows 设置 → 默认应用中搜索文件类型 {0}，打开搜索结果并选择软件，完成后返回此窗口。</value>
+  </data>
+  <data name="DefaultOpenWithMenu" xml:space="preserve">
+    <value>默认打开方式设置</value>
+  </data>
+  <data name="DefaultAppsRegistrationBusy" xml:space="preserve">
+    <value>其他实例可能正在注册默认打开程序，或注册锁不可用。请稍后重试。</value>
+  </data>
+  <data name="DefaultAppsIconCleanupFailed" xml:space="preserve">
+    <value>保存格式图标失败，且无法清理未完成的临时文件。请检查当前用户的本地应用数据文件夹访问权限后重试。</value>
+  </data>
+  <data name="DefaultAppsIconFailed" xml:space="preserve">
+    <value>无法在当前用户的本地应用数据文件夹中加载、保存或核验格式图标。尚未写入新的打开程序注册。请检查访问权限和剩余空间后重试。</value>
+  </data>
+  <data name="DefaultAppsIconHint" xml:space="preserve">
+    <value>TANGERINE ZIP 成为默认应用后，文件显示带橙色格式字母和白色描边的 logo 图标。Windows 刷新图标可能需要片刻。</value>
+  </data>
 </root>

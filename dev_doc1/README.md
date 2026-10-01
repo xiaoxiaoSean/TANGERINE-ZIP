@@ -1,5 +1,7 @@
 # TANGERINE ZIP 开发文档
 
+系统设置菜单、默认打开方式注册及 Windows 10/11 兼容流程见 [`DEFAULT_OPEN_WITH.md`](DEFAULT_OPEN_WITH.md)。
+
 2026-09-27 新增功能与修复见 [`change20260927/README.md`](change20260927/README.md)。
 
 密码压缩、解压、加密封装与安全清理的详细设计见 [`PASSWORD_ARCHIVES.md`](PASSWORD_ARCHIVES.md)。
