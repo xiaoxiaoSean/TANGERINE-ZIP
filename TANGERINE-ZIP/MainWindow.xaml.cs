@@ -107,7 +107,10 @@ public partial class MainWindow : Window
     private void ApplyLocalizedText()
     {
         operationStatusText.Text = LanguageManager.Get("readytext");
-        aboutMenuItem.Header = LanguageManager.Get("AboutTzipMenu");
+        // Keep the release codename in one global configuration value. The
+        // translated format string supplies the language-specific menu label.
+        aboutMenuItem.Header = string.Format(LanguageManager.Get("AboutTzipMenu"),
+            GlobalConfig.VName);
         openArchiveMenuItem.Header = LanguageManager.Get("openText");
         createDroppedArchiveMenuItem.Header = LanguageManager.Get("CreateDroppedArchiveMenu");
         openDroppedArchiveMenuItem.Header = LanguageManager.Get("OpenDroppedArchiveMenu");
@@ -126,6 +129,10 @@ public partial class MainWindow : Window
         extractSelectedHereMenuItem.Header = LanguageManager.Get("extractDirectlySELECTEDText");
         extractSelectedToFolderMenuItem.Header = LanguageManager.Get("extractToAFolderSELECTEDText");
         compressFilesMenuItem.Header = LanguageManager.Get("SelectFilesToCompress");
+        addFilesToArchiveMenuItem.Header = LanguageManager.Get("ArchiveUpdateMenu");
+        batchMenuItem.Header = LanguageManager.Get("BatchMenu");
+        batchExtractMenuItem.Header = LanguageManager.Get("BatchExtractMenu");
+        batchConvertMenuItem.Header = LanguageManager.Get("BatchConvertMenu");
         _sourceFilesDialog.Title = LanguageManager.Get("SelectFilesToCompress");
         _sourceFilesDialog.Filter = LanguageManager.Get("AllFilesFilter");
         extractNestedTarMenuItem.Header = LanguageManager.Get("ExtractNestedTar");
@@ -140,7 +147,11 @@ public partial class MainWindow : Window
         integrityMenuItem.Header = LanguageManager.Get("IntegrityMenu");
         repairMenuItem.Header = LanguageManager.Get("RepairMenu");
         hashMenuItem.Header = LanguageManager.Get("HashMenu");
+        defenderScanMenuItem.Header = LanguageManager.Get("DefenderScanMenu");
+        snapshotMenuItem.Header = LanguageManager.Get("SnapshotMenu");
         encodingMenuItem.Header = LanguageManager.Get("EncodingMenu");
+        archiveCommentMenuItem.Header = LanguageManager.Get("CommentMenu");
+        passwordVaultMenuItem.Header = LanguageManager.Get("VaultTitle");
         nameColumn.Header = LanguageManager.Get("ListName");
         originalSizeColumn.Header = LanguageManager.Get("ListOriginalSize");
         compressedSizeColumn.Header = LanguageManager.Get("ListCompressedSize");
@@ -397,6 +408,154 @@ public partial class MainWindow : Window
         catch (Exception exception) { ShowException("MAINW0005", exception); } //MAINW0005
     }
 
+    private async void AddFilesToArchiveMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            if (string.IsNullOrEmpty(_archivePath)) { ShowInformation("NoOpenedFile"); return; }
+            if (FileDetector.DetectFileType(_archivePath) is not
+                (FileDetector.FileType.Zip or FileDetector.FileType.SevenZip or FileDetector.FileType.Rar))
+            { ShowInformation("ArchiveUpdateUnsupported"); return; }
+
+            // The selected files are added at the archive root. Explain that
+            // matching archive names are updated before the worker creates a
+            // replacement; the user can cancel without touching the archive.
+            _sourceFilesDialog.FileName = string.Empty;
+            _sourceFilesDialog.Title = LanguageManager.Get("ArchiveUpdateSelectFiles");
+            if (_sourceFilesDialog.ShowDialog(this) != true) return;
+            string[] sources = _sourceFilesDialog.FileNames;
+            if (sources.Length == 0) return;
+            if (ThemedPromptWindow.Ask(this, LanguageManager.Get("ArchiveUpdateMenu"),
+                LanguageManager.Get("ArchiveUpdateConfirm"),
+                (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
+                (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) != MessageBoxResult.Yes) return;
+
+            string path = _archivePath;
+            string backup = string.Empty;
+            await RunOperationAsync(LanguageManager.Get("ArchiveUpdateProgress"), async (progress, token) =>
+                backup = await _archiveService.AddFilesAsync(path, sources, progress, token));
+            _archiveClipboard = null;
+            await ReloadEditedArchiveAsync(path, _archiveCurrentDirectory, backup);
+            operationStatusText.Text = string.Format(LanguageManager.Get("ArchiveUpdateCompleted"), backup);
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0035", exception); } //MAINW0035
+    }
+
+    private async void BatchExtractMenu_Click(object sender, RoutedEventArgs e) =>
+        await RunBatchAsync(conversion: false);
+
+    private async void BatchConvertMenu_Click(object sender, RoutedEventArgs e) =>
+        await RunBatchAsync(conversion: true);
+
+    private async Task RunBatchAsync(bool conversion)
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            OpenFileDialog picker = new()
+            {
+                Multiselect = true,
+                CheckFileExists = true,
+                Title = LanguageManager.Get("BatchSelectArchives"),
+                Filter = LanguageManager.Get("ArchiveDialogFilter")
+            };
+            if (picker.ShowDialog(this) != true) return;
+            string[] sources = picker.FileNames;
+            if (sources.Length == 0) return;
+            destinationFolderDialog.Title = LanguageManager.Get("BatchSelectDestination");
+            if (destinationFolderDialog.ShowDialog(this) != true) return;
+            string destination = destinationFolderDialog.FolderName;
+            ArchiveBatchOptionsWindow options = new(conversion) { Owner = this };
+            if (options.ShowDialog() != true) return;
+
+            // The service stages each archive separately. A failure leaves
+            // previously published batch items intact and identifies the
+            // failing archive through its StageCode and progress text.
+            string initial = LanguageManager.Get(conversion ? "BatchConverting" : "BatchExtracting");
+            await RunOperationAsync(initial, (progress, token) => conversion
+                ? ArchiveBatchService.ConvertAsync(sources, destination, options.TargetType,
+                    options.InputPassword, options.OutputPassword, _archiveService, progress, token,
+                    (issue, issueToken) => ExtractionPrompt.AskAsync(this, issue, issueToken))
+                : ArchiveBatchService.ExtractAsync(sources, destination, options.InputPassword,
+                    _archiveService, progress, token,
+                    (issue, issueToken) => ExtractionPrompt.AskAsync(this, issue, issueToken)));
+            operationProgressBar.Value = 100;
+            operationStatusText.Text = string.Format(LanguageManager.Get("BatchCompleted"), sources.Length);
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0036", exception); } //MAINW0036
+    }
+
+    private async void ArchiveCommentMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            if (string.IsNullOrEmpty(_archivePath) ||
+                FileDetector.DetectFileType(_archivePath) != FileDetector.FileType.Zip)
+            { ShowInformation("CommentUnsupported"); return; }
+            string path = _archivePath;
+            string comment = string.Empty;
+            await RunOperationAsync(LanguageManager.Get("CommentLoading"), async (_, token) =>
+                comment = await _archiveService.ReadCommentAsync(path, token));
+            ArchiveCommentWindow editor = new(Path.GetFileName(path), comment) { Owner = this };
+            if (editor.ShowDialog() != true || editor.CommentText == comment) return;
+            string backup = string.Empty;
+            await RunOperationAsync(LanguageManager.Get("CommentSaving"), async (_, token) =>
+                backup = await _archiveService.WriteCommentAsync(path, editor.CommentText, token));
+            _archiveClipboard = null;
+            await ReloadEditedArchiveAsync(path, _archiveCurrentDirectory, backup);
+            operationStatusText.Text = string.Format(LanguageManager.Get("CommentSaved"), backup);
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception exception) { ShowException("MAINW0038", exception); } //MAINW0038
+    }
+
+    private void PasswordVaultMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try { new PasswordVaultWindow(selecting: false) { Owner = this }.ShowDialog(); }
+        catch (Exception error) { ShowException("MAINW0039", error); } //MAINW0039
+    }
+
+    private async void DefenderScanMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            if (string.IsNullOrEmpty(_archivePath))
+            { ShowInformation("DefenderSelectArchive"); return; }
+            // The custom scan leaves archive contents and Defender quarantine
+            // untouched. Its result is shown only after the engine exits.
+            await RunOperationAsync(LanguageManager.Get("DefenderScanning"), (_, token) =>
+                DefenderScanService.ScanAsync(_archivePath, token));
+            operationStatusText.Text = LanguageManager.Get("DefenderScanComplete");
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception error) { ShowException("MAINW0040", error); } //MAINW0040
+    }
+
+    private async void SnapshotMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            if (string.IsNullOrEmpty(_archivePath))
+            { ShowInformation("SnapshotSelectArchive"); return; }
+            destinationFolderDialog.Title = LanguageManager.Get("SnapshotSelectDestination");
+            if (destinationFolderDialog.ShowDialog(this) != true) return;
+            string source = _archivePath;
+            string destination = destinationFolderDialog.FolderName;
+            string snapshot = string.Empty;
+            await RunOperationAsync(LanguageManager.Get("SnapshotCreating"), async (_, token) =>
+                snapshot = await ArchiveSnapshotService.CreateAsync(source, destination, 0, token));
+            operationStatusText.Text = string.Format(LanguageManager.Get("SnapshotCreated"), snapshot);
+        }
+        catch (OperationCanceledException) { operationStatusText.Text = LanguageManager.Get("OperationCancelled"); }
+        catch (Exception error) { ShowException("MAINW0041", error); } //MAINW0041
+    }
+
     /// <summary>
     /// A dropped file or directory is staged as a source path until the user
     /// chooses the target name and format in the standard Windows save dialog.
@@ -416,6 +575,17 @@ public partial class MainWindow : Window
         CompressionOptionsWindow optionsWindow = new(Path.GetFileName(outputPath), type) { Owner = this };
         if (optionsWindow.ShowDialog() != true) return;
         CompressionOptions options = optionsWindow.Options!;
+        if (options.SelfExtracting)
+        {
+            string executableOutput = Path.ChangeExtension(outputPath, ".exe");
+            if (File.Exists(executableOutput) || Directory.Exists(executableOutput))
+                throw new StageException("MAINW0037", LanguageManager.Get("SfxOutputExists")); //MAINW0037
+            if (ThemedPromptWindow.Ask(this, LanguageManager.Get("SfxOption"),
+                string.Format(LanguageManager.Get("SfxOutputConfirm"), executableOutput),
+                (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
+                (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) != MessageBoxResult.Yes) return;
+            outputPath = executableOutput;
+        }
         // A source can disappear while the user is choosing an output path or
         // compression options. Check again immediately before starting the worker.
         if (!await EnsureSourcesAvailableAsync(sourcePaths)) return;
@@ -1301,6 +1471,13 @@ public partial class MainWindow : Window
         unloadArchiveMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed;
         previewEntryMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed;
         extractMenuItem.Visibility = loaded ? Visibility.Visible : Visibility.Collapsed;
+        archiveCommentMenuItem.Visibility = loaded &&
+            FileDetector.DetectFileType(_archivePath) == FileDetector.FileType.Zip
+            ? Visibility.Visible : Visibility.Collapsed;
+        addFilesToArchiveMenuItem.Visibility = loaded &&
+            (FileDetector.DetectFileType(_archivePath) is FileDetector.FileType.Zip or FileDetector.FileType.SevenZip ||
+             FileDetector.DetectFileType(_archivePath) == FileDetector.FileType.Rar && new RarToolService().IsAvailable)
+            ? Visibility.Visible : Visibility.Collapsed;
         extractNestedTarMenuItem.Visibility = loaded && _nestedTarInfo.HasNestedTar
             ? Visibility.Visible : Visibility.Collapsed;
         RefreshPendingActions();
@@ -1315,6 +1492,8 @@ public partial class MainWindow : Window
         previewEntryMenuItem.IsEnabled = enabled;
         extractMenuItem.IsEnabled = enabled;
         compressMenuItem.IsEnabled = enabled;
+        batchMenuItem.IsEnabled = enabled;
+        addFilesToArchiveMenuItem.IsEnabled = enabled;
         unloadArchiveMenuItem.IsEnabled = enabled;
         extractNestedTarMenuItem.IsEnabled = enabled;
         systemSettingsMenuItem.IsEnabled = enabled;

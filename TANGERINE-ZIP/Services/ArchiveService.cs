@@ -8,6 +8,7 @@ using SharpCompress.Common.Options;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.BZip2;
 using SharpCompress.Compressors.ZStandard;
+using SharpCompress.Compressors.Lzw;
 using SharpCompress.Readers;
 using SharpCompress.Writers;
 using System.IO.Compression;
@@ -57,7 +58,9 @@ internal sealed class ArchiveService
                 {
                     FileDetector.FileType.Iso => ListIso(archivePath),
                     FileDetector.FileType.Wim => ListWim(archivePath),
-                    FileDetector.FileType.GZip or FileDetector.FileType.BZip2 or FileDetector.FileType.Lz4 or FileDetector.FileType.Xz or FileDetector.FileType.Zstd =>
+                    FileDetector.FileType.Arj or FileDetector.FileType.Ace or
+                    FileDetector.FileType.Arc => ListForwardReader(archivePath, cancellationToken, password),
+                    FileDetector.FileType.GZip or FileDetector.FileType.BZip2 or FileDetector.FileType.Lz4 or FileDetector.FileType.Xz or FileDetector.FileType.Zstd or FileDetector.FileType.Lzw or FileDetector.FileType.Lzip =>
                         [new ArchiveEntryInfo(GetRawOutputName(archivePath), false, 0,
                             new FileInfo(archivePath).Length, type.ToString(), SizeKnown: false)],
                     _ => ListSharpCompress(archivePath, cancellationToken, password)
@@ -71,7 +74,7 @@ internal sealed class ArchiveService
             {
                 throw;
             }
-            catch (Exception exception) when (IsPasswordFailure(exception))
+            catch (Exception exception) when (IsArchivePasswordFailure(archivePath, exception))
             {
                 throw CreatePasswordException(password, exception);
             }
@@ -138,7 +141,7 @@ internal sealed class ArchiveService
             {
                 throw;
             }
-            catch (Exception exception) when (IsPasswordFailure(exception))
+            catch (Exception exception) when (IsArchivePasswordFailure(archivePath, exception))
             {
                 throw CreatePasswordException(password, exception);
             }
@@ -255,7 +258,15 @@ internal sealed class ArchiveService
                 case FileDetector.FileType.Lz4:
                 case FileDetector.FileType.Xz:
                 case FileDetector.FileType.Zstd:
+                case FileDetector.FileType.Lzw:
+                case FileDetector.FileType.Lzip:
                     await ExtractRawAsync(archivePath, destinationPath, type, overwritePolicy, progress, cancellationToken, conflicts);
+                    break;
+                case FileDetector.FileType.Arj:
+                case FileDetector.FileType.Ace:
+                case FileDetector.FileType.Arc:
+                    await ExtractForwardReaderAsync(archivePath, destinationPath, selectedEntries,
+                        overwritePolicy, progress, cancellationToken, password, conflicts);
                     break;
                 default:
                     await ExtractSharpCompressAsync(archivePath, destinationPath, selectedEntries, overwritePolicy, progress, cancellationToken, password, conflicts);
@@ -336,6 +347,25 @@ internal sealed class ArchiveService
                     progress?.Report(new ArchiveProgress(100, entryKey));
                     return payload;
                 }
+                if (type is FileDetector.FileType.Arj or FileDetector.FileType.Ace or FileDetector.FileType.Arc)
+                {
+                    using IReader reader = ReaderFactory.OpenReader(archivePath, CreateReaderOptions(password));
+                    while (reader.MoveToNextEntry())
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        IEntry member = reader.Entry;
+                        string memberKey = member.Key ?? string.Empty;
+                        if (string.IsNullOrEmpty(memberKey)) memberKey = GetRawOutputName(archivePath);
+                        if (member.IsDirectory || !NormalizeEntry(memberKey)
+                            .Equals(NormalizeEntry(entryKey), StringComparison.OrdinalIgnoreCase)) continue;
+                        if (member.IsEncrypted && string.IsNullOrEmpty(password))
+                            throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
+                        using Stream selectedStreamFromReader = reader.OpenEntryStream();
+                        return CopyPreviewToMemory(selectedStreamFromReader, entryKey, member.Size,
+                            memoryLimit, progress, cancellationToken);
+                    }
+                    throw new StageException("PRVWS0001", LanguageManager.Get("PreviewEntryMissing")); //PRVWS0001
+                }
                 using IArchive archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password));
                 IArchiveEntry selected = archive.Entries.FirstOrDefault(entry => !entry.IsDirectory &&
                     NormalizeEntry(entry.Key ?? string.Empty).Equals(NormalizeEntry(entryKey), StringComparison.OrdinalIgnoreCase))
@@ -347,7 +377,8 @@ internal sealed class ArchiveService
             }
             catch (StageException) { throw; }
             catch (OperationCanceledException) { throw; }
-            catch (Exception exception) when (IsPasswordFailure(exception)) { throw CreatePasswordException(password, exception); }
+            catch (Exception exception) when (IsArchivePasswordFailure(archivePath, exception))
+            { throw CreatePasswordException(password, exception); }
             catch (Exception exception) { throw new StageException("PRVWS0003", exception.Message, exception); } //PRVWS0003
         }, cancellationToken);
     }
@@ -497,6 +528,103 @@ internal sealed class ArchiveService
                 entry.Crc > 0 && entry.Crc <= uint.MaxValue ? entry.Crc : null);
         }).ToArray();
     }
+
+    private static IReadOnlyList<ArchiveEntryInfo> ListForwardReader(string archivePath,
+        CancellationToken token, string? password)
+    {
+        using IReader reader = ReaderFactory.OpenReader(archivePath, CreateReaderOptions(password));
+        List<ArchiveEntryInfo> entries = [];
+        while (reader.MoveToNextEntry())
+        {
+            token.ThrowIfCancellationRequested();
+            IEntry entry = reader.Entry;
+            if (entry.IsEncrypted && string.IsNullOrEmpty(password))
+                throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
+            string key = NormalizeEntry(entry.Key ?? string.Empty);
+            if (string.IsNullOrEmpty(key)) key = GetRawOutputName(archivePath);
+            entries.Add(new ArchiveEntryInfo(key, entry.IsDirectory, entry.Size,
+                entry.IsDirectory ? null : entry.CompressedSize > 0 || entry.Size == 0 ? entry.CompressedSize : null,
+                entry.CompressionType == SharpCompress.Common.CompressionType.Unknown ? null : entry.CompressionType.ToString(),
+                entry.IsEncrypted, entry.LastModifiedTime,
+                entry.Crc > 0 && entry.Crc <= uint.MaxValue ? entry.Crc : null));
+        }
+        return entries;
+    }
+
+    private static Task ExtractForwardReaderAsync(string archivePath, string destinationPath,
+        IReadOnlyCollection<string>? selectedEntries, OverwritePolicy overwritePolicy,
+        IProgress<ArchiveProgress>? progress, CancellationToken token, string? password,
+        ConflictResolutionState? conflicts) => Task.Run(() =>
+    {
+        // The metadata pass provides a stable progress denominator. Reopening
+        // the forward reader is necessary because legacy formats cannot seek.
+        IReadOnlyList<ArchiveEntryInfo> listed = ListForwardReader(archivePath, token, password);
+        long total = Math.Max(1, listed.Where(entry => !entry.IsDirectory).Aggregate(0L,
+            (sum, entry) => sum > long.MaxValue - Math.Max(entry.Size, 1)
+                ? long.MaxValue : sum + Math.Max(entry.Size, 1)));
+        long completed = 0;
+        using IReader reader = ReaderFactory.OpenReader(archivePath, CreateReaderOptions(password));
+        while (reader.MoveToNextEntry())
+        {
+            token.ThrowIfCancellationRequested();
+            IEntry entry = reader.Entry;
+            string key = entry.Key ?? string.Empty;
+            if (string.IsNullOrEmpty(key)) key = GetRawOutputName(archivePath);
+            if (!ShouldInclude(key, selectedEntries)) continue;
+            string targetPath;
+            try { targetPath = GetSafeTargetPath(destinationPath, key); }
+            catch (SkipArchiveEntryException) { completed += Math.Max(entry.Size, 1); continue; }
+            if (entry.IsDirectory) { Directory.CreateDirectory(targetPath); continue; }
+            long compressedBaseline = entry.CompressedSize > 0
+                ? entry.CompressedSize : new FileInfo(archivePath).Length;
+            bool preapprovedBomb = false;
+            if (entry.Size >= 1024L * 1024 * 1024 && compressedBaseline > 0 &&
+                entry.Size / compressedBaseline >= 1000)
+            {
+                ExtractionAnswer answer = AskSafety(ExtractionIssueKind.SuspiciousSize, key,
+                    $"{ResourcePreflight.FormatBytes(compressedBaseline)} → {ResourcePreflight.FormatBytes(entry.Size)}");
+                if (answer.Decision == ExtractionDecision.Stop) throw new OperationCanceledException();
+                if (answer.Decision == ExtractionDecision.Skip) { completed += Math.Max(entry.Size, 1); continue; }
+                preapprovedBomb = true;
+            }
+            ResourcePreflight.Check(targetPath, entry.Size > long.MaxValue - 16L * 1024 * 1024
+                ? long.MaxValue : Math.Max(0, entry.Size) + 16L * 1024 * 1024, 128L * 1024 * 1024);
+            Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+            if (!ShouldOverwriteTarget(targetPath, key, overwritePolicy, conflicts))
+            { completed += Math.Max(entry.Size, 1); continue; }
+            while (true)
+            {
+                string temporary = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                long entryCompleted = 0;
+                try
+                {
+                    using Stream input = reader.OpenEntryStream();
+                    using (FileStream output = new(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                        CopyWithProgress(input, output, entry.Size, () => completed + entryCompleted,
+                            value => entryCompleted += value, total, key, progress, token,
+                            preapprovedBomb ? 0 : compressedBaseline);
+                    File.Move(temporary, targetPath, true);
+                    completed += Math.Max(entryCompleted, 1);
+                    break;
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (SkipArchiveEntryException) { completed += Math.Max(entry.Size, 1); break; }
+                catch (Exception error) when (entry.IsEncrypted && IsPasswordFailure(error))
+                { throw CreatePasswordException(password, error); }
+                catch (Exception error)
+                {
+                    ExtractionAnswer answer = AskSafety(ExtractionIssueKind.FileFailure, key, error.Message);
+                    if (answer.Decision == ExtractionDecision.Retry) continue;
+                    if (answer.Decision == ExtractionDecision.Skip) { completed += Math.Max(entry.Size, 1); break; }
+                    throw new OperationCanceledException();
+                }
+                finally { if (File.Exists(temporary)) File.Delete(temporary); }
+            }
+            if (entry.LastModifiedTime.HasValue && File.Exists(targetPath))
+                File.SetLastWriteTime(targetPath, entry.LastModifiedTime.Value);
+        }
+        progress?.Report(new ArchiveProgress(100, string.Empty));
+    }, token);
 
     private static IReadOnlyList<ArchiveEntryInfo> ListIso(string archivePath)
     {
@@ -950,6 +1078,9 @@ internal sealed class ArchiveService
             FileDetector.FileType.Lz4 => LZ4Stream.Decode(input, leaveOpen: false),
             FileDetector.FileType.Xz => CreateXzDecoder(input),
             FileDetector.FileType.Zstd => new DecompressionStream(input, 1024 * 128, false, false),
+            FileDetector.FileType.Lzw => new LzwStream(input),
+            FileDetector.FileType.Lzip => SharpCompress.Compressors.LZMA.LZipStream.Create(input,
+                SharpCompress.Compressors.CompressionMode.Decompress, leaveOpen: false),
             _ => throw new NotSupportedException()
         };
     }
@@ -1063,6 +1194,20 @@ internal sealed class ArchiveService
                message.Contains("CRC", StringComparison.OrdinalIgnoreCase) ||
                message.Contains("compressed stream type", StringComparison.OrdinalIgnoreCase) ||
                message.Contains("data error", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsArchivePasswordFailure(string archivePath, Exception exception)
+    {
+        // Decoder errors such as "compressed stream type" also occur in
+        // corrupt unencrypted legacy streams. Only password-capable formats
+        // may turn such diagnostics into a password prompt.
+        try
+        {
+            return FileDetector.DetectFileType(archivePath) is
+                (FileDetector.FileType.Zip or FileDetector.FileType.Rar or FileDetector.FileType.SevenZip) &&
+                IsPasswordFailure(exception);
+        }
+        catch { return false; }
     }
 
     private static void DrainForAuthentication(Stream stream, string entryKey, long total, ref long completed,

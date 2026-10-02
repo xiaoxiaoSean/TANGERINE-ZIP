@@ -20,14 +20,15 @@
 
 ## Features
 
-- Create, browse, and extract ZIP, 7z, TAR, GZ, BZ2, XZ, LZ4, ZSTD, ISO, and WIM archives. Browse and extract RAR archives; creating RAR archives requires the official `rar.exe` beside the application.
+- Create, browse, and extract ZIP, 7z, TAR, GZ, BZ2, XZ, LZ4, ZSTD, ISO, and WIM archives. Browse and extract RAR archives; creating RAR archives requires the official `rar.exe` beside the application. ARJ, ACE, ARC, LZW, and LZip are available for reading and extraction.
 - Preview text and images inside supported archives. Search entries, inspect their details, and extract a single entry or an entire archive.
 - Test archive integrity, inspect or verify hashes, recover readable files from damaged archives, and change filename encoding for archives with garbled names.
-- Configure compression for ZIP, 7z, and RAR, including supported advanced options and split volumes. Edit entries in eligible ZIP, 7z, and TAR archives with backup protection.
-- Use the Windows 11 Explorer context menu, customizable colors and mouse effects, and the built-in `help`, `compress`, `extract`, and `list` commands.
+- Configure compression for ZIP, 7z, and RAR, including split volumes, solid mode, exclusions, RAR recovery records, and saved profiles. Create 7z self-extracting EXE files. Edit entries in eligible ZIP, 7z, and TAR archives with backup protection; add or replace files in ordinary ZIP, 7z, and RAR archives (RAR requires `rar.exe`).
+- Batch extract and convert archives, edit ZIP comments, save passwords in Windows Credential Manager, and create verified archive snapshots with optional retention. Scan a selected archive with Microsoft Defender when that component is available.
+- Use the Windows 11 Explorer context menu, customizable colors and mouse effects, and the built-in command-line tools. Run `help` to list commands and `help <command>` for options.
 - Under **System settings → Default apps**, register supported archive formats, try automatic current-user defaults, or remove this app's defaults and registrations. Windows may block automatic association changes on protected versions.
 
-Some operations depend on the archive format and its contents. The application explains unavailable options in the interface.
+Some operations depend on the archive format and its contents. Encrypted and split archives cannot be updated in place, and password-protected conversion outputs are limited to ZIP and 7z. Microsoft Defender scanning requires an available Defender installation; the app treats scanner errors as failures.
 
 ## Download and first run
 

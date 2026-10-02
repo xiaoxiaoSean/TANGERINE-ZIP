@@ -33,6 +33,7 @@ internal sealed partial class ArchivePasswordWindow : Window
         _enablePassword.IsEnabled = passwordSupported;
         _enablePassword.Visibility = creating ? Visibility.Visible : Visibility.Collapsed;
         passwordText.Text = LanguageManager.Get("PasswordLabel");
+        savedPasswordButton.Content = LanguageManager.Get("VaultChooseButton");
         confirmationText.Text = LanguageManager.Get("ConfirmPasswordLabel");
         confirmationFields.Visibility = creating ? Visibility.Visible : Visibility.Collapsed;
         _showPassword.Content = LanguageManager.Get("ShowPassword");
@@ -52,6 +53,23 @@ internal sealed partial class ArchivePasswordWindow : Window
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+
+    private void SavedPassword_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            PasswordVaultWindow vault = new(selecting: true) { Owner = this };
+            if (vault.ShowDialog() != true || vault.SelectedPassword is not string password) return;
+            _password.Password = password;
+            _visiblePassword.Text = password;
+        }
+        catch (Exception error)
+        {
+            ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
+                MessageTipGenerator.GenerateTip(error is StageException stage ? stage.StageCode : "APWDW0004",
+                    error.Message)); //APWDW0004
+        }
+    }
 
     private void ShowPasswords(bool show)
     {

@@ -18,7 +18,7 @@ internal sealed record WorkerRequest(string Operation, string Path, string? Dest
 internal sealed record WorkerMessage(ArchiveProgress? Progress = null, ArchiveEntryInfo[]? Entries = null,
     NestedTarInfo? Nested = null, bool Completed = false, string? StageCode = null, string? Error = null,
     string? ConflictPath = null, string? ConflictEntry = null, bool Cancelled = false,
-    ExtractionIssue? Issue = null, string? BackupPath = null);
+    ExtractionIssue? Issue = null, string? BackupPath = null, string? Comment = null);
 
 internal sealed record WorkerCommand(ConflictChoice ConflictChoice = ConflictChoice.Cancel,
     ExtractionAnswer? IssueAnswer = null);
@@ -101,6 +101,17 @@ internal static class ArchiveWorker
                         result = result with { BackupPath = await ArchiveEditService.EditAsync(request.Path,
                             request.Selection!, request.Destination ?? string.Empty, request.EditAction!.Value,
                             progress, CancellationToken.None) };
+                        break;
+                    case "add-files":
+                        result = result with { BackupPath = await ArchiveUpdateService.AddFilesAsync(request.Path,
+                            request.Sources!, progress, CancellationToken.None) };
+                        break;
+                    case "comment-read":
+                        result = result with { Comment = ArchiveCommentService.Read(request.Path) };
+                        break;
+                    case "comment-write":
+                        result = result with { BackupPath = ArchiveCommentService.Write(request.Path,
+                            request.Destination ?? string.Empty, CancellationToken.None) };
                         break;
                     default: throw new InvalidDataException();
                 }
@@ -274,4 +285,16 @@ internal sealed class ArchiveWorkerClient
         CancellationToken token) =>
         (await RunAsync(new("edit", path, Destination: destinationPrefix,
             Selection: selection.ToArray(), EditAction: action), progress, token)).BackupPath!;
+
+    // Add/update is isolated in the worker just like extraction and editing;
+    // stopping the UI job terminates the embedded 7-Zip child process as well.
+    public async Task<string> AddFilesAsync(string path, IReadOnlyList<string> sources,
+        IProgress<ArchiveProgress>? progress, CancellationToken token) =>
+        (await RunAsync(new("add-files", path, Sources: sources.ToArray()), progress, token)).BackupPath!;
+
+    public async Task<string> ReadCommentAsync(string path, CancellationToken token) =>
+        (await RunAsync(new("comment-read", path), null, token)).Comment ?? string.Empty;
+
+    public async Task<string> WriteCommentAsync(string path, string comment, CancellationToken token) =>
+        (await RunAsync(new("comment-write", path, Destination: comment), null, token)).BackupPath!;
 }

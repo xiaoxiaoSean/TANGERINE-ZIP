@@ -5,6 +5,8 @@ using System.Text;
 using SharpCompress.Archives;
 using SharpCompress.Common.Options;
 using SharpCompress.Readers;
+using SharpCompress.Compressors.Lzw;
+using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP.Services;
 
@@ -57,13 +59,56 @@ internal static class ArchiveDiagnostics
         Task.Run<IReadOnlyList<EntryTestResult>>(() =>
         {
             List<EntryTestResult> results = [];
-            using IArchive archive = ArchiveFactory.OpenArchive(path, new ReaderOptions { Password = password });
-            foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
+            bool forwardOnly = FileDetector.DetectFileType(path) is
+                FileDetector.FileType.Arj or FileDetector.FileType.Ace or
+                FileDetector.FileType.Arc;
+            FileDetector.FileType type = FileDetector.DetectFileType(path);
+            if (type is FileDetector.FileType.Lzw or FileDetector.FileType.Lzip)
             {
-                token.ThrowIfCancellationRequested();
+                // Standalone LZW and LZip have no archive directory. Read the
+                // complete decoded stream so checksum/decoder failures surface.
+                string key = Path.GetFileNameWithoutExtension(path);
+                CheckEntry(key, 0, () =>
+                {
+                    FileStream input = File.OpenRead(path);
+                    try
+                    {
+                        return type == FileDetector.FileType.Lzw
+                            ? new LzwStream(input)
+                            : SharpCompress.Compressors.LZMA.LZipStream.Create(input,
+                                SharpCompress.Compressors.CompressionMode.Decompress, leaveOpen: false);
+                    }
+                    catch { input.Dispose(); throw; }
+                });
+            }
+            else if (forwardOnly)
+            {
+                // The Reader API is the only SharpCompress path for these
+                // legacy formats. Drain every member to verify available CRCs.
+                using IReader reader = ReaderFactory.OpenReader(path, new ReaderOptions { Password = password });
+                while (reader.MoveToNextEntry())
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (reader.Entry.IsDirectory) continue;
+                    CheckEntry(reader.Entry.Key ?? string.Empty, reader.Entry.Crc, reader.OpenEntryStream);
+                }
+            }
+            else
+            {
+                using IArchive archive = ArchiveFactory.OpenArchive(path, new ReaderOptions { Password = password });
+                foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
+                {
+                    token.ThrowIfCancellationRequested();
+                    CheckEntry(entry.Key ?? string.Empty, entry.Crc, entry.OpenEntryStream);
+                }
+            }
+            return results;
+
+            void CheckEntry(string key, long expectedCrc, Func<Stream> open)
+            {
                 try
                 {
-                    using Stream input = entry.OpenEntryStream();
+                    using Stream input = open();
                     byte[] buffer = new byte[128 * 1024];
                     uint crc = uint.MaxValue;
                     int read;
@@ -72,17 +117,31 @@ internal static class ArchiveDiagnostics
                         token.ThrowIfCancellationRequested();
                         crc = Crc32Checksum.Update(crc, buffer.AsSpan(0, read));
                     }
-                    if (!Crc32Checksum.Matches(entry.Crc, crc))
+                    if (!Crc32Checksum.Matches(expectedCrc, crc))
                         throw new InvalidDataException(LanguageManager.Get("IntegrityCrcMismatch"));
-                    results.Add(new(entry.Key ?? string.Empty, true, LanguageManager.Get("IntegrityHealthy")));
+                    results.Add(new(key, true, LanguageManager.Get("IntegrityHealthy")));
                 }
-                catch (Exception error) { results.Add(new(entry.Key ?? string.Empty, false, error.Message)); }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception error)
+                {
+                    // Decoder exception text comes from external libraries and can
+                    // ignore the selected UI language. Keep a stable translated
+                    // result while retaining the detailed exception in the caller's
+                    // diagnostic boundary if archive opening itself fails.
+                    string message = error is InvalidDataException &&
+                        error.Message == LanguageManager.Get("IntegrityCrcMismatch")
+                            ? error.Message : LanguageManager.Get("IntegrityReadFailed");
+                    results.Add(new(key, false, message));
+                }
             }
-            return results;
         }, token);
 
     public static Task<string> RecoverAsync(string path, string? password, CancellationToken token) => Task.Run(() =>
     {
+        if (FileDetector.DetectFileType(path) is not
+            (FileDetector.FileType.Zip or FileDetector.FileType.Rar or
+             FileDetector.FileType.SevenZip or FileDetector.FileType.Tar or FileDetector.FileType.GZip))
+            throw new StageException("ARDIA0001", LanguageManager.Get("RepairFormatUnsupported")); //ARDIA0001
         string backup = path + "." + DateTime.Now.ToString("yyyyMMddHHmmss") + "." + Guid.NewGuid().ToString("N") + ".bak";
         string recovered = path + ".recovered." + DateTime.Now.ToString("yyyyMMddHHmmss") + "." +
             Guid.NewGuid().ToString("N") + ".zip";

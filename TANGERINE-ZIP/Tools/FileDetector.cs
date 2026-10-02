@@ -23,6 +23,11 @@ namespace TANGERINE_ZIP.Tools
             Xz = 7,
             Lz4 = 8,
             Zstd = 9,
+            Arj = 10,
+            Ace = 11,
+            Arc = 12,
+            Lzw = 13,
+            Lzip = 14,
 
             // Disk image formats
             Iso = 20,
@@ -84,6 +89,8 @@ namespace TANGERINE_ZIP.Tools
                 FileType.Xz or
                 FileType.Lz4 or
                 FileType.Zstd or
+                FileType.Arj or FileType.Ace or FileType.Arc or
+                FileType.Lzw or FileType.Lzip or
                 FileType.Iso or
                 FileType.Wim => true,
 
@@ -98,7 +105,21 @@ namespace TANGERINE_ZIP.Tools
             }
 
             using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return DetectFileType(stream);
+            FileType detected = DetectFileType(stream);
+            // ARC's short header is ambiguous. Accept it only when the
+            // extension and the forward reader agree on the container type.
+            if (detected == FileType.Unknown &&
+                Path.GetExtension(path).Equals(".arc", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    using SharpCompress.Readers.IReader reader =
+                        SharpCompress.Readers.ReaderFactory.OpenReader(path, new SharpCompress.Readers.ReaderOptions());
+                    if (reader.Type == SharpCompress.Common.ArchiveType.Arc) return FileType.Arc;
+                }
+                catch { /* Malformed input remains an unknown file. */ }
+            }
+            return detected;
         }
 
         public static FileType DetectFileType(Stream stream)
@@ -170,6 +191,13 @@ namespace TANGERINE_ZIP.Tools
             if (Match(h,
                 0x04, 0x22, 0x4D, 0x18))
                 return FileType.Lz4;
+
+            // These formats are decompressed through SharpCompress's reader
+            // API; its random-access Archive API does not cover them.
+            if (Match(h, 0x60, 0xEA)) return FileType.Arj;
+            if (h.Length >= 14 && MatchAscii(h.Slice(7), "**ACE**")) return FileType.Ace;
+            if (Match(h, 0x1F, 0x9D)) return FileType.Lzw;
+            if (MatchAscii(h, "LZIP")) return FileType.Lzip;
 
             // TAR is accepted by its POSIX signature or by a valid header checksum.
             if ((h.Length >= 262 && MatchAscii(h.Slice(257), "ustar")) || HasValidTarHeader(h))

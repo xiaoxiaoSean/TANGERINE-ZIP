@@ -13,7 +13,7 @@
 		<UseWindowsForms>true</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<!-- Change this single value for the application version shown in About and Windows file properties. -->
-		<Version>2.1.1</Version>
+		<Version>2.1.5</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 		<FileVersion>$(Version)</FileVersion>
 		<InformationalVersion>$(Version)</InformationalVersion>
@@ -75,6 +75,7 @@
 		<EmbeddedResource Include="..\third_party\UserChoiceLatestHash\TzipLatestHash.dll" LogicalName="TANGERINE_ZIP.TzipLatestHash.dll" />
 		<EmbeddedResource Include="Embedded\SevenZip\7z.exe" LogicalName="TANGERINE_ZIP.SevenZip.7z.exe" />
 		<EmbeddedResource Include="Embedded\SevenZip\7z.dll" LogicalName="TANGERINE_ZIP.SevenZip.7z.dll" />
+		<EmbeddedResource Include="Embedded\SevenZip\7z.sfx" LogicalName="TANGERINE_ZIP.SevenZip.7z.sfx" />
 		<EmbeddedResource Include="Embedded\SevenZip\License.txt" LogicalName="TANGERINE_ZIP.SevenZip.License.txt" />
 	</ItemGroup>
 

@@ -275,7 +275,7 @@ Stage Code is :
     <value>TANGERINE ZIP</value>
   </data>
   <data name="AboutTzipMenu" xml:space="preserve">
-    <value>About TZIP</value>
+    <value>About {0}</value>
   </data>
     <data name="SelectFilesToCompress" xml:space="preserve">
     <value>Select files to compress</value>
@@ -284,7 +284,7 @@ Stage Code is :
     <value>Select an archive or image</value>
   </data>
   <data name="ArchiveDialogFilter" xml:space="preserve">
-    <value>Supported files|*.zip;*.rar;*.7z;*.tar;*.gz;*.bz2;*.xz;*.lz4;*.zst;*.zstd;*.iso;*.wim|All files|*.*</value>
+    <value>Supported files|*.zip;*.rar;*.7z;*.tar;*.gz;*.bz2;*.xz;*.lz4;*.zst;*.zstd;*.iso;*.wim;*.arj;*.ace;*.arc;*.Z;*.lz;*.lzip|All files|*.*</value>
   </data>
   <data name="AllFilesFilter" xml:space="preserve">
     <value>All files|*.*</value>
@@ -1141,4 +1141,150 @@ Existing file: {1}</value>
   <data name="SettingsColorSaveFailedStatus" xml:space="preserve"><value>Could not save color settings.</value></data>
   <data name="SettingsColorUnchanged" xml:space="preserve"><value>Color settings were not changed.</value></data>
   <data name="DragExtractNoDrop" xml:space="preserve"><value>Drag was cancelled; extracted temporary files were removed.</value></data>
+  <data name="ArchiveUpdateMenu" xml:space="preserve"><value>Add or update files in archive…</value></data>
+  <data name="ArchiveUpdateSelectFiles" xml:space="preserve"><value>Select files to add to the archive</value></data>
+  <data name="ArchiveUpdateConfirm" xml:space="preserve"><value>Add the selected files at the archive root? Files with the same names will be updated. A backup of the original archive will be kept.</value></data>
+  <data name="ArchiveUpdateProgress" xml:space="preserve"><value>Adding files to archive</value></data>
+  <data name="ArchiveUpdateCompleted" xml:space="preserve"><value>Archive updated. Original backup: {0}</value></data>
+  <data name="ArchiveUpdateNoFiles" xml:space="preserve"><value>Select at least one file to add.</value></data>
+  <data name="ArchiveUpdateUnsupported" xml:space="preserve"><value>Adding files is supported only for ordinary, unencrypted, single-volume ZIP, 7z, and RAR archives; RAR requires the official rar.exe.</value></data>
+  <data name="ArchiveUpdateSourceMissing" xml:space="preserve"><value>A selected source file is missing, or is the archive itself.</value></data>
+  <data name="ArchiveUpdateDuplicateNames" xml:space="preserve"><value>Selected files have duplicate names. Choose one file per name.</value></data>
+  <data name="ArchiveUpdateToolFailed" xml:space="preserve"><value>The embedded 7-Zip tool could not start.</value></data>
+  <data name="ArchiveUpdateToolExit" xml:space="preserve"><value>Updating the archive failed (7-Zip exit code {0}): {1}</value></data>
+  <data name="ArchiveUpdateInvalidOutput" xml:space="preserve"><value>The updated archive did not pass format validation. The original was kept.</value></data>
+  <data name="ArchiveUpdateFailed" xml:space="preserve"><value>Could not update the archive. The original was kept.</value></data>
+  <data name="ArchiveUpdateCleanupFailed" xml:space="preserve"><value>The archive was updated, but temporary files could not be removed.</value></data>
+  <data name="BatchMenu" xml:space="preserve"><value>Batch</value></data>
+  <data name="BatchExtractMenu" xml:space="preserve"><value>Extract multiple archives…</value></data>
+  <data name="BatchConvertMenu" xml:space="preserve"><value>Convert multiple archives…</value></data>
+  <data name="BatchSelectArchives" xml:space="preserve"><value>Select archives</value></data>
+  <data name="BatchSelectDestination" xml:space="preserve"><value>Select the output folder</value></data>
+  <data name="BatchExtractDescription" xml:space="preserve"><value>Each archive will be extracted into its own new folder. Existing folders will not be replaced.</value></data>
+  <data name="BatchConvertDescription" xml:space="preserve"><value>Each archive will be converted into a new archive with the chosen format. Existing files will not be replaced.</value></data>
+  <data name="BatchTargetFormat" xml:space="preserve"><value>Output format</value></data>
+  <data name="BatchInputPassword" xml:space="preserve"><value>Input archive password (optional; shared by all inputs)</value></data>
+  <data name="BatchOutputPassword" xml:space="preserve"><value>New archive password (optional)</value></data>
+  <data name="BatchOutputPasswordConfirm" xml:space="preserve"><value>Confirm new archive password</value></data>
+  <data name="BatchEncryptionNote" xml:space="preserve"><value>Converted archives have no password unless you enter a new output password.</value></data>
+  <data name="BatchTarPasswordUnsupported" xml:space="preserve"><value>TAR archives do not support password protection.</value></data>
+  <data name="BatchNoArchives" xml:space="preserve"><value>Select at least one archive.</value></data>
+  <data name="BatchDestinationMissing" xml:space="preserve"><value>The selected output folder is unavailable.</value></data>
+  <data name="BatchSourceUnsupported" xml:space="preserve"><value>An input is missing or is not a supported archive.</value></data>
+  <data name="BatchOutputExists" xml:space="preserve"><value>An output with this name already exists. Choose another destination.</value></data>
+  <data name="BatchDuplicateOutput" xml:space="preserve"><value>Two inputs would create the same output name. Rename one input or process them separately.</value></data>
+  <data name="BatchTargetUnsupported" xml:space="preserve"><value>This output format is not supported for batch conversion.</value></data>
+  <data name="BatchExtractFailed" xml:space="preserve"><value>Could not extract this batch item. Earlier completed items were kept.</value></data>
+  <data name="BatchConvertFailed" xml:space="preserve"><value>Could not convert this batch item. Earlier completed items were kept.</value></data>
+  <data name="BatchEmptyArchive" xml:space="preserve"><value>The input archive contains no files to convert.</value></data>
+  <data name="BatchInvalidOutput" xml:space="preserve"><value>The converted archive did not pass format validation.</value></data>
+  <data name="BatchCleanupFailed" xml:space="preserve"><value>Could not remove the private batch staging files.</value></data>
+  <data name="BatchUnsafeTempPath" xml:space="preserve"><value>The private batch staging path failed its safety check.</value></data>
+  <data name="BatchExtracting" xml:space="preserve"><value>Extracting archives</value></data>
+  <data name="BatchConverting" xml:space="preserve"><value>Converting archives</value></data>
+  <data name="BatchCompleted" xml:space="preserve"><value>Completed {0} archives.</value></data>
+  <data name="SfxOption" xml:space="preserve"><value>Create a self-extracting EXE (7z only)</value></data>
+  <data name="SfxNote" xml:space="preserve"><value>Creates a Windows executable that extracts itself. Split volumes are unavailable. The output filename will use .exe.</value></data>
+  <data name="SfxInvalidOptions" xml:space="preserve"><value>Self-extracting output requires 7z format, an .exe filename, and no split volumes.</value></data>
+  <data name="SfxOutputExists" xml:space="preserve"><value>The self-extracting EXE already exists. Choose another output name.</value></data>
+  <data name="SfxOutputConfirm" xml:space="preserve"><value>Create the self-extracting executable at {0}?</value></data>
+  <data name="CompressionDefaultMethod" xml:space="preserve"><value>Default</value></data>
+  <data name="SolidModeLabel" xml:space="preserve"><value>Solid compression</value></data>
+  <data name="SolidModeDefault" xml:space="preserve"><value>Format default</value></data>
+  <data name="SolidModeOn" xml:space="preserve"><value>On</value></data>
+  <data name="SolidModeOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RecoveryPercentLabel" xml:space="preserve"><value>RAR recovery record percent (0 = off, 1–10)</value></data>
+  <data name="RecoveryPercentInvalid" xml:space="preserve"><value>RAR recovery record must be between 0 and 10 percent.</value></data>
+  <data name="ExcludePatternsLabel" xml:space="preserve"><value>Exclude patterns (separate with semicolons)</value></data>
+  <data name="ExcludePatternsNote" xml:space="preserve"><value>Matching files and folders are omitted when creating ZIP, 7z, or RAR archives.</value></data>
+  <data name="ExcludePatternsInvalid" xml:space="preserve"><value>An exclusion pattern is empty, too long, or contains a line break.</value></data>
+<data name="CliHelpV2" xml:space="preserve"><value>TANGERINE ZIP command line&#10;  help [command]&#10;  compress &lt;output&gt; &lt;source&gt;... [options]&#10;  extract &lt;archive&gt; &lt;destination&gt; [options]&#10;  list &lt;archive&gt; [options]&#10;  add &lt;archive&gt; &lt;file&gt;...&#10;  batch-extract &lt;output-folder&gt; &lt;archive&gt;... [options]&#10;  convert &lt;output-folder&gt; &lt;archive&gt;... --format zip|7z|tar [options]&#10;  test &lt;archive&gt; [options]&#10;  hash &lt;file&gt; [options]&#10;  repair &lt;archive&gt; [options]&#10;  comment &lt;archive.zip&gt; [options]&#10;  vault list|save|check|delete [options]&#10;  scan &lt;file&gt;&#10;  snapshot &lt;archive&gt; &lt;folder&gt; [options]&#10;No arguments opens the GUI.</value></data>
+  <data name="CliHelp_compressV2" xml:space="preserve"><value>compress &lt;output&gt; &lt;source&gt;... [options]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|iso|wim&#10;  --password TEXT | --password-env NAME&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads N  --memory-limit MiB  --volume MiB&#10;  --solid default|on|off (7z/RAR)  --recovery-percent 0..10 (RAR)&#10;  --exclude PATTERN (repeatable)  --sfx (requires --format 7z and .exe output; no volumes)&#10;Existing output is rejected. Use -- before paths beginning with --.</value></data>
+  <data name="CliHelp_add" xml:space="preserve"><value>add &lt;archive.zip|archive.7z|archive.rar&gt; &lt;file&gt;...&#10;Adds or updates files at the archive root and keeps a backup. Encrypted and split archives are unsupported.</value></data>
+  <data name="CliHelp_batch-extract" xml:space="preserve"><value>batch-extract &lt;output-folder&gt; &lt;archive&gt;... [--password TEXT | --password-env NAME]&#10;Each archive gets a new folder; existing output is rejected.</value></data>
+  <data name="CliHelp_convert" xml:space="preserve"><value>convert &lt;output-folder&gt; &lt;archive&gt;... --format zip|7z|tar [options]&#10;  --password TEXT | --password-env NAME (input password)&#10;  --output-password-env NAME (new ZIP/7z password)&#10;Each archive gets a new output file; existing output is rejected.</value></data>
+  <data name="CliHelp_test" xml:space="preserve"><value>test &lt;archive&gt; [--password TEXT | --password-env NAME]&#10;Reads archive members and checks available CRC values.</value></data>
+  <data name="CliHelp_hash" xml:space="preserve"><value>hash &lt;file&gt; [--algorithm SHA256|SHA512|MD5] [--expected HEX]&#10;Prints the hash and returns an error if the expected value differs.</value></data>
+  <data name="CliHelp_repair" xml:space="preserve"><value>repair &lt;archive&gt; [--password TEXT | --password-env NAME]&#10;Copies the source as a backup and writes readable members to a new ZIP.</value></data>
+  <data name="CliArchiveUpdated" xml:space="preserve"><value>Archive updated. Original backup: {0}</value></data>
+  <data name="CliBatchCompleted" xml:space="preserve"><value>Completed {0} archives.</value></data>
+  <data name="CliHashMismatch" xml:space="preserve"><value>The calculated hash does not match the expected value.</value></data>
+  <data name="ProfileNameLabel" xml:space="preserve"><value>Profile name</value></data>
+  <data name="SavedProfilesLabel" xml:space="preserve"><value>Saved profiles for this format</value></data>
+  <data name="ProfileSaveButton" xml:space="preserve"><value>Save profile</value></data>
+  <data name="ProfileLoadButton" xml:space="preserve"><value>Load selected</value></data>
+  <data name="ProfileDeleteButton" xml:space="preserve"><value>Delete selected</value></data>
+  <data name="ProfileNoPasswordsNote" xml:space="preserve"><value>Profiles save compression options, including SFX and exclusions. Passwords are never stored.</value></data>
+  <data name="ProfileInvalidName" xml:space="preserve"><value>Enter a profile name of at most 64 characters without control characters.</value></data>
+  <data name="ProfileInvalidFile" xml:space="preserve"><value>The compression profile file is malformed or too large.</value></data>
+  <data name="ProfileLoadFailed" xml:space="preserve"><value>Could not read compression profiles.</value></data>
+  <data name="ProfileLimitReached" xml:space="preserve"><value>The profile limit of 100 has been reached.</value></data>
+  <data name="ProfileSaveFailed" xml:space="preserve"><value>Could not save compression profiles.</value></data>
+  <data name="ProfileCleanupFailed" xml:space="preserve"><value>Could not remove a temporary profile file.</value></data>
+  <data name="ProfileSelectFirst" xml:space="preserve"><value>Select a saved profile first.</value></data>
+  <data name="ProfileDeleteConfirm" xml:space="preserve"><value>Delete the profile “{0}”?</value></data>
+  <data name="ProfileEnableAdvanced" xml:space="preserve"><value>Expand advanced options before saving a profile.</value></data>
+  <data name="CommentMenu" xml:space="preserve"><value>ZIP archive comment…</value></data>
+  <data name="CommentDescription" xml:space="preserve"><value>View or edit the ZIP archive comment for {0}.</value></data>
+  <data name="CommentSave" xml:space="preserve"><value>Save comment</value></data>
+  <data name="CommentUnsupported" xml:space="preserve"><value>Archive comments can be edited only in ordinary, unencrypted, single-volume ZIP archives.</value></data>
+  <data name="CommentReadFailed" xml:space="preserve"><value>Could not read the ZIP archive comment.</value></data>
+  <data name="CommentTooLong" xml:space="preserve"><value>The ZIP archive comment exceeds 65,535 UTF-8 bytes.</value></data>
+  <data name="CommentInvalidOutput" xml:space="preserve"><value>The updated ZIP failed format validation; the original was kept.</value></data>
+  <data name="CommentWriteFailed" xml:space="preserve"><value>Could not save the archive comment; the original was kept.</value></data>
+  <data name="CommentLoading" xml:space="preserve"><value>Loading archive comment</value></data>
+  <data name="CommentSaving" xml:space="preserve"><value>Saving archive comment</value></data>
+  <data name="CommentSaved" xml:space="preserve"><value>Archive comment saved. Original backup: {0}</value></data>
+  <data name="CliHelp_comment" xml:space="preserve"><value>comment &lt;archive.zip&gt; [--set TEXT | --file UTF8_TEXT_FILE]&#10;Without options, prints the ZIP archive comment. Changes keep an original backup.</value></data>
+  <data name="VaultTitle" xml:space="preserve"><value>Password manager</value></data>
+  <data name="VaultDescription" xml:space="preserve"><value>Passwords are stored in Windows Credential Manager for this account on this computer. Select one to use it; the list never displays secret text.</value></data>
+  <data name="VaultSavedLabel" xml:space="preserve"><value>Saved password names</value></data>
+  <data name="VaultNameLabel" xml:space="preserve"><value>Name</value></data>
+  <data name="VaultPasswordLabel" xml:space="preserve"><value>Password to save</value></data>
+  <data name="VaultSaveButton" xml:space="preserve"><value>Save password</value></data>
+  <data name="VaultUseButton" xml:space="preserve"><value>Use selected</value></data>
+  <data name="VaultDeleteButton" xml:space="preserve"><value>Delete selected</value></data>
+  <data name="VaultReplaceConfirm" xml:space="preserve"><value>Replace the saved password named “{0}”?</value></data>
+  <data name="VaultDeleteConfirm" xml:space="preserve"><value>Delete the saved password named “{0}”?</value></data>
+  <data name="VaultSelectFirst" xml:space="preserve"><value>Select a saved password first.</value></data>
+  <data name="VaultListFailed" xml:space="preserve"><value>Could not list saved passwords in Windows Credential Manager.</value></data>
+  <data name="VaultInvalidSecret" xml:space="preserve"><value>The saved credential has an invalid password value.</value></data>
+  <data name="VaultReadFailed" xml:space="preserve"><value>Could not read the selected saved password.</value></data>
+  <data name="VaultPasswordTooLong" xml:space="preserve"><value>The password is too long for Windows Credential Manager.</value></data>
+  <data name="VaultSaveFailed" xml:space="preserve"><value>Could not save the password in Windows Credential Manager.</value></data>
+  <data name="VaultDeleteFailed" xml:space="preserve"><value>Could not delete the saved password.</value></data>
+  <data name="VaultInvalidName" xml:space="preserve"><value>Enter a name of at most 64 characters without control characters.</value></data>
+  <data name="VaultChooseButton" xml:space="preserve"><value>Use saved password…</value></data>
+  <data name="CliHelp_vault" xml:space="preserve"><value>vault list&#10;vault save &lt;name&gt; --password-env NAME&#10;vault check &lt;name&gt; --password-env NAME&#10;vault delete &lt;name&gt;&#10;Secrets stay in Windows Credential Manager; check prints only match status.</value></data>
+  <data name="CliVaultDeleted" xml:space="preserve"><value>Saved password deleted.</value></data>
+  <data name="CliVaultSaved" xml:space="preserve"><value>Password saved in Windows Credential Manager.</value></data>
+  <data name="CliVaultMismatch" xml:space="preserve"><value>The saved password differs from the supplied value.</value></data>
+  <data name="CliVaultMatched" xml:space="preserve"><value>The saved password matches.</value></data>
+  <data name="VaultSessionUnavailable" xml:space="preserve"><value>Windows Credential Manager requires an active user logon session.</value></data>
+  <data name="DefenderScanMenu" xml:space="preserve"><value>Scan archive with Microsoft Defender</value></data>
+  <data name="DefenderSelectArchive" xml:space="preserve"><value>Open an archive before starting the scan.</value></data>
+  <data name="DefenderScanning" xml:space="preserve"><value>Scanning archive with Microsoft Defender...</value></data>
+  <data name="DefenderScanComplete" xml:space="preserve"><value>Microsoft Defender completed the scan without reporting a detection.</value></data>
+  <data name="DefenderTargetMissing" xml:space="preserve"><value>The selected scan file does not exist.</value></data>
+  <data name="DefenderUnavailable" xml:space="preserve"><value>Microsoft Defender Antivirus is unavailable on this computer.</value></data>
+  <data name="DefenderStartFailed" xml:space="preserve"><value>Could not start the Microsoft Defender scan.</value></data>
+  <data name="DefenderScanFailed" xml:space="preserve"><value>Microsoft Defender reported a detection or a scan error. Review the scanner details below.</value></data>
+  <data name="DefenderStopFailed" xml:space="preserve"><value>Could not stop the Microsoft Defender scan.</value></data>
+  <data name="CliHelp_scan" xml:space="preserve"><value>scan &lt;file&gt;&#10;Runs a read-only Microsoft Defender custom scan of the file.</value></data>
+  <data name="SnapshotMenu" xml:space="preserve"><value>Create archive snapshot</value></data>
+  <data name="SnapshotSelectArchive" xml:space="preserve"><value>Open an archive before creating a snapshot.</value></data>
+  <data name="SnapshotSelectDestination" xml:space="preserve"><value>Select a snapshot folder</value></data>
+  <data name="SnapshotCreating" xml:space="preserve"><value>Creating archive snapshot...</value></data>
+  <data name="SnapshotCreated" xml:space="preserve"><value>Archive snapshot created: {0}</value></data>
+  <data name="SnapshotInvalidKeep" xml:space="preserve"><value>Snapshot retention must be between 0 and 1000.</value></data>
+  <data name="SnapshotInvalidPaths" xml:space="preserve"><value>The archive or snapshot destination is unavailable.</value></data>
+  <data name="SnapshotSourceChanged" xml:space="preserve"><value>The archive changed while its snapshot was being created.</value></data>
+  <data name="SnapshotHashMismatch" xml:space="preserve"><value>The snapshot hash does not match the archive.</value></data>
+  <data name="SnapshotFailed" xml:space="preserve"><value>Could not create the archive snapshot or apply retention.</value></data>
+  <data name="SnapshotCleanupFailed" xml:space="preserve"><value>Could not remove a private snapshot temporary file.</value></data>
+  <data name="CliHelp_snapshot" xml:space="preserve"><value>snapshot &lt;archive&gt; &lt;folder&gt; [--keep 0..1000]&#10;Creates a verified archive copy. --keep 0 retains every snapshot.</value></data>
+  <data name="RepairFormatUnsupported" xml:space="preserve"><value>Recovery is not available for this archive format.</value></data>
+  <data name="CliIntegrityFailed" xml:space="preserve"><value>One or more archive members failed the integrity check.</value></data>
+  <data name="IntegrityReadFailed" xml:space="preserve"><value>Could not decode or verify this archive member.</value></data>
+  <data name="CliUnexpectedFailure" xml:space="preserve"><value>The command could not be completed. Check the input and try again.</value></data>
 </root>

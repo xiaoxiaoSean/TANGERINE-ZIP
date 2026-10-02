@@ -1,0 +1,28 @@
+<Window x:Class="TANGERINE_ZIP.ArchiveBatchOptionsWindow" x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStartupLocation="CenterOwner" SizeToContent="WidthAndHeight"
+        Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource ForegroundBrush}"
+        FontFamily="Microsoft YaHei UI">
+    <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Theme.xaml" />
+    </ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
+    <DockPanel Margin="14">
+        <UniformGrid DockPanel.Dock="Bottom" Columns="2" Margin="0,12,0,0">
+            <Button x:Name="confirmButton" IsDefault="True" Click="Confirm_Click" />
+            <Button x:Name="cancelButton" IsCancel="True" Click="Cancel_Click" />
+        </UniformGrid>
+        <StackPanel>
+            <TextBlock x:Name="descriptionText" TextWrapping="Wrap" Margin="4,4,4,12" />
+            <TextBlock x:Name="formatLabel" Margin="4" />
+            <ComboBox x:Name="formatCombo" Margin="4" />
+            <TextBlock x:Name="inputPasswordLabel" Margin="4,12,4,4" />
+            <PasswordBox x:Name="inputPasswordBox" Margin="4" />
+            <TextBlock x:Name="outputPasswordLabel" Margin="4,12,4,4" />
+            <PasswordBox x:Name="outputPasswordBox" Margin="4" />
+            <TextBlock x:Name="outputPasswordConfirmLabel" Margin="4,4,4,4" />
+            <PasswordBox x:Name="outputPasswordConfirmBox" Margin="4" />
+            <TextBlock x:Name="encryptionNote" TextWrapping="Wrap" Margin="4,8,4,4" />
+        </StackPanel>
+    </DockPanel>
+</Window>

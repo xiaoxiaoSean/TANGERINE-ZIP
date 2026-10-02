@@ -25,6 +25,11 @@ internal sealed class RarToolService
         string? password = null,
         CompressionOptions? options = null)
     {
+        if (options is not null && (options.SolidMode is not ("Default" or "On" or "Off") ||
+            options.RecoveryPercent is < 0 or > 10 ||
+            options.ExcludePatterns?.Any(pattern => string.IsNullOrWhiteSpace(pattern) ||
+                pattern.Length > 260 || pattern.Contains('\r') || pattern.Contains('\n')) == true))
+            throw new StageException("RARTL0008", LanguageManager.Get("CompressionInvalidOptions")); //RARTL0008
         if (!IsAvailable)
         {
             throw new StageException("RARTL0001", LanguageManager.Get("RarToolMissing")); //RARTL0001
@@ -59,6 +64,11 @@ internal sealed class RarToolService
                 startInfo.ArgumentList.Add($"-md{options.DictionaryMiB}m");
                 if (options.Threads > 0) startInfo.ArgumentList.Add($"-mt{options.Threads}");
                 if (options.VolumeMiB > 0) startInfo.ArgumentList.Add($"-v{options.VolumeMiB}m");
+                if (options.SolidMode != "Default")
+                    startInfo.ArgumentList.Add(options.SolidMode == "On" ? "-s" : "-s-");
+                if (options.RecoveryPercent > 0) startInfo.ArgumentList.Add($"-rr{options.RecoveryPercent}p");
+                foreach (string pattern in options.ExcludePatterns ?? [])
+                    startInfo.ArgumentList.Add("-x" + pattern);
             }
             startInfo.ArgumentList.Add("-y");
             // -hp enables native RAR data and header encryption. ArgumentList preserves Unicode exactly

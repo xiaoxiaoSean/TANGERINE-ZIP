@@ -12,6 +12,7 @@ internal sealed class SevenZipToolService
 {
     private const string ExecutableResource = "TANGERINE_ZIP.SevenZip.7z.exe";
     private const string LibraryResource = "TANGERINE_ZIP.SevenZip.7z.dll";
+    private const string SfxResource = "TANGERINE_ZIP.SevenZip.7z.sfx";
     private const string LicenseResource = "TANGERINE_ZIP.SevenZip.License.txt";
 
     public async Task CreateEncryptedAsync(IReadOnlyList<string> sourcePaths, string outputPath,
@@ -23,6 +24,13 @@ internal sealed class SevenZipToolService
     {
         if (type is not (FileDetector.FileType.Zip or FileDetector.FileType.SevenZip))
             throw new StageException("SZTLS0001", LanguageManager.Get("PasswordFormatUnsupported")); //SZTLS0001
+        if (options.SelfExtracting && (type != FileDetector.FileType.SevenZip ||
+            options.VolumeMiB > 0 || !outputPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)))
+            throw new StageException("SZTLS0012", LanguageManager.Get("SfxInvalidOptions")); //SZTLS0012
+        if (options.SolidMode is not ("Default" or "On" or "Off") ||
+            options.ExcludePatterns?.Any(pattern => string.IsNullOrWhiteSpace(pattern) ||
+                pattern.Length > 260 || pattern.Contains('\r') || pattern.Contains('\n')) == true)
+            throw new StageException("SZTLS0013", LanguageManager.Get("CompressionInvalidOptions")); //SZTLS0013
         if (options.Method == "LZMA2" && type == FileDetector.FileType.Zip ||
             options.Method == "Deflate" && type == FileDetector.FileType.SevenZip)
             throw new StageException("SZTLS0009", LanguageManager.Get("CompressionInvalidOptions"));
@@ -37,7 +45,8 @@ internal sealed class SevenZipToolService
         {
             throw new StageException("SZTLS0005", exception.Message, exception); //SZTLS0005
         }
-        string temporaryOutput = outputPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        string temporaryOutput = outputPath + "." + Guid.NewGuid().ToString("N") +
+            (options.SelfExtracting ? ".tmp.exe" : ".tmp");
         List<string> movedVolumes = [];
         try
         {
@@ -55,6 +64,7 @@ internal sealed class SevenZipToolService
             };
             start.ArgumentList.Add("a");
             start.ArgumentList.Add(type == FileDetector.FileType.Zip ? "-tzip" : "-t7z");
+            if (options.SelfExtracting) start.ArgumentList.Add("-sfx7z.sfx");
             if (!string.IsNullOrEmpty(options.Password))
                 start.ArgumentList.Add(type == FileDetector.FileType.Zip ? "-mem=AES256" : "-mhe=on");
             start.ArgumentList.Add(options.Threads == 0 ? "-mmt=on" : $"-mmt={options.Threads}");
@@ -63,7 +73,11 @@ internal sealed class SevenZipToolService
                 start.ArgumentList.Add($"-mx={options.Level}");
                 if (options.Method != "Default") start.ArgumentList.Add("-m0=" + options.Method);
                 if (type == FileDetector.FileType.SevenZip) start.ArgumentList.Add($"-md={options.DictionaryMiB}m");
+                if (type == FileDetector.FileType.SevenZip && options.SolidMode != "Default")
+                    start.ArgumentList.Add(options.SolidMode == "On" ? "-ms=on" : "-ms=off");
                 if (options.VolumeMiB > 0) start.ArgumentList.Add($"-v{options.VolumeMiB}m");
+                foreach (string pattern in options.ExcludePatterns ?? [])
+                    start.ArgumentList.Add("-xr!" + pattern);
             }
             start.ArgumentList.Add("-bsp1");
             start.ArgumentList.Add("-sccUTF-8");
@@ -131,7 +145,10 @@ internal sealed class SevenZipToolService
         }
     }
 
-    private static async Task<string> EnsureToolAsync(CancellationToken token)
+    // ArchiveUpdateService uses the same embedded executable, so both paths
+    // share one extraction and cleanup contract instead of depending on a
+    // separately installed 7-Zip copy.
+    internal static async Task<string> EnsureToolAsync(CancellationToken token)
     {
         Assembly assembly = typeof(SevenZipToolService).Assembly;
         string identity;
@@ -146,6 +163,7 @@ internal sealed class SevenZipToolService
         {
             await ExtractResourceAsync(assembly, ExecutableResource, Path.Combine(directory, "7z.exe"), token);
             await ExtractResourceAsync(assembly, LibraryResource, Path.Combine(directory, "7z.dll"), token);
+            await ExtractResourceAsync(assembly, SfxResource, Path.Combine(directory, "7z.sfx"), token);
             await ExtractResourceAsync(assembly, LicenseResource, Path.Combine(directory, "License.txt"), token);
             return directory;
         }

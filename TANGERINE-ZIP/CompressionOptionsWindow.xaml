@@ -16,12 +16,25 @@
                 <TextBlock x:Name="descriptionText" FontWeight="SemiBold" Margin="4,4,4,12" />
                 <CheckBox x:Name="enablePassword" Margin="4" Checked="Password_Changed" Unchecked="Password_Changed" />
                 <PasswordBox x:Name="passwordBox" Margin="4" />
+                <Button x:Name="savedPasswordButton" Margin="4,0,4,8" Click="SavedPassword_Click" />
                 <TextBlock x:Name="passwordRisk" Margin="4,0,4,12" />
+                <StackPanel x:Name="profilePanel" Margin="4,4,4,12">
+                    <TextBlock x:Name="profileNameLabel" />
+                    <TextBox x:Name="profileNameBox" Margin="0,4,0,8" />
+                    <TextBlock x:Name="savedProfilesLabel" />
+                    <ComboBox x:Name="profileCombo" Margin="0,4,0,8" />
+                    <WrapPanel>
+                        <Button x:Name="saveProfileButton" Click="SaveProfile_Click" />
+                        <Button x:Name="loadProfileButton" Click="LoadProfile_Click" />
+                        <Button x:Name="deleteProfileButton" Click="DeleteProfile_Click" />
+                    </WrapPanel>
+                    <TextBlock x:Name="profileNote" TextWrapping="Wrap" Margin="0,6,0,0" />
+                </StackPanel>
                 <CheckBox x:Name="advancedCheck" Margin="4" Checked="Advanced_Checked" />
                 <StackPanel x:Name="advancedPanel" Visibility="Collapsed" Margin="8,8,4,8">
                     <TextBlock x:Name="methodLabel" FontWeight="SemiBold" />
                     <ComboBox x:Name="methodCombo" Margin="0,4,0,2" SelectedIndex="0">
-                        <ComboBoxItem Content="Default"/><ComboBoxItem Content="LZMA2"/><ComboBoxItem Content="Deflate"/>
+                        <ComboBoxItem x:Name="defaultMethodItem" Tag="Default"/><ComboBoxItem Content="LZMA2" Tag="LZMA2"/><ComboBoxItem Content="Deflate" Tag="Deflate"/>
                     </ComboBox>
                     <TextBlock x:Name="methodRisk" Margin="0,0,0,12" />
                     <TextBlock x:Name="levelLabel" FontWeight="SemiBold" />
@@ -29,6 +42,12 @@
                         <ComboBoxItem Content="0"/><ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/><ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/><ComboBoxItem Content="7"/><ComboBoxItem Content="8"/><ComboBoxItem Content="9"/>
                     </ComboBox>
                     <TextBlock x:Name="levelRisk" Margin="0,0,0,12" />
+                    <TextBlock x:Name="solidLabel" FontWeight="SemiBold" />
+                    <ComboBox x:Name="solidCombo" Margin="0,4,0,12" SelectedIndex="0">
+                        <ComboBoxItem x:Name="solidDefaultItem" Tag="Default" />
+                        <ComboBoxItem x:Name="solidOnItem" Tag="On" />
+                        <ComboBoxItem x:Name="solidOffItem" Tag="Off" />
+                    </ComboBox>
                     <TextBlock x:Name="dictionaryLabel" FontWeight="SemiBold" />
                     <TextBox x:Name="dictionaryBox" Text="16" Margin="0,4,0,2" />
                     <TextBlock x:Name="dictionaryRisk" Margin="0,0,0,12" />
@@ -41,6 +60,13 @@
                     <TextBlock x:Name="volumeLabel" FontWeight="SemiBold" />
                     <TextBox x:Name="volumeBox" Text="0" Margin="0,4,0,2" />
                     <TextBlock x:Name="volumeRisk" Margin="0,0,0,12" />
+                    <TextBlock x:Name="recoveryLabel" FontWeight="SemiBold" />
+                    <TextBox x:Name="recoveryBox" Text="0" Margin="0,4,0,12" />
+                    <TextBlock x:Name="excludeLabel" FontWeight="SemiBold" />
+                    <TextBox x:Name="excludeBox" Margin="0,4,0,2" />
+                    <TextBlock x:Name="excludeNote" TextWrapping="Wrap" Margin="0,0,0,12" />
+                    <CheckBox x:Name="selfExtractingCheck" Margin="0,8,0,4" />
+                    <TextBlock x:Name="selfExtractingNote" TextWrapping="Wrap" Margin="0,0,0,12" />
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

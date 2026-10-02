@@ -97,9 +97,13 @@ internal static class ArchiveCapabilities
         FileDetector.FileType.GZip or FileDetector.FileType.BZip2 or
         FileDetector.FileType.Xz or FileDetector.FileType.Lz4 or
         FileDetector.FileType.Zstd or FileDetector.FileType.Iso or
-        FileDetector.FileType.Wim;
+        FileDetector.FileType.Wim or FileDetector.FileType.Arj or
+        FileDetector.FileType.Ace or FileDetector.FileType.Arc or
+        FileDetector.FileType.Lzw or FileDetector.FileType.Lzip;
 
-    public static bool CanCreate(FileDetector.FileType type) => CanOpen(type);
+    public static bool CanCreate(FileDetector.FileType type) => CanOpen(type) && type is not
+        (FileDetector.FileType.Arj or FileDetector.FileType.Ace or
+         FileDetector.FileType.Arc or FileDetector.FileType.Lzw or FileDetector.FileType.Lzip);
 
     // Only these archive standards define interoperable password protection.
     public static bool CanCreateWithPassword(FileDetector.FileType type) => type is
@@ -108,5 +112,5 @@ internal static class ArchiveCapabilities
     public static bool IsSingleFileStream(FileDetector.FileType type) => type is
         FileDetector.FileType.GZip or FileDetector.FileType.BZip2 or
         FileDetector.FileType.Xz or FileDetector.FileType.Lz4 or
-        FileDetector.FileType.Zstd;
+        FileDetector.FileType.Zstd or FileDetector.FileType.Lzw or FileDetector.FileType.Lzip;
 }

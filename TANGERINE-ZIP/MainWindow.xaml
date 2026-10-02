@@ -23,7 +23,7 @@
                     <WrapPanel />
                 </ItemsPanelTemplate>
             </Menu.ItemsPanel>
-            <MenuItem x:Name="aboutMenuItem" Header="About TZIP" Click="AboutMenu_Click" />
+            <MenuItem x:Name="aboutMenuItem" Click="AboutMenu_Click" />
             <MenuItem x:Name="openArchiveMenuItem" Header="Open" Click="OpenArchiveMenu_Click" />
             <MenuItem x:Name="createDroppedArchiveMenuItem" Header="Create a new archive" Visibility="Collapsed" Click="CreateDroppedArchiveMenu_Click" />
             <MenuItem x:Name="openDroppedArchiveMenuItem" Header="Open dropped archive" Visibility="Collapsed" Click="OpenDroppedArchiveMenu_Click" />
@@ -40,12 +40,21 @@
             </MenuItem>
             <MenuItem x:Name="compressMenuItem" Header="Compress">
                 <MenuItem x:Name="compressFilesMenuItem" Header="Select files" Click="CompressFilesMenu_Click" />
+                <MenuItem x:Name="addFilesToArchiveMenuItem" Header="Add files to archive" Visibility="Collapsed" Click="AddFilesToArchiveMenu_Click" />
+            </MenuItem>
+            <MenuItem x:Name="batchMenuItem" Header="Batch">
+                <MenuItem x:Name="batchExtractMenuItem" Click="BatchExtractMenu_Click" />
+                <MenuItem x:Name="batchConvertMenuItem" Click="BatchConvertMenu_Click" />
             </MenuItem>
             <MenuItem x:Name="toolsMenuItem" Header="Archive tools">
                 <MenuItem x:Name="integrityMenuItem" Click="IntegrityMenu_Click" />
                 <MenuItem x:Name="repairMenuItem" Click="RepairMenu_Click" />
                 <MenuItem x:Name="hashMenuItem" Click="HashMenu_Click" />
+                <MenuItem x:Name="defenderScanMenuItem" Click="DefenderScanMenu_Click" />
+                <MenuItem x:Name="snapshotMenuItem" Click="SnapshotMenu_Click" />
                 <MenuItem x:Name="encodingMenuItem" Click="EncodingMenu_Click" />
+                <MenuItem x:Name="archiveCommentMenuItem" Visibility="Collapsed" Click="ArchiveCommentMenu_Click" />
+                <MenuItem x:Name="passwordVaultMenuItem" Click="PasswordVaultMenu_Click" />
             </MenuItem>
             <MenuItem x:Name="settingsMenuItem" Header="Settings" Click="SettingsMenu_Click" />
             <MenuItem x:Name="unloadArchiveMenuItem" Header="Unload" Click="UnloadArchiveMenu_Click" />

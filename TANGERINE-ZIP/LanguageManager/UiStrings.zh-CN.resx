@@ -275,7 +275,7 @@
     <value>TANGERINE ZIP</value>
   </data>
   <data name="AboutTzipMenu" xml:space="preserve">
-    <value>关于 TZIP</value>
+    <value>关于 {0}</value>
   </data>
     <data name="SelectFilesToCompress" xml:space="preserve">
     <value>选择要压缩的文件</value>
@@ -284,7 +284,7 @@
     <value>选择压缩包或镜像</value>
   </data>
   <data name="ArchiveDialogFilter" xml:space="preserve">
-    <value>支持的文件|*.zip;*.rar;*.7z;*.tar;*.gz;*.bz2;*.xz;*.lz4;*.zst;*.zstd;*.iso;*.wim|所有文件|*.*</value>
+    <value>支持的文件|*.zip;*.rar;*.7z;*.tar;*.gz;*.bz2;*.xz;*.lz4;*.zst;*.zstd;*.iso;*.wim;*.arj;*.ace;*.arc;*.Z;*.lz;*.lzip|所有文件|*.*</value>
   </data>
   <data name="AllFilesFilter" xml:space="preserve">
     <value>所有文件|*.*</value>
@@ -1141,4 +1141,150 @@
   <data name="SettingsColorSaveFailedStatus" xml:space="preserve"><value>颜色设置未能保存。</value></data>
   <data name="SettingsColorUnchanged" xml:space="preserve"><value>颜色设置未改变。</value></data>
   <data name="DragExtractNoDrop" xml:space="preserve"><value>拖放已取消，解压出的临时文件已清理。</value></data>
+  <data name="ArchiveUpdateMenu" xml:space="preserve"><value>向压缩包添加或更新文件…</value></data>
+  <data name="ArchiveUpdateSelectFiles" xml:space="preserve"><value>选择要加入压缩包的文件</value></data>
+  <data name="ArchiveUpdateConfirm" xml:space="preserve"><value>将所选文件加入压缩包根目录吗？同名文件会被更新。程序会保留原压缩包的备份。</value></data>
+  <data name="ArchiveUpdateProgress" xml:space="preserve"><value>正在向压缩包添加文件</value></data>
+  <data name="ArchiveUpdateCompleted" xml:space="preserve"><value>压缩包已更新。原包备份：{0}</value></data>
+  <data name="ArchiveUpdateNoFiles" xml:space="preserve"><value>请至少选择一个要添加的文件。</value></data>
+  <data name="ArchiveUpdateUnsupported" xml:space="preserve"><value>仅普通、未加密、非分卷的 ZIP、7z 和 RAR 压缩包支持添加文件；RAR 需要官方 rar.exe。</value></data>
+  <data name="ArchiveUpdateSourceMissing" xml:space="preserve"><value>所选源文件不存在，或源文件就是压缩包本身。</value></data>
+  <data name="ArchiveUpdateDuplicateNames" xml:space="preserve"><value>所选文件存在重名。每个文件名请只选择一个文件。</value></data>
+  <data name="ArchiveUpdateToolFailed" xml:space="preserve"><value>无法启动内嵌的 7-Zip 工具。</value></data>
+  <data name="ArchiveUpdateToolExit" xml:space="preserve"><value>更新压缩包失败（7-Zip 退出码 {0}）：{1}</value></data>
+  <data name="ArchiveUpdateInvalidOutput" xml:space="preserve"><value>更新后的压缩包未通过格式校验，原包已保留。</value></data>
+  <data name="ArchiveUpdateFailed" xml:space="preserve"><value>无法更新压缩包，原包已保留。</value></data>
+  <data name="ArchiveUpdateCleanupFailed" xml:space="preserve"><value>压缩包已更新，但无法清理临时文件。</value></data>
+  <data name="BatchMenu" xml:space="preserve"><value>批量处理</value></data>
+  <data name="BatchExtractMenu" xml:space="preserve"><value>批量解压…</value></data>
+  <data name="BatchConvertMenu" xml:space="preserve"><value>批量转换格式…</value></data>
+  <data name="BatchSelectArchives" xml:space="preserve"><value>选择压缩包</value></data>
+  <data name="BatchSelectDestination" xml:space="preserve"><value>选择输出文件夹</value></data>
+  <data name="BatchExtractDescription" xml:space="preserve"><value>每个压缩包分别解压到一个新文件夹，已有文件夹不会被替换。</value></data>
+  <data name="BatchConvertDescription" xml:space="preserve"><value>每个压缩包分别转换为所选格式的新压缩包，已有文件不会被替换。</value></data>
+  <data name="BatchTargetFormat" xml:space="preserve"><value>输出格式</value></data>
+  <data name="BatchInputPassword" xml:space="preserve"><value>输入压缩包密码（可选，所有输入共用）</value></data>
+  <data name="BatchOutputPassword" xml:space="preserve"><value>新压缩包密码（可选）</value></data>
+  <data name="BatchOutputPasswordConfirm" xml:space="preserve"><value>确认新压缩包密码</value></data>
+  <data name="BatchEncryptionNote" xml:space="preserve"><value>若不填写新密码，转换后的压缩包不会加密。</value></data>
+  <data name="BatchTarPasswordUnsupported" xml:space="preserve"><value>TAR 压缩包不支持密码保护。</value></data>
+  <data name="BatchNoArchives" xml:space="preserve"><value>请至少选择一个压缩包。</value></data>
+  <data name="BatchDestinationMissing" xml:space="preserve"><value>所选输出文件夹不可用。</value></data>
+  <data name="BatchSourceUnsupported" xml:space="preserve"><value>某个输入文件不存在或不是支持的压缩包。</value></data>
+  <data name="BatchOutputExists" xml:space="preserve"><value>同名输出已存在，请选择其他目标位置。</value></data>
+  <data name="BatchDuplicateOutput" xml:space="preserve"><value>两个输入会产生同名输出，请重命名其中一个或分开处理。</value></data>
+  <data name="BatchTargetUnsupported" xml:space="preserve"><value>批量转换不支持此输出格式。</value></data>
+  <data name="BatchExtractFailed" xml:space="preserve"><value>无法解压此批次中的某个压缩包，先前已完成的结果仍保留。</value></data>
+  <data name="BatchConvertFailed" xml:space="preserve"><value>无法转换此批次中的某个压缩包，先前已完成的结果仍保留。</value></data>
+  <data name="BatchEmptyArchive" xml:space="preserve"><value>输入压缩包没有可转换的文件。</value></data>
+  <data name="BatchInvalidOutput" xml:space="preserve"><value>转换后的压缩包未通过格式校验。</value></data>
+  <data name="BatchCleanupFailed" xml:space="preserve"><value>无法清理批量处理的专用暂存文件。</value></data>
+  <data name="BatchUnsafeTempPath" xml:space="preserve"><value>批量处理暂存路径未通过安全校验。</value></data>
+  <data name="BatchExtracting" xml:space="preserve"><value>正在批量解压</value></data>
+  <data name="BatchConverting" xml:space="preserve"><value>正在批量转换</value></data>
+  <data name="BatchCompleted" xml:space="preserve"><value>已完成 {0} 个压缩包。</value></data>
+  <data name="SfxOption" xml:space="preserve"><value>创建自解压 EXE（仅 7z）</value></data>
+  <data name="SfxNote" xml:space="preserve"><value>生成可自行解压的 Windows 可执行文件；不能同时分卷。输出文件名将使用 .exe。</value></data>
+  <data name="SfxInvalidOptions" xml:space="preserve"><value>自解压输出要求 7z 格式、.exe 文件名且不分卷。</value></data>
+  <data name="SfxOutputExists" xml:space="preserve"><value>自解压 EXE 已存在，请选择其他输出名称。</value></data>
+  <data name="SfxOutputConfirm" xml:space="preserve"><value>要在 {0} 创建自解压可执行文件吗？</value></data>
+  <data name="CompressionDefaultMethod" xml:space="preserve"><value>默认</value></data>
+  <data name="SolidModeLabel" xml:space="preserve"><value>固实压缩</value></data>
+  <data name="SolidModeDefault" xml:space="preserve"><value>格式默认</value></data>
+  <data name="SolidModeOn" xml:space="preserve"><value>开启</value></data>
+  <data name="SolidModeOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RecoveryPercentLabel" xml:space="preserve"><value>RAR 恢复记录百分比（0 为关闭，1–10）</value></data>
+  <data name="RecoveryPercentInvalid" xml:space="preserve"><value>RAR 恢复记录百分比必须在 0 到 10 之间。</value></data>
+  <data name="ExcludePatternsLabel" xml:space="preserve"><value>排除规则（用分号分隔）</value></data>
+  <data name="ExcludePatternsNote" xml:space="preserve"><value>创建 ZIP、7z 或 RAR 时，匹配的文件和文件夹不会加入压缩包。</value></data>
+  <data name="ExcludePatternsInvalid" xml:space="preserve"><value>排除规则为空、过长或包含换行符。</value></data>
+<data name="CliHelpV2" xml:space="preserve"><value>TANGERINE ZIP 命令行&#10;  help [命令]&#10;  compress &lt;输出&gt; &lt;源文件&gt;... [选项]&#10;  extract &lt;压缩包&gt; &lt;目标目录&gt; [选项]&#10;  list &lt;压缩包&gt; [选项]&#10;  add &lt;压缩包&gt; &lt;文件&gt;...&#10;  batch-extract &lt;输出目录&gt; &lt;压缩包&gt;... [选项]&#10;  convert &lt;输出目录&gt; &lt;压缩包&gt;... --format zip|7z|tar [选项]&#10;  test &lt;压缩包&gt; [选项]&#10;  hash &lt;文件&gt; [选项]&#10;  repair &lt;压缩包&gt; [选项]&#10;  comment &lt;压缩包.zip&gt; [选项]&#10;  vault list|save|check|delete [选项]&#10;  scan &lt;文件&gt;&#10;  snapshot &lt;压缩包&gt; &lt;目录&gt; [选项]&#10;不带参数时打开图形界面。</value></data>
+  <data name="CliHelp_compressV2" xml:space="preserve"><value>compress &lt;输出&gt; &lt;源文件&gt;... [选项]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|iso|wim&#10;  --password 文本 | --password-env 环境变量名&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads 数量  --memory-limit MiB  --volume MiB&#10;  --solid default|on|off（7z/RAR）  --recovery-percent 0..10（RAR）&#10;  --exclude 规则（可重复）  --sfx（需 --format 7z，输出 EXE，不可分卷）&#10;已有输出会被拒绝。以 -- 开头的路径前请加单独的 --。</value></data>
+  <data name="CliHelp_add" xml:space="preserve"><value>add &lt;压缩包.zip|压缩包.7z|压缩包.rar&gt; &lt;文件&gt;...&#10;把文件加入压缩包根目录或更新同名文件，并保留备份。不支持加密包及分卷包。</value></data>
+  <data name="CliHelp_batch-extract" xml:space="preserve"><value>batch-extract &lt;输出目录&gt; &lt;压缩包&gt;... [--password 文本 | --password-env 环境变量名]&#10;每个压缩包写入一个新目录；已有输出会被拒绝。</value></data>
+  <data name="CliHelp_convert" xml:space="preserve"><value>convert &lt;输出目录&gt; &lt;压缩包&gt;... --format zip|7z|tar [选项]&#10;  --password 文本 | --password-env 环境变量名（输入密码）&#10;  --output-password-env 环境变量名（新 ZIP/7z 密码）&#10;每个压缩包写入一个新文件；已有输出会被拒绝。</value></data>
+  <data name="CliHelp_test" xml:space="preserve"><value>test &lt;压缩包&gt; [--password 文本 | --password-env 环境变量名]&#10;读取包内成员并核验可用的 CRC 值。</value></data>
+  <data name="CliHelp_hash" xml:space="preserve"><value>hash &lt;文件&gt; [--algorithm SHA256|SHA512|MD5] [--expected 十六进制值]&#10;显示 Hash；与预期不符时返回错误。</value></data>
+  <data name="CliHelp_repair" xml:space="preserve"><value>repair &lt;压缩包&gt; [--password 文本 | --password-env 环境变量名]&#10;先备份原包，再将可读取的成员写入新的 ZIP。</value></data>
+  <data name="CliArchiveUpdated" xml:space="preserve"><value>压缩包已更新。原包备份：{0}</value></data>
+  <data name="CliBatchCompleted" xml:space="preserve"><value>已完成 {0} 个压缩包。</value></data>
+  <data name="CliHashMismatch" xml:space="preserve"><value>计算出的 Hash 与预期值不符。</value></data>
+  <data name="ProfileNameLabel" xml:space="preserve"><value>预设名称</value></data>
+  <data name="SavedProfilesLabel" xml:space="preserve"><value>此格式已保存的预设</value></data>
+  <data name="ProfileSaveButton" xml:space="preserve"><value>保存预设</value></data>
+  <data name="ProfileLoadButton" xml:space="preserve"><value>载入所选预设</value></data>
+  <data name="ProfileDeleteButton" xml:space="preserve"><value>删除所选预设</value></data>
+  <data name="ProfileNoPasswordsNote" xml:space="preserve"><value>预设会保存压缩选项，包括自解压和排除规则；不会保存密码。</value></data>
+  <data name="ProfileInvalidName" xml:space="preserve"><value>请输入不超过 64 个字符且不含控制字符的预设名称。</value></data>
+  <data name="ProfileInvalidFile" xml:space="preserve"><value>压缩预设文件格式错误或文件过大。</value></data>
+  <data name="ProfileLoadFailed" xml:space="preserve"><value>无法读取压缩预设。</value></data>
+  <data name="ProfileLimitReached" xml:space="preserve"><value>最多只能保存 100 个预设。</value></data>
+  <data name="ProfileSaveFailed" xml:space="preserve"><value>无法保存压缩预设。</value></data>
+  <data name="ProfileCleanupFailed" xml:space="preserve"><value>无法清理临时预设文件。</value></data>
+  <data name="ProfileSelectFirst" xml:space="preserve"><value>请先选择已保存的预设。</value></data>
+  <data name="ProfileDeleteConfirm" xml:space="preserve"><value>删除预设“{0}”吗？</value></data>
+  <data name="ProfileEnableAdvanced" xml:space="preserve"><value>保存预设前请展开高级选项。</value></data>
+  <data name="CommentMenu" xml:space="preserve"><value>ZIP 压缩包注释…</value></data>
+  <data name="CommentDescription" xml:space="preserve"><value>查看或编辑 {0} 的 ZIP 压缩包注释。</value></data>
+  <data name="CommentSave" xml:space="preserve"><value>保存注释</value></data>
+  <data name="CommentUnsupported" xml:space="preserve"><value>仅普通、未加密、非分卷的 ZIP 压缩包支持编辑注释。</value></data>
+  <data name="CommentReadFailed" xml:space="preserve"><value>无法读取 ZIP 压缩包注释。</value></data>
+  <data name="CommentTooLong" xml:space="preserve"><value>ZIP 压缩包注释超过 65,535 个 UTF-8 字节。</value></data>
+  <data name="CommentInvalidOutput" xml:space="preserve"><value>更新后的 ZIP 未通过格式校验，原包已保留。</value></data>
+  <data name="CommentWriteFailed" xml:space="preserve"><value>无法保存压缩包注释，原包已保留。</value></data>
+  <data name="CommentLoading" xml:space="preserve"><value>正在读取压缩包注释</value></data>
+  <data name="CommentSaving" xml:space="preserve"><value>正在保存压缩包注释</value></data>
+  <data name="CommentSaved" xml:space="preserve"><value>压缩包注释已保存。原包备份：{0}</value></data>
+  <data name="CliHelp_comment" xml:space="preserve"><value>comment &lt;压缩包.zip&gt; [--set 文本 | --file UTF8_文本文件]&#10;不带选项时显示 ZIP 注释；修改时保留原包备份。</value></data>
+  <data name="VaultTitle" xml:space="preserve"><value>密码管理器</value></data>
+  <data name="VaultDescription" xml:space="preserve"><value>密码保存在此电脑当前账户的 Windows 凭据管理器中。选中后才会读取密码，列表不会显示密码正文。</value></data>
+  <data name="VaultSavedLabel" xml:space="preserve"><value>已保存的密码名称</value></data>
+  <data name="VaultNameLabel" xml:space="preserve"><value>名称</value></data>
+  <data name="VaultPasswordLabel" xml:space="preserve"><value>要保存的密码</value></data>
+  <data name="VaultSaveButton" xml:space="preserve"><value>保存密码</value></data>
+  <data name="VaultUseButton" xml:space="preserve"><value>使用所选密码</value></data>
+  <data name="VaultDeleteButton" xml:space="preserve"><value>删除所选密码</value></data>
+  <data name="VaultReplaceConfirm" xml:space="preserve"><value>替换名为“{0}”的已保存密码吗？</value></data>
+  <data name="VaultDeleteConfirm" xml:space="preserve"><value>删除名为“{0}”的已保存密码吗？</value></data>
+  <data name="VaultSelectFirst" xml:space="preserve"><value>请先选择已保存的密码。</value></data>
+  <data name="VaultListFailed" xml:space="preserve"><value>无法从 Windows 凭据管理器列出密码。</value></data>
+  <data name="VaultInvalidSecret" xml:space="preserve"><value>保存的凭据中密码值无效。</value></data>
+  <data name="VaultReadFailed" xml:space="preserve"><value>无法读取所选的已保存密码。</value></data>
+  <data name="VaultPasswordTooLong" xml:space="preserve"><value>密码超过 Windows 凭据管理器允许的长度。</value></data>
+  <data name="VaultSaveFailed" xml:space="preserve"><value>无法将密码保存到 Windows 凭据管理器。</value></data>
+  <data name="VaultDeleteFailed" xml:space="preserve"><value>无法删除已保存的密码。</value></data>
+  <data name="VaultInvalidName" xml:space="preserve"><value>请输入不超过 64 个字符且不含控制字符的名称。</value></data>
+  <data name="VaultChooseButton" xml:space="preserve"><value>使用已保存的密码…</value></data>
+  <data name="CliHelp_vault" xml:space="preserve"><value>vault list&#10;vault save &lt;名称&gt; --password-env 环境变量名&#10;vault check &lt;名称&gt; --password-env 环境变量名&#10;vault delete &lt;名称&gt;&#10;密码保存在 Windows 凭据管理器中；check 只显示是否匹配。</value></data>
+  <data name="CliVaultDeleted" xml:space="preserve"><value>已删除保存的密码。</value></data>
+  <data name="CliVaultSaved" xml:space="preserve"><value>密码已保存到 Windows 凭据管理器。</value></data>
+  <data name="CliVaultMismatch" xml:space="preserve"><value>保存的密码与提供的值不符。</value></data>
+  <data name="CliVaultMatched" xml:space="preserve"><value>保存的密码匹配。</value></data>
+  <data name="VaultSessionUnavailable" xml:space="preserve"><value>Windows 凭据管理器需要有效的用户登录会话。</value></data>
+  <data name="DefenderScanMenu" xml:space="preserve"><value>用 Microsoft Defender 扫描压缩包</value></data>
+  <data name="DefenderSelectArchive" xml:space="preserve"><value>请先打开压缩包，再启动扫描。</value></data>
+  <data name="DefenderScanning" xml:space="preserve"><value>正在用 Microsoft Defender 扫描压缩包…</value></data>
+  <data name="DefenderScanComplete" xml:space="preserve"><value>Microsoft Defender 已完成扫描，未报告威胁。</value></data>
+  <data name="DefenderTargetMissing" xml:space="preserve"><value>要扫描的文件不存在。</value></data>
+  <data name="DefenderUnavailable" xml:space="preserve"><value>这台电脑上的 Microsoft Defender 防病毒软件不可用。</value></data>
+  <data name="DefenderStartFailed" xml:space="preserve"><value>无法启动 Microsoft Defender 扫描。</value></data>
+  <data name="DefenderScanFailed" xml:space="preserve"><value>Microsoft Defender 报告威胁或扫描错误，请查看下方扫描详情。</value></data>
+  <data name="DefenderStopFailed" xml:space="preserve"><value>无法停止 Microsoft Defender 扫描。</value></data>
+  <data name="CliHelp_scan" xml:space="preserve"><value>scan &lt;文件&gt;&#10;使用 Microsoft Defender 对文件执行只读自定义扫描。</value></data>
+  <data name="SnapshotMenu" xml:space="preserve"><value>创建压缩包快照</value></data>
+  <data name="SnapshotSelectArchive" xml:space="preserve"><value>请先打开压缩包，再创建快照。</value></data>
+  <data name="SnapshotSelectDestination" xml:space="preserve"><value>选择快照目录</value></data>
+  <data name="SnapshotCreating" xml:space="preserve"><value>正在创建压缩包快照…</value></data>
+  <data name="SnapshotCreated" xml:space="preserve"><value>已创建压缩包快照：{0}</value></data>
+  <data name="SnapshotInvalidKeep" xml:space="preserve"><value>快照保留数量必须在 0 到 1000 之间。</value></data>
+  <data name="SnapshotInvalidPaths" xml:space="preserve"><value>压缩包或快照目标目录不可用。</value></data>
+  <data name="SnapshotSourceChanged" xml:space="preserve"><value>创建快照时原压缩包发生了变化。</value></data>
+  <data name="SnapshotHashMismatch" xml:space="preserve"><value>快照的校验值与原压缩包不一致。</value></data>
+  <data name="SnapshotFailed" xml:space="preserve"><value>无法创建压缩包快照或执行保留策略。</value></data>
+  <data name="SnapshotCleanupFailed" xml:space="preserve"><value>无法删除快照临时文件。</value></data>
+  <data name="CliHelp_snapshot" xml:space="preserve"><value>snapshot &lt;压缩包&gt; &lt;目录&gt; [--keep 0..1000]&#10;创建经过校验的压缩包副本。--keep 0 表示保留所有快照。</value></data>
+  <data name="RepairFormatUnsupported" xml:space="preserve"><value>此压缩格式暂不支持恢复可读成员。</value></data>
+  <data name="CliIntegrityFailed" xml:space="preserve"><value>一个或多个压缩包成员未通过完整性校验。</value></data>
+  <data name="IntegrityReadFailed" xml:space="preserve"><value>无法解码或校验此压缩包成员。</value></data>
+  <data name="CliUnexpectedFailure" xml:space="preserve"><value>无法完成命令，请检查输入后重试。</value></data>
 </root>

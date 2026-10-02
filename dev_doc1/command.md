@@ -1,6 +1,6 @@
 # TANGERINE ZIP 命令行操作手册
 
-本文对应当前仓库中的 `TANGERINE-ZIP.exe`。同一个程序同时支持图形界面和命令行：**无参数**时打开主窗口；只传入**一个已经存在的文件路径**时在主窗口打开该文件；第一个参数是 `help`、`compress`、`extract` 或 `list` 时在终端执行命令，不打开主窗口。资源管理器右键菜单和内部归档工作进程使用保留参数，不属于公开命令行接口。
+本文对应当前仓库中的 `TANGERINE-ZIP.exe`。同一个程序同时支持图形界面和命令行：**无参数**时打开主窗口；只传入**一个已经存在的文件路径**时在主窗口打开该文件；以 `help`、`compress`、`extract`、`list`、`add`、`batch-extract`、`convert`、`test`、`hash`、`repair`、`comment`、`vault`、`scan` 或 `snapshot` 开头时在终端执行命令，不打开主窗口。资源管理器右键菜单和内部归档工作进程使用保留参数，不属于公开命令行接口。
 
 EXE 使用 Windows GUI 子系统，启动时不会新建命令行窗口。CLI 沿用已有终端或重定向管道；没有终端时不创建替代窗口。脚本需要可靠等待结束和读取退出码时，请显式等待，例如 `Start-Process -Wait -PassThru -NoNewWindow`，完整说明见 [`WINDOW_LAYOUT_AND_PROCESS_STARTUP.md`](WINDOW_LAYOUT_AND_PROCESS_STARTUP.md)。
 
@@ -10,11 +10,11 @@ EXE 使用 Windows GUI 子系统，启动时不会新建命令行窗口。CLI �
 & "C:\Program Files\TANGERINE ZIP\TANGERINE-ZIP.exe" help
 ```
 
-`<...>` 代表必填值，`[...]` 代表可选项，末尾的 `...` 代表可以重复。示例中的尖括号只是说明符，实际输入时不要保留。含空格的路径要加引号。命令名不区分大小写；长参数名称（例如 `--on-conflict`）区分大小写，按本文小写形式输入。选项可以放在位置参数之间；同一选项通常只能出现一次，`--entry` 例外。使用单独的 `--` 可以结束选项解析，此后的参数均按路径处理，因此它后面不能再写选项。
+`<...>` 代表必填值，`[...]` 代表可选项，末尾的 `...` 代表可以重复。示例中的尖括号只是说明符，实际输入时不要保留。含空格的路径要加引号。命令名不区分大小写；长参数名称（例如 `--on-conflict`）区分大小写，按本文小写形式输入。选项可以放在位置参数之间；同一选项通常只能出现一次，`--entry` 和 `--exclude` 例外。使用单独的 `--` 可以结束选项解析，此后的参数均按路径处理，因此它后面不能再写选项。
 
 ## 使用前准备
 
-`compress`、`extract` 和 `list` 都会读取 **exe 同目录**下的无后缀 `TEMP_D`。该文件保存临时目录的绝对路径。先启动一次图形界面按提示设置，之后也可以在“设置 → 更多”修改。命令行不会弹出目录选择窗口；若 `TEMP_D` 缺失、目录不可达、不可写或空间不足，会向标准错误输出报告错误和 StageCode，并提示回到图形界面设置。`help` 无需设置临时目录。
+除 `help`、`hash`、`vault`、`scan`、`snapshot` 外，命令行任务都会读取 **exe 同目录**下的无后缀 `TEMP_D`。该文件保存临时目录的绝对路径。先启动一次图形界面按提示设置，之后也可以在“设置 → 更多”修改。命令行不会弹出目录选择窗口；若 `TEMP_D` 缺失、目录不可达、不可写或空间不足，会向标准错误输出报告错误和 StageCode，并提示回到图形界面设置。`help` 无需设置临时目录。
 
 命令行与图形界面共用归档工作进程。创建和解压前会检查目标磁盘、内存及临时目录的可用空间；解压期间也会复核空间。临时工作文件由程序管理，输出压缩包与解压结果则位于你指定的位置。
 
@@ -37,7 +37,7 @@ TANGERINE-ZIP.exe --help
 TANGERINE-ZIP.exe -h
 ```
 
-`command` 可为 `compress`、`extract` 或 `list`。不填写或填写其他名称时显示总览；`help` 不进行归档读写，不要求 `TEMP_D`。例如：
+`command` 可为总览中的任一公开命令。不填写或填写其他名称时显示总览；`help` 不进行归档读写，不要求 `TEMP_D`。例如：
 
 ```powershell
 ./TANGERINE-ZIP.exe help compress
@@ -84,6 +84,10 @@ TANGERINE-ZIP.exe compress <output> <source>... [options]
 | `--threads N` | `0–128`；默认 `0`（自动） | 调整支持该设置的 ZIP、7z、RAR 写入工具的并行度。高值会增加 CPU 和内存占用。 |
 | `--memory-limit N` | `0–1048576` MiB；默认 `0`（不设工具内存上限） | 对使用外部工具的 ZIP、7z、RAR 压缩进程施加内存上限；过低会使任务失败。资源预检仍独立进行。 |
 | `--volume N` | `0–1048576` MiB；默认 `0`（不分卷） | 由 ZIP、7z、RAR 写入工具生成分卷；需要保留全部卷才能恢复。 |
+| `--solid default\|on\|off` | 仅 7z、RAR；默认 `default` | 控制固实压缩。 |
+| `--recovery-percent N` | 仅 RAR，`0–10`；默认 `0` | 在 RAR 中写入恢复记录，需要官方 `rar.exe`。 |
+| `--exclude PATTERN` | 可重复；仅 ZIP、7z、RAR | 排除匹配的文件；规则交给所选格式的写入工具处理。 |
+| `--sfx` | 需同时指定 `--format 7z`，输出为 `.exe`，不可分卷 | 用内置 7-Zip SFX 模块创建自解压程序。 |
 
 只要提供 `--level`、`--method`、`--dictionary`、`--threads`、`--memory-limit` 或 `--volume` 之一，就启用该任务的高级写入方式；这些参数仅允许用于 ZIP、7z、RAR。未提供高级参数时使用格式的默认写入方式。大字典、较多线程和较高等级可能增加耗时或使低配置设备解压缓慢；改变默认算法、分卷或加密方式可能降低旧版解压软件的兼容性。
 
@@ -179,6 +183,23 @@ TANGERINE-ZIP.exe extract <archive> <destination> [options]
 # 已知目标目录可覆盖时，允许覆盖；危险或失败成员仍默认终止
 ./TANGERINE-ZIP.exe extract "D:\Backup\photos.zip" "D:\Restored" --on-conflict overwrite
 ```
+
+## 其他公开命令
+
+| 命令 | 用法与行为 |
+|---|---|
+| `add` | `add <archive.zip\|archive.7z\|archive.rar> <file>...`：向压缩包根目录添加或强制替换同名文件，完成后保留原包备份。RAR 需要官方 `rar.exe`；加密包、分卷包和目录来源不适用。 |
+| `batch-extract` | `batch-extract <output-folder> <archive>... [--password TEXT\|--password-env NAME]`：每个输入对应一个独立的新目录；同名输出或已有输出会被拒绝。 |
+| `convert` | `convert <output-folder> <archive>... --format zip\|7z\|tar [--password TEXT\|--password-env NAME] [--output-password-env NAME]`：逐个解压并转换。输出密码只支持 ZIP、7z；结果与输入同名时不会覆盖。 |
+| `test` | `test <archive> [--password TEXT\|--password-env NAME]`：读取成员并检查可用的 CRC；坏成员会列出并以 `CLINE0011` 返回非零退出码。 |
+| `hash` | `hash <file> [--algorithm SHA256\|SHA512\|MD5] [--expected HEX]`：显示哈希值，若与预期不符则返回错误。 |
+| `repair` | `repair <archive> [--password TEXT\|--password-env NAME]`：先备份原包，再把可读成员写入新的 ZIP；支持 ZIP、7z、RAR、TAR、GZip。 |
+| `comment` | `comment <archive.zip> [--set TEXT\|--file UTF8_TEXT_FILE]`：读取或修改 ZIP 注释；修改时保留备份，不支持加密或分卷 ZIP。 |
+| `vault` | `vault list`、`vault save <name> --password-env NAME`、`vault check <name> --password-env NAME`、`vault delete <name>`：密码保存在当前 Windows 用户的凭据管理器中。没有有效登录会话时会报告 `PWVLT0009`。 |
+| `scan` | `scan <file>`：调用本机 Microsoft Defender 执行不修改文件的自定义扫描。扫描器不存在、报告威胁或扫描失败时会返回错误；需要系统允许使用该组件，某些环境可能需要管理员权限。 |
+| `snapshot` | `snapshot <archive> <folder> [--keep N]`：创建经 SHA-256 校验的独立副本。`--keep 0` 默认保留全部；`1–1000` 只清理本功能为同名来源创建的旧快照。可从 Windows 任务计划程序定期调用。 |
+
+`add`、`comment`、`repair` 和 `snapshot` 不会直接覆盖原包。批量操作中后续项目失败时，先前已完成的输出仍保留。ARJ、ACE、ARC、LZW 和 LZip 可以浏览、预览、解压和执行 `test`，但不能创建或使用 `repair`。
 
 ## 标准输出、错误输出与退出码
 
