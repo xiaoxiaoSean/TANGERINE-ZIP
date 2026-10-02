@@ -285,7 +285,7 @@ Stage Code is :</value>
     <value>Select output archive</value>
   </data>
   <data name="CreateArchiveFilter" xml:space="preserve">
-    <value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR|*.rar</value>
+    <value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR|*.rar|LZip|*.lz|ARJ|*.arj|ARC|*.arc|Unix compress (LZW)|*.Z|ACE|*.ace</value>
   </data>
   <data name="CompressingText" xml:space="preserve">
     <value>Compressing</value>
@@ -930,7 +930,7 @@ Existing file: {1}</value>
   <data name="ArchiveEditClipboardStageFailed" xml:space="preserve"><value>Some selected files could not be extracted to the temporary directory. Nothing was placed on the clipboard.</value></data>
   <data name="TempDirectoryCleanupFailed" xml:space="preserve"><value>Could not clear the application's temporary workspace. Close other instances or choose another temporary directory.</value></data>
   <data name="CliHelp" xml:space="preserve"><value>TANGERINE ZIP command line&#10;  TANGERINE-ZIP.exe help [command]&#10;  TANGERINE-ZIP.exe compress &lt;output&gt; &lt;source&gt;... [options]&#10;  TANGERINE-ZIP.exe extract &lt;archive&gt; &lt;destination&gt; [options]&#10;  TANGERINE-ZIP.exe list &lt;archive&gt; [options]&#10;Run help compress, help extract, or help list for parameters. No arguments opens the GUI.</value></data>
-  <data name="CliHelp_compress" xml:space="preserve"><value>compress &lt;output&gt; &lt;source&gt;... [options]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|iso|wim (default: output extension)&#10;  --password TEXT | --password-env NAME&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads N (0=auto)&#10;  --memory-limit MiB (0=unlimited)  --volume MiB (0=single file)&#10;Advanced options apply to ZIP, 7z, and RAR. Existing output is rejected. Use -- before paths that begin with --.</value></data>
+  <data name="CliHelp_compress" xml:space="preserve"><value>compress &lt;output&gt; &lt;source&gt;... [options]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|lz|arj|ace|arc|z|iso|wim (default: output extension)&#10;  --password TEXT | --password-env NAME&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads N (0=auto)&#10;  --memory-limit MiB (0=unlimited)  --volume MiB (0=single file)&#10;Advanced options apply to ZIP, 7z, and RAR. Existing output is rejected. Use -- before paths that begin with --.</value></data>
   <data name="CliHelp_extract" xml:space="preserve"><value>extract &lt;archive&gt; &lt;destination&gt; [options]&#10;  --password TEXT | --password-env NAME&#10;  --encoding NAME (archive entry names)&#10;  --entry PATH (repeat to select members)&#10;  --on-conflict abort|overwrite|skip (default: abort)&#10;  --on-issue abort|skip (default: abort; includes unsafe paths and suspicious sizes)</value></data>
   <data name="CliHelp_list" xml:space="preserve"><value>list &lt;archive&gt; [options]&#10;  --password TEXT | --password-env NAME&#10;  --encoding NAME (archive entry names)&#10;  --json (output full member metadata as JSON)&#10;Default output columns: path, original bytes, compressed bytes, compression method.</value></data>
   <data name="CliInvalidArguments" xml:space="preserve"><value>Invalid command arguments.</value></data>
@@ -1196,8 +1196,11 @@ Existing file: {1}</value>
   <data name="ExcludePatternsLabel" xml:space="preserve"><value>Exclude patterns (separate with semicolons)</value></data>
   <data name="ExcludePatternsNote" xml:space="preserve"><value>Matching files and folders are omitted when creating ZIP, 7z, or RAR archives.</value></data>
   <data name="ExcludePatternsInvalid" xml:space="preserve"><value>An exclusion pattern is empty, too long, or contains a line break.</value></data>
-<data name="CliHelpV2" xml:space="preserve"><value>TANGERINE ZIP command line&#10;  help [command]&#10;  compress &lt;output&gt; &lt;source&gt;... [options]&#10;  extract &lt;archive&gt; &lt;destination&gt; [options]&#10;  list &lt;archive&gt; [options]&#10;  add &lt;archive&gt; &lt;file&gt;...&#10;  batch-extract &lt;output-folder&gt; &lt;archive&gt;... [options]&#10;  convert &lt;output-folder&gt; &lt;archive&gt;... --format zip|7z|tar [options]&#10;  test &lt;archive&gt; [options]&#10;  hash &lt;file&gt; [options]&#10;  repair &lt;archive&gt; [options]&#10;  comment &lt;archive.zip&gt; [options]&#10;  vault list|save|check|delete [options]&#10;  scan &lt;file&gt;&#10;  snapshot &lt;archive&gt; &lt;folder&gt; [options]&#10;No arguments opens the GUI.</value></data>
-  <data name="CliHelp_compressV2" xml:space="preserve"><value>compress &lt;output&gt; &lt;source&gt;... [options]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|iso|wim&#10;  --password TEXT | --password-env NAME&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads N  --memory-limit MiB  --volume MiB&#10;  --solid default|on|off (7z/RAR)  --recovery-percent 0..10 (RAR)&#10;  --exclude PATTERN (repeatable)  --sfx (requires --format 7z and .exe output; no volumes)&#10;Existing output is rejected. Use -- before paths beginning with --.</value></data>
+<data name="CliHelpV2" xml:space="preserve"><value>TANGERINE ZIP command line&#10;  help [command]&#10;  compress &lt;output&gt; &lt;source&gt;... [options]&#10;  extract &lt;archive&gt; &lt;destination&gt; [options]&#10;  list &lt;archive&gt; [options]&#10;  add &lt;archive&gt; &lt;file&gt;...&#10;  batch-extract &lt;output-folder&gt; &lt;archive&gt;... [options]&#10;  convert &lt;output-folder&gt; &lt;archive&gt;... --format zip|7z|tar [options]&#10;  sfx &lt;source-archive&gt; &lt;output.exe&gt;&#10;  test &lt;archive&gt; [options]&#10;  hash &lt;file&gt; [options]&#10;  repair &lt;archive&gt; [options]&#10;  comment &lt;archive.zip&gt; [options]&#10;  vault list|save|check|delete [options]&#10;  scan &lt;file&gt;&#10;  snapshot &lt;archive&gt; &lt;folder&gt; [options]&#10;No arguments opens the GUI.</value></data>
+  <data name="CliHelp_compressV2" xml:space="preserve"><value>compress &lt;output&gt; &lt;source&gt;... [options]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|lz|arj|ace|arc|z|iso|wim&#10;  --password TEXT | --password-env NAME&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads N  --memory-limit MiB  --volume MiB&#10;  --solid default|on|off (7z/RAR)  --recovery-percent 0..10 (RAR)&#10;  --exclude PATTERN (repeatable)  --sfx (requires --format 7z and .exe output; no volumes)&#10;Existing output is rejected. Use -- before paths beginning with --.
+  ISO only: --iso-volume TEXT --iso-manufacturer TEXT --iso-joliet on|off --iso-deduplicate on|off
+  --iso-boot-image PATH --iso-emulation none|floppy1200|floppy1440|floppy2880|harddisk
+  --iso-load-segment 0..65535 --iso-isolinux on|off</value></data>
   <data name="CliHelp_add" xml:space="preserve"><value>add &lt;archive.zip|archive.7z|archive.rar&gt; &lt;file&gt;...&#10;Adds or updates files at the archive root and keeps a backup. Encrypted and split archives are unsupported.</value></data>
   <data name="CliHelp_batch-extract" xml:space="preserve"><value>batch-extract &lt;output-folder&gt; &lt;archive&gt;... [--password TEXT | --password-env NAME]&#10;Each archive gets a new folder; existing output is rejected.</value></data>
   <data name="CliHelp_convert" xml:space="preserve"><value>convert &lt;output-folder&gt; &lt;archive&gt;... --format zip|7z|tar [options]&#10;  --password TEXT | --password-env NAME (input password)&#10;  --output-password-env NAME (new ZIP/7z password)&#10;Each archive gets a new output file; existing output is rejected.</value></data>
@@ -1285,4 +1288,59 @@ Existing file: {1}</value>
   <data name="CliIntegrityFailed" xml:space="preserve"><value>One or more archive members failed the integrity check.</value></data>
   <data name="IntegrityReadFailed" xml:space="preserve"><value>Could not decode or verify this archive member.</value></data>
   <data name="CliUnexpectedFailure" xml:space="preserve"><value>The command could not be completed. Check the input and try again.</value></data>
+  <data name="SfxToolMenu" xml:space="preserve"><value>Create self-extracting EXE</value></data>
+  <data name="SfxToolDescription" xml:space="preserve"><value>Choose an existing archive. TANGERINE ZIP extracts its contents in a private workspace, then builds a 7z-based Windows self-extracting EXE.</value></data>
+  <data name="SfxSourceLabel" xml:space="preserve"><value>Source archive</value></data>
+  <data name="SfxChooseSource" xml:space="preserve"><value>Choose archive…</value></data>
+  <data name="SfxUseCurrent" xml:space="preserve"><value>Use currently open archive</value></data>
+  <data name="SfxInputPassword" xml:space="preserve"><value>Source archive password (if needed)</value></data>
+  <data name="SfxOutputLabel" xml:space="preserve"><value>Output executable</value></data>
+  <data name="SfxChooseOutput" xml:space="preserve"><value>Choose EXE…</value></data>
+  <data name="SfxFormatNote" xml:space="preserve"><value>Inputs: any archive this app can extract. Output: a 7z-based self-extracting EXE. Source files stay unchanged; encrypted inputs require their password.</value></data>
+  <data name="SfxCreateButton" xml:space="preserve"><value>Create EXE</value></data>
+  <data name="SfxExeFilter" xml:space="preserve"><value>Self-extracting executable|*.exe</value></data>
+  <data name="SfxNoCurrentArchive" xml:space="preserve"><value>No archive is currently open. Choose an archive file instead.</value></data>
+  <data name="SfxSourceUnsupported" xml:space="preserve"><value>Choose an existing archive in a format this app can extract.</value></data>
+  <data name="SfxOutputInvalid" xml:space="preserve"><value>Choose an output path ending in .exe in an existing folder.</value></data>
+  <data name="SfxSourceChanged" xml:space="preserve"><value>The source archive changed during conversion. No EXE was published.</value></data>
+  <data name="SfxEmptyArchive" xml:space="preserve"><value>The source archive has no files to package.</value></data>
+  <data name="SfxInvalidOutput" xml:space="preserve"><value>The generated file is not a valid 7z self-extracting EXE.</value></data>
+  <data name="SfxConversionFailed" xml:space="preserve"><value>Could not convert this archive to a self-extracting EXE.</value></data>
+  <data name="SfxCleanupFailed" xml:space="preserve"><value>Could not remove private self-extraction work files.</value></data>
+  <data name="SfxDialogFailed" xml:space="preserve"><value>Could not complete the self-extracting EXE dialog.</value></data>
+  <data name="SfxConverting" xml:space="preserve"><value>Creating self-extracting EXE…</value></data>
+  <data name="SfxCreated" xml:space="preserve"><value>Self-extracting EXE created: {0}</value></data>
+  <data name="CliHelp_sfx" xml:space="preserve"><value>sfx &lt;source-archive&gt; &lt;output.exe&gt; [--password TEXT|--password-env NAME]&#10;Extracts a readable archive and creates a 7z-based self-extracting EXE. Existing output is refused.</value></data>
+  <data name="IsoOptionsTitle" xml:space="preserve"><value>ISO creation settings</value></data>
+  <data name="IsoOptionsDescription" xml:space="preserve"><value>Set the ISO filesystem and optional El Torito BIOS boot image. The boot image must already contain boot code.</value></data>
+  <data name="IsoVolumeLabel" xml:space="preserve"><value>Volume identifier (1–32 ASCII characters)</value></data>
+  <data name="IsoManufacturerLabel" xml:space="preserve"><value>Manufacturer identifier (optional, up to 128 ASCII characters)</value></data>
+  <data name="IsoUseJoliet" xml:space="preserve"><value>Enable Joliet Unicode names</value></data>
+  <data name="IsoTrackEqualFiles" xml:space="preserve"><value>Share identical source file data</value></data>
+  <data name="IsoBootable" xml:space="preserve"><value>Create a bootable ISO</value></data>
+  <data name="IsoBootImage" xml:space="preserve"><value>Boot image file</value></data>
+  <data name="IsoChooseBootImage" xml:space="preserve"><value>Choose boot image</value></data>
+  <data name="IsoBootImageFilter" xml:space="preserve"><value>Boot images|*.img;*.bin;*.ima;*.iso|All files|*.*</value></data>
+  <data name="IsoBootEmulation" xml:space="preserve"><value>Boot emulation</value></data>
+  <data name="IsoLoadSegment" xml:space="preserve"><value>BIOS load segment (0–65535; 0 = default)</value></data>
+  <data name="IsoUpdateIsolinux" xml:space="preserve"><value>Update ISOLINUX boot information table</value></data>
+  <data name="IsoBootNote" xml:space="preserve"><value>This writer supports one El Torito BIOS boot entry. It cannot create a UEFI boot entry or hybrid USB image. Floppy emulation requires an exact 1.2, 1.44, or 2.88 MiB boot image.</value></data>
+  <data name="IsoEmulationNone" xml:space="preserve"><value>No emulation</value></data>
+  <data name="IsoEmulation1200" xml:space="preserve"><value>1.2 MiB floppy</value></data>
+  <data name="IsoEmulation1440" xml:space="preserve"><value>1.44 MiB floppy</value></data>
+  <data name="IsoEmulation2880" xml:space="preserve"><value>2.88 MiB floppy</value></data>
+  <data name="IsoEmulationHardDisk" xml:space="preserve"><value>Hard disk</value></data>
+  <data name="IsoInvalidMetadata" xml:space="preserve"><value>The volume or manufacturer identifier is invalid. Use ASCII text within the displayed limits.</value></data>
+  <data name="IsoInvalidBootImage" xml:space="preserve"><value>Choose a valid nonempty boot image. Floppy images must match the selected capacity exactly, and the load segment must be 0–65535.</value></data>
+  <data name="IsoOptionsFailed" xml:space="preserve"><value>The ISO settings could not be prepared. Check the selected files and try again.</value></data>
+  <data name="UnsupportedCreateFormat" xml:space="preserve"><value>This format cannot be created.</value></data>
+  <data name="LegacySourceMissing" xml:space="preserve"><value>The source file is missing or the selected folder contains no files.</value></data>
+  <data name="LegacyDuplicateNames" xml:space="preserve"><value>The selected files produce duplicate archive entry names.</value></data>
+  <data name="ArcNameUnsupported" xml:space="preserve"><value>Classic ARC supports flat ASCII file names of at most 12 characters. Select individual files with shorter names.</value></data>
+  <data name="AceNameUnsupported" xml:space="preserve"><value>ACE store mode requires ASCII entry names.</value></data>
+  <data name="LegacyWriterInvalid" xml:space="preserve"><value>The ACE writer did not provide a valid archive header.</value></data>
+  <data name="AceSizeUnsupported" xml:space="preserve"><value>ACE store mode supports files up to 4 GiB and entry names up to 65504 bytes.</value></data>
+  <data name="LegacySourceChanged" xml:space="preserve"><value>A source file changed while the archive was being created.</value></data>
+  <data name="LegacyMemberTooLarge" xml:space="preserve"><value>This member exceeds the 2 GiB limit of the ARJ/ARC writer.</value></data>
+  <data name="ArcHeaderInvalid" xml:space="preserve"><value>The ARC header is invalid or damaged.</value></data>
 </root>

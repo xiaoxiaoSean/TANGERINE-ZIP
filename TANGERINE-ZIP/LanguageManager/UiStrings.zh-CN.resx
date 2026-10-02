@@ -293,7 +293,7 @@
     <value>选择输出压缩包</value>
   </data>
   <data name="CreateArchiveFilter" xml:space="preserve">
-    <value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR|*.rar</value>
+    <value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR|*.rar|LZip|*.lz|ARJ|*.arj|ARC|*.arc|Unix 压缩 (LZW)|*.Z|ACE|*.ace</value>
   </data>
   <data name="CompressingText" xml:space="preserve">
     <value>正在压缩</value>
@@ -932,7 +932,7 @@
   <data name="ArchiveEditClipboardStageFailed" xml:space="preserve"><value>部分选中文件无法解压到临时目录，未写入剪贴板。</value></data>
   <data name="TempDirectoryCleanupFailed" xml:space="preserve"><value>无法清空程序临时工作目录。请关闭其他实例或选择其他临时目录。</value></data>
   <data name="CliHelp" xml:space="preserve"><value>TANGERINE ZIP 命令行&#10;  TANGERINE-ZIP.exe help [命令]&#10;  TANGERINE-ZIP.exe compress &lt;输出文件&gt; &lt;来源&gt;... [参数]&#10;  TANGERINE-ZIP.exe extract &lt;压缩包&gt; &lt;目标目录&gt; [参数]&#10;  TANGERINE-ZIP.exe list &lt;压缩包&gt; [参数]&#10;用 help compress、help extract 或 help list 查看参数。无参数时打开图形界面。</value></data>
-  <data name="CliHelp_compress" xml:space="preserve"><value>compress &lt;输出文件&gt; &lt;来源&gt;... [参数]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|iso|wim（默认按输出后缀）&#10;  --password 密码 | --password-env 环境变量名&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads 数量（0=自动）&#10;  --memory-limit MiB（0=不限）  --volume MiB（0=不分卷）&#10;高级参数仅适用于 ZIP、7z、RAR。已存在的输出会被拒绝。以 -- 开头的路径前可添加单独的 --。</value></data>
+  <data name="CliHelp_compress" xml:space="preserve"><value>compress &lt;输出文件&gt; &lt;来源&gt;... [参数]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|lz|arj|ace|arc|z|iso|wim（默认按输出后缀）&#10;  --password 密码 | --password-env 环境变量名&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads 数量（0=自动）&#10;  --memory-limit MiB（0=不限）  --volume MiB（0=不分卷）&#10;高级参数仅适用于 ZIP、7z、RAR。已存在的输出会被拒绝。以 -- 开头的路径前可添加单独的 --。</value></data>
   <data name="CliHelp_extract" xml:space="preserve"><value>extract &lt;压缩包&gt; &lt;目标目录&gt; [参数]&#10;  --password 密码 | --password-env 环境变量名&#10;  --encoding 编码名称（成员文件名）&#10;  --entry 成员路径（可重复）&#10;  --on-conflict abort|overwrite|skip（默认 abort）&#10;  --on-issue abort|skip（默认 abort；包括不安全路径和可疑体积）</value></data>
   <data name="CliHelp_list" xml:space="preserve"><value>list &lt;压缩包&gt; [参数]&#10;  --password 密码 | --password-env 环境变量名&#10;  --encoding 编码名称（成员文件名）&#10;  --json（输出完整成员元数据）&#10;默认列：路径、原始字节数、压缩后字节数、压缩方式。</value></data>
   <data name="CliInvalidArguments" xml:space="preserve"><value>命令参数无效。</value></data>
@@ -1198,8 +1198,11 @@
   <data name="ExcludePatternsLabel" xml:space="preserve"><value>排除规则（用分号分隔）</value></data>
   <data name="ExcludePatternsNote" xml:space="preserve"><value>创建 ZIP、7z 或 RAR 时，匹配的文件和文件夹不会加入压缩包。</value></data>
   <data name="ExcludePatternsInvalid" xml:space="preserve"><value>排除规则为空、过长或包含换行符。</value></data>
-<data name="CliHelpV2" xml:space="preserve"><value>TANGERINE ZIP 命令行&#10;  help [命令]&#10;  compress &lt;输出&gt; &lt;源文件&gt;... [选项]&#10;  extract &lt;压缩包&gt; &lt;目标目录&gt; [选项]&#10;  list &lt;压缩包&gt; [选项]&#10;  add &lt;压缩包&gt; &lt;文件&gt;...&#10;  batch-extract &lt;输出目录&gt; &lt;压缩包&gt;... [选项]&#10;  convert &lt;输出目录&gt; &lt;压缩包&gt;... --format zip|7z|tar [选项]&#10;  test &lt;压缩包&gt; [选项]&#10;  hash &lt;文件&gt; [选项]&#10;  repair &lt;压缩包&gt; [选项]&#10;  comment &lt;压缩包.zip&gt; [选项]&#10;  vault list|save|check|delete [选项]&#10;  scan &lt;文件&gt;&#10;  snapshot &lt;压缩包&gt; &lt;目录&gt; [选项]&#10;不带参数时打开图形界面。</value></data>
-  <data name="CliHelp_compressV2" xml:space="preserve"><value>compress &lt;输出&gt; &lt;源文件&gt;... [选项]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|iso|wim&#10;  --password 文本 | --password-env 环境变量名&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads 数量  --memory-limit MiB  --volume MiB&#10;  --solid default|on|off（7z/RAR）  --recovery-percent 0..10（RAR）&#10;  --exclude 规则（可重复）  --sfx（需 --format 7z，输出 EXE，不可分卷）&#10;已有输出会被拒绝。以 -- 开头的路径前请加单独的 --。</value></data>
+<data name="CliHelpV2" xml:space="preserve"><value>TANGERINE ZIP 命令行&#10;  help [命令]&#10;  compress &lt;输出&gt; &lt;源文件&gt;... [选项]&#10;  extract &lt;压缩包&gt; &lt;目标目录&gt; [选项]&#10;  list &lt;压缩包&gt; [选项]&#10;  add &lt;压缩包&gt; &lt;文件&gt;...&#10;  batch-extract &lt;输出目录&gt; &lt;压缩包&gt;... [选项]&#10;  convert &lt;输出目录&gt; &lt;压缩包&gt;... --format zip|7z|tar [选项]&#10;  sfx &lt;来源压缩包&gt; &lt;输出.exe&gt;&#10;  test &lt;压缩包&gt; [选项]&#10;  hash &lt;文件&gt; [选项]&#10;  repair &lt;压缩包&gt; [选项]&#10;  comment &lt;压缩包.zip&gt; [选项]&#10;  vault list|save|check|delete [选项]&#10;  scan &lt;文件&gt;&#10;  snapshot &lt;压缩包&gt; &lt;目录&gt; [选项]&#10;不带参数时打开图形界面。</value></data>
+  <data name="CliHelp_compressV2" xml:space="preserve"><value>compress &lt;输出&gt; &lt;源文件&gt;... [选项]&#10;  --format zip|7z|rar|tar|gz|bz2|xz|lz4|zst|lz|arj|ace|arc|z|iso|wim&#10;  --password 文本 | --password-env 环境变量名&#10;  --level 0..9  --method Default|Deflate|LZMA2&#10;  --dictionary MiB  --threads 数量  --memory-limit MiB  --volume MiB&#10;  --solid default|on|off（7z/RAR）  --recovery-percent 0..10（RAR）&#10;  --exclude 规则（可重复）  --sfx（需 --format 7z，输出 EXE，不可分卷）&#10;已有输出会被拒绝。以 -- 开头的路径前请加单独的 --。
+  ISO 专用：--iso-volume 文本 --iso-manufacturer 文本 --iso-joliet on|off --iso-deduplicate on|off
+  --iso-boot-image 路径 --iso-emulation none|floppy1200|floppy1440|floppy2880|harddisk
+  --iso-load-segment 0..65535 --iso-isolinux on|off</value></data>
   <data name="CliHelp_add" xml:space="preserve"><value>add &lt;压缩包.zip|压缩包.7z|压缩包.rar&gt; &lt;文件&gt;...&#10;把文件加入压缩包根目录或更新同名文件，并保留备份。不支持加密包及分卷包。</value></data>
   <data name="CliHelp_batch-extract" xml:space="preserve"><value>batch-extract &lt;输出目录&gt; &lt;压缩包&gt;... [--password 文本 | --password-env 环境变量名]&#10;每个压缩包写入一个新目录；已有输出会被拒绝。</value></data>
   <data name="CliHelp_convert" xml:space="preserve"><value>convert &lt;输出目录&gt; &lt;压缩包&gt;... --format zip|7z|tar [选项]&#10;  --password 文本 | --password-env 环境变量名（输入密码）&#10;  --output-password-env 环境变量名（新 ZIP/7z 密码）&#10;每个压缩包写入一个新文件；已有输出会被拒绝。</value></data>
@@ -1287,4 +1290,59 @@
   <data name="CliIntegrityFailed" xml:space="preserve"><value>一个或多个压缩包成员未通过完整性校验。</value></data>
   <data name="IntegrityReadFailed" xml:space="preserve"><value>无法解码或校验此压缩包成员。</value></data>
   <data name="CliUnexpectedFailure" xml:space="preserve"><value>无法完成命令，请检查输入后重试。</value></data>
+  <data name="SfxToolMenu" xml:space="preserve"><value>创建自解压 EXE</value></data>
+  <data name="SfxToolDescription" xml:space="preserve"><value>选择现有压缩包。程序会先在私有临时目录中解压内容，再生成基于 7z 的 Windows 自解压 EXE。</value></data>
+  <data name="SfxSourceLabel" xml:space="preserve"><value>来源压缩包</value></data>
+  <data name="SfxChooseSource" xml:space="preserve"><value>选择压缩包…</value></data>
+  <data name="SfxUseCurrent" xml:space="preserve"><value>使用当前打开的压缩包</value></data>
+  <data name="SfxInputPassword" xml:space="preserve"><value>来源压缩包密码（如需要）</value></data>
+  <data name="SfxOutputLabel" xml:space="preserve"><value>输出可执行文件</value></data>
+  <data name="SfxChooseOutput" xml:space="preserve"><value>选择 EXE…</value></data>
+  <data name="SfxFormatNote" xml:space="preserve"><value>来源支持本软件可解压的格式；输出统一为基于 7z 的自解压 EXE。原压缩包不会改变；加密来源需要输入密码。</value></data>
+  <data name="SfxCreateButton" xml:space="preserve"><value>创建 EXE</value></data>
+  <data name="SfxExeFilter" xml:space="preserve"><value>自解压可执行文件|*.exe</value></data>
+  <data name="SfxNoCurrentArchive" xml:space="preserve"><value>当前没有打开压缩包，请改用“选择压缩包”。</value></data>
+  <data name="SfxSourceUnsupported" xml:space="preserve"><value>请选择已存在且本软件支持解压的压缩包。</value></data>
+  <data name="SfxOutputInvalid" xml:space="preserve"><value>请选择现有目录中以 .exe 结尾的输出路径。</value></data>
+  <data name="SfxSourceChanged" xml:space="preserve"><value>转换过程中来源压缩包发生变化，未发布 EXE。</value></data>
+  <data name="SfxEmptyArchive" xml:space="preserve"><value>来源压缩包中没有可打包的文件。</value></data>
+  <data name="SfxInvalidOutput" xml:space="preserve"><value>生成的文件不是有效的 7z 自解压 EXE。</value></data>
+  <data name="SfxConversionFailed" xml:space="preserve"><value>无法将该压缩包转换为自解压 EXE。</value></data>
+  <data name="SfxCleanupFailed" xml:space="preserve"><value>无法清理自解压任务的私有临时文件。</value></data>
+  <data name="SfxDialogFailed" xml:space="preserve"><value>无法完成自解压 EXE 窗口操作。</value></data>
+  <data name="SfxConverting" xml:space="preserve"><value>正在创建自解压 EXE…</value></data>
+  <data name="SfxCreated" xml:space="preserve"><value>已创建自解压 EXE：{0}</value></data>
+  <data name="CliHelp_sfx" xml:space="preserve"><value>sfx &lt;来源压缩包&gt; &lt;输出.exe&gt; [--password 密码|--password-env 环境变量名]&#10;解压可读压缩包并创建基于 7z 的自解压 EXE。拒绝覆盖已有输出。</value></data>
+  <data name="IsoOptionsTitle" xml:space="preserve"><value>ISO 创建设置</value></data>
+  <data name="IsoOptionsDescription" xml:space="preserve"><value>设置 ISO 文件系统及可选的 El Torito BIOS 启动映像。启动映像本身必须包含启动代码。</value></data>
+  <data name="IsoVolumeLabel" xml:space="preserve"><value>卷标识（1–32 个 ASCII 字符）</value></data>
+  <data name="IsoManufacturerLabel" xml:space="preserve"><value>制造商标识（可选，最多 128 个 ASCII 字符）</value></data>
+  <data name="IsoUseJoliet" xml:space="preserve"><value>启用 Joliet Unicode 文件名</value></data>
+  <data name="IsoTrackEqualFiles" xml:space="preserve"><value>复用内容相同的源文件数据</value></data>
+  <data name="IsoBootable" xml:space="preserve"><value>创建可引导 ISO</value></data>
+  <data name="IsoBootImage" xml:space="preserve"><value>启动映像文件</value></data>
+  <data name="IsoChooseBootImage" xml:space="preserve"><value>选择启动映像</value></data>
+  <data name="IsoBootImageFilter" xml:space="preserve"><value>启动映像|*.img;*.bin;*.ima;*.iso|所有文件|*.*</value></data>
+  <data name="IsoBootEmulation" xml:space="preserve"><value>启动仿真类型</value></data>
+  <data name="IsoLoadSegment" xml:space="preserve"><value>BIOS 加载段（0–65535；0 为默认）</value></data>
+  <data name="IsoUpdateIsolinux" xml:space="preserve"><value>更新 ISOLINUX 启动信息表</value></data>
+  <data name="IsoBootNote" xml:space="preserve"><value>此写入器只支持一个 El Torito BIOS 启动项，不支持创建 UEFI 启动项或可从 USB 启动的混合映像。软盘仿真需要大小精确匹配的 1.2、1.44 或 2.88 MiB 启动映像。</value></data>
+  <data name="IsoEmulationNone" xml:space="preserve"><value>无仿真</value></data>
+  <data name="IsoEmulation1200" xml:space="preserve"><value>1.2 MiB 软盘</value></data>
+  <data name="IsoEmulation1440" xml:space="preserve"><value>1.44 MiB 软盘</value></data>
+  <data name="IsoEmulation2880" xml:space="preserve"><value>2.88 MiB 软盘</value></data>
+  <data name="IsoEmulationHardDisk" xml:space="preserve"><value>硬盘</value></data>
+  <data name="IsoInvalidMetadata" xml:space="preserve"><value>卷标识或制造商标识无效。请使用界面所示长度范围内的 ASCII 文字。</value></data>
+  <data name="IsoInvalidBootImage" xml:space="preserve"><value>请选择有效且非空的启动映像。软盘映像大小必须与所选容量完全一致，加载段须为 0–65535。</value></data>
+  <data name="IsoOptionsFailed" xml:space="preserve"><value>无法准备 ISO 设置，请检查所选文件后重试。</value></data>
+  <data name="UnsupportedCreateFormat" xml:space="preserve"><value>无法创建此格式。</value></data>
+  <data name="LegacySourceMissing" xml:space="preserve"><value>来源文件不存在，或所选文件夹不包含文件。</value></data>
+  <data name="LegacyDuplicateNames" xml:space="preserve"><value>所选文件在压缩包中会产生重名条目。</value></data>
+  <data name="ArcNameUnsupported" xml:space="preserve"><value>经典 ARC 仅支持不含目录的 ASCII 文件名，且最长 12 个字符。请选择名称更短的单独文件。</value></data>
+  <data name="AceNameUnsupported" xml:space="preserve"><value>ACE 存储模式要求条目名称使用 ASCII 字符。</value></data>
+  <data name="LegacyWriterInvalid" xml:space="preserve"><value>ACE 写入库未提供有效的压缩包头。</value></data>
+  <data name="AceSizeUnsupported" xml:space="preserve"><value>ACE 存储模式仅支持不超过 4 GiB 的文件和不超过 65504 字节的条目名。</value></data>
+  <data name="LegacySourceChanged" xml:space="preserve"><value>创建压缩包时来源文件发生了变化。</value></data>
+  <data name="LegacyMemberTooLarge" xml:space="preserve"><value>此文件超过 ARJ/ARC 写入器的 2 GiB 限制。</value></data>
+  <data name="ArcHeaderInvalid" xml:space="preserve"><value>ARC 文件头无效或已损坏。</value></data>
 </root>

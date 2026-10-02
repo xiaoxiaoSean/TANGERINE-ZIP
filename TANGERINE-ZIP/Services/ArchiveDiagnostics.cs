@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
+using DiscUtils.Iso9660;
 using SharpCompress.Archives;
 using SharpCompress.Common.Options;
 using SharpCompress.Readers;
@@ -63,7 +64,20 @@ internal static class ArchiveDiagnostics
                 FileDetector.FileType.Arj or FileDetector.FileType.Ace or
                 FileDetector.FileType.Arc;
             FileDetector.FileType type = FileDetector.DetectFileType(path);
-            if (type is FileDetector.FileType.Lzw or FileDetector.FileType.Lzip)
+            if (type == FileDetector.FileType.Iso)
+            {
+                // An ISO has no per-file CRC field. Reading every file through
+                // DiscUtils still checks directory records and data extents.
+                // Report each readable file instead of a misleading zero count.
+                using FileStream image = File.OpenRead(path);
+                using CDReader iso = new(image, true);
+                foreach (string key in iso.GetFiles("", "*", SearchOption.AllDirectories))
+                {
+                    token.ThrowIfCancellationRequested();
+                    CheckEntry(key, 0, () => iso.OpenFile(key, FileMode.Open));
+                }
+            }
+            else if (type is FileDetector.FileType.Lzw or FileDetector.FileType.Lzip)
             {
                 // Standalone LZW and LZip have no archive directory. Read the
                 // complete decoded stream so checksum/decoder failures surface.
@@ -111,13 +125,31 @@ internal static class ArchiveDiagnostics
                     using Stream input = open();
                     byte[] buffer = new byte[128 * 1024];
                     uint crc = uint.MaxValue;
+                    ushort arcCrc = 0;
                     int read;
                     while ((read = input.Read(buffer)) > 0)
                     {
                         token.ThrowIfCancellationRequested();
                         crc = Crc32Checksum.Update(crc, buffer.AsSpan(0, read));
+                        if (type == FileDetector.FileType.Arc)
+                        {
+                            // Classic ARC stores CRC-16/IBM (seed zero) rather
+                            // than a CRC-32. Its reader exposes that 16-bit
+                            // value through the common Entry.Crc property.
+                            foreach (byte value in buffer.AsSpan(0, read))
+                            {
+                                arcCrc ^= value;
+                                for (int bit = 0; bit < 8; bit++)
+                                    arcCrc = (ushort)((arcCrc >> 1) ^
+                                        ((arcCrc & 1) != 0 ? 0xA001 : 0));
+                            }
+                        }
                     }
-                    if (!Crc32Checksum.Matches(expectedCrc, crc))
+                    if (type == FileDetector.FileType.Arc
+                        ? arcCrc != (ushort)expectedCrc
+                        : type == FileDetector.FileType.Ace
+                            ? expectedCrc > 0 && expectedCrc <= uint.MaxValue && (uint)expectedCrc != crc
+                            : !Crc32Checksum.Matches(expectedCrc, crc))
                         throw new InvalidDataException(LanguageManager.Get("IntegrityCrcMismatch"));
                     results.Add(new(key, true, LanguageManager.Get("IntegrityHealthy")));
                 }

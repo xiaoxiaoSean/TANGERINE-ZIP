@@ -47,6 +47,7 @@
                 <MenuItem x:Name="batchConvertMenuItem" Click="BatchConvertMenu_Click" />
             </MenuItem>
             <MenuItem x:Name="toolsMenuItem" Header="Archive tools">
+                <MenuItem x:Name="createSfxMenuItem" Click="CreateSfxMenu_Click" />
                 <MenuItem x:Name="integrityMenuItem" Click="IntegrityMenu_Click" />
                 <MenuItem x:Name="repairMenuItem" Click="RepairMenu_Click" />
                 <MenuItem x:Name="hashMenuItem" Click="HashMenu_Click" />

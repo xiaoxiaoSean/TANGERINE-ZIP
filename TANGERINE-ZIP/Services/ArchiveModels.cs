@@ -101,9 +101,7 @@ internal static class ArchiveCapabilities
         FileDetector.FileType.Ace or FileDetector.FileType.Arc or
         FileDetector.FileType.Lzw or FileDetector.FileType.Lzip;
 
-    public static bool CanCreate(FileDetector.FileType type) => CanOpen(type) && type is not
-        (FileDetector.FileType.Arj or FileDetector.FileType.Ace or
-         FileDetector.FileType.Arc or FileDetector.FileType.Lzw or FileDetector.FileType.Lzip);
+    public static bool CanCreate(FileDetector.FileType type) => CanOpen(type);
 
     // Only these archive standards define interoperable password protection.
     public static bool CanCreateWithPassword(FileDetector.FileType type) => type is

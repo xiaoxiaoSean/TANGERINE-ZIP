@@ -85,6 +85,8 @@
 
 		<PackageReference Include="Devedse.DiscUtils.Iso9660" Version="1.0.107" />
 
+		<PackageReference Include="Hawkynt.FileFormats.Archives" Version="1.0.0.776" />
+
 		<PackageReference Include="Joveler.Compression.XZ" Version="5.0.2" />
 
 		<PackageReference Include="K4os.Compression.LZ4.Streams" Version="1.3.8" />

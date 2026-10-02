@@ -59,10 +59,6 @@ internal sealed partial class CompressionOptionsWindow : Window
             type == FileDetector.FileType.Rar ? Visibility.Visible : Visibility.Collapsed;
         excludeLabel.Text = LanguageManager.Get("ExcludePatternsLabel");
         excludeNote.Text = LanguageManager.Get("ExcludePatternsNote");
-        selfExtractingCheck.Content = LanguageManager.Get("SfxOption");
-        selfExtractingNote.Text = LanguageManager.Get("SfxNote");
-        selfExtractingCheck.Visibility = selfExtractingNote.Visibility =
-            type == FileDetector.FileType.SevenZip ? Visibility.Visible : Visibility.Collapsed;
         confirmButton.Content = LanguageManager.Get("Confirm");
         cancelButton.Content = LanguageManager.Get("Cancel");
         if (type == FileDetector.FileType.Zip) methodCombo.SelectedIndex = 2;
@@ -141,15 +137,8 @@ internal sealed partial class CompressionOptionsWindow : Window
             method == "LZMA2" && _type == FileDetector.FileType.Zip ||
             method == "Deflate" && _type == FileDetector.FileType.SevenZip))
         { Warn("CompressionInvalidOptions"); return null; }
-        bool selfExtracting = advanced && selfExtractingCheck.IsChecked == true;
-        if (selfExtracting && volume > 0)
-        {
-            ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
-                MessageTipGenerator.GenerateTip("COPTW0001", LanguageManager.Get("SfxInvalidOptions"))); //COPTW0001
-            return null;
-        }
         return new CompressionOptions(password, advanced, levelCombo.SelectedIndex, method,
-            dictionary, threads, memory, volume, selfExtracting,
+            dictionary, threads, memory, volume, SelfExtracting: false,
             advanced ? solidMode : "Default", advanced && _type == FileDetector.FileType.Rar ? recoveryPercent : 0,
             advanced ? excludes : null);
     }
@@ -200,7 +189,6 @@ internal sealed partial class CompressionOptionsWindow : Window
             volumeBox.Text = value.VolumeMiB.ToString();
             recoveryBox.Text = value.RecoveryPercent.ToString();
             excludeBox.Text = string.Join("; ", value.ExcludePatterns ?? []);
-            selfExtractingCheck.IsChecked = value.SelfExtracting;
             profileNameBox.Text = profile.Name;
         }
         catch (Exception error) { ShowProfileError("COPTW0006", error); } //COPTW0006

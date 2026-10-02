@@ -482,6 +482,11 @@ namespace TANGERINE_ZIP.Tools
                 9 => FileType.Iso,
                 10 => FileType.Wim,
                 11 => FileType.Rar,
+                12 => FileType.Lzip,
+                13 => FileType.Arj,
+                14 => FileType.Arc,
+                15 => FileType.Lzw,
+                16 => FileType.Ace,
                 _ => FileType.Unknown
             };
         }

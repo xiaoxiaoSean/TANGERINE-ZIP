@@ -85,7 +85,8 @@ internal static class ArchiveWorker
                         result = result with { Nested = await service.AnalyzeNestedTarAsync(request.Path, CancellationToken.None, request.Password, progress) };
                         break;
                     case "list":
-                        result = result with { Entries = (await service.ListAsync(request.Path, CancellationToken.None, request.Password)).ToArray() };
+                        result = result with { Entries = (await service.ListAsync(request.Path, CancellationToken.None,
+                            request.Password, progress)).ToArray() };
                         break;
                     case "list-tar":
                         result = result with { Entries = (await service.ListNestedTarAsync(request.Path, request.TarKeys![0], CancellationToken.None, request.Password)).ToArray() };
@@ -152,7 +153,8 @@ internal static class ArchiveWorker
             if (request.Type == FileDetector.FileType.Rar)
                 await new RarToolService().CreateAsync(request.Sources!, request.Path, progress, CancellationToken.None);
             else
-                await service.CreateAsync(request.Sources!, request.Path, request.Type, progress, CancellationToken.None);
+                await service.CreateAsync(request.Sources!, request.Path, request.Type, progress, CancellationToken.None,
+                    request.Options?.Iso);
             return;
         }
         if (!ArchiveCapabilities.CanCreateWithPassword(request.Type))
@@ -270,8 +272,9 @@ internal sealed class ArchiveWorkerClient
     public async Task<NestedTarInfo> AnalyzeNestedTarAsync(string path, CancellationToken token, string? password = null,
         IProgress<ArchiveProgress>? progress = null) =>
         (await RunAsync(new("analyze", path, Password: password), progress, token)).Nested!;
-    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string path, CancellationToken token, string? password = null) =>
-        (await RunAsync(new("list", path, Password: password), null, token)).Entries!;
+    public async Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string path, CancellationToken token,
+        string? password = null, IProgress<ArchiveProgress>? progress = null) =>
+        (await RunAsync(new("list", path, Password: password), progress, token)).Entries!;
     public async Task<IReadOnlyList<ArchiveEntryInfo>> ListNestedTarAsync(string path, string key, CancellationToken token, string? password = null) =>
         (await RunAsync(new("list-tar", path, TarKeys: [key], Password: password), null, token)).Entries!;
     public Task ExtractAsync(string path, string destination, IReadOnlyCollection<string>? selection, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null, Func<ArchiveConflict, CancellationToken, Task<ConflictChoice>>? conflictResolver = null, Func<ExtractionIssue, CancellationToken, Task<ExtractionAnswer>>? issueResolver = null) =>

@@ -144,6 +144,7 @@ public partial class MainWindow : Window
         archiveOpenDialog.Title = LanguageManager.Get("SelectArchive");
         archiveOpenDialog.Filter = LanguageManager.Get("ArchiveDialogFilter");
         toolsMenuItem.Header = LanguageManager.Get("ToolsMenu");
+        createSfxMenuItem.Header = LanguageManager.Get("SfxToolMenu");
         integrityMenuItem.Header = LanguageManager.Get("IntegrityMenu");
         repairMenuItem.Header = LanguageManager.Get("RepairMenu");
         hashMenuItem.Header = LanguageManager.Get("HashMenu");
@@ -230,9 +231,13 @@ public partial class MainWindow : Window
                     if (!ArchiveCapabilities.CanOpen(type))
                         throw new StageException("MAINW0002", LanguageManager.Get("NotACompressedFile")); //MAINW0002
                     NestedTarInfo nestedTarInfo = await _archiveService.AnalyzeNestedTarAsync(archivePath, token, password, progress);
+                    progress.Report(new ArchiveProgress(45, string.Empty));
                     IReadOnlyList<ArchiveEntryInfo> entries = nestedTarInfo.FlattenAutomatically
                         ? await _archiveService.ListNestedTarAsync(archivePath, nestedTarInfo.TarEntryKeys[0], token, password)
-                        : await _archiveService.ListAsync(archivePath, token, password);
+                        : await _archiveService.ListAsync(archivePath, token, password,
+                            new InlineProgress<ArchiveProgress>(item =>
+                                progress.Report(new ArchiveProgress(45 + item.Percentage * 55 / 100,
+                                    item.EntryKey))));
                     _archivePath = archivePath;
                     _archivePassword = password;
                     _nestedTarInfo = nestedTarInfo;
@@ -519,6 +524,29 @@ public partial class MainWindow : Window
         catch (Exception error) { ShowException("MAINW0039", error); } //MAINW0039
     }
 
+    private async void CreateSfxMenu_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_isBusy) { ShowInformation("AlreadyDoingJob"); return; }
+            // The tool stays in the menu regardless of whether an archive is
+            // open. The dialog can choose a file or explain the empty state.
+            ArchiveSfxWindow dialog = new(_archivePath) { Owner = this };
+            if (dialog.ShowDialog() != true) return;
+            string source = dialog.SourcePath;
+            string output = dialog.OutputPath;
+            string? password = dialog.InputPassword;
+            await RunOperationAsync(LanguageManager.Get("SfxConverting"), (progress, token) =>
+                ArchiveSfxService.CreateAsync(source, output, password, _archiveService, progress, token));
+            operationStatusText.Text = string.Format(LanguageManager.Get("SfxCreated"), output);
+        }
+        catch (OperationCanceledException)
+        {
+            operationStatusText.Text = LanguageManager.Get("OperationCancelled");
+        }
+        catch (Exception error) { ShowException("MAINW0042", error); } //MAINW0042
+    }
+
     private async void DefenderScanMenu_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -572,19 +600,20 @@ public partial class MainWindow : Window
         if (archiveSaveDialog.ShowDialog(this) != true) return;
         string outputPath = archiveSaveDialog.FileName;
         FileDetector.FileType type = FileDetector.GetTypeFromCreateFilterIndex(archiveSaveDialog.FilterIndex);
-        CompressionOptionsWindow optionsWindow = new(Path.GetFileName(outputPath), type) { Owner = this };
-        if (optionsWindow.ShowDialog() != true) return;
-        CompressionOptions options = optionsWindow.Options!;
-        if (options.SelfExtracting)
+        CompressionOptions options;
+        if (type == FileDetector.FileType.Iso)
         {
-            string executableOutput = Path.ChangeExtension(outputPath, ".exe");
-            if (File.Exists(executableOutput) || Directory.Exists(executableOutput))
-                throw new StageException("MAINW0037", LanguageManager.Get("SfxOutputExists")); //MAINW0037
-            if (ThemedPromptWindow.Ask(this, LanguageManager.Get("SfxOption"),
-                string.Format(LanguageManager.Get("SfxOutputConfirm"), executableOutput),
-                (LanguageManager.Get("PromptYes"), MessageBoxResult.Yes),
-                (LanguageManager.Get("PromptNo"), MessageBoxResult.No)) != MessageBoxResult.Yes) return;
-            outputPath = executableOutput;
+            // ISO creation has filesystem and boot settings rather than
+            // compression levels, so it uses its own validated dialog.
+            IsoCreationWindow isoWindow = new() { Owner = this };
+            if (isoWindow.ShowDialog() != true) return;
+            options = new CompressionOptions(Iso: isoWindow.Options);
+        }
+        else
+        {
+            CompressionOptionsWindow optionsWindow = new(Path.GetFileName(outputPath), type) { Owner = this };
+            if (optionsWindow.ShowDialog() != true) return;
+            options = optionsWindow.Options!;
         }
         // A source can disappear while the user is choosing an output path or
         // compression options. Check again immediately before starting the worker.
@@ -1493,6 +1522,7 @@ public partial class MainWindow : Window
         extractMenuItem.IsEnabled = enabled;
         compressMenuItem.IsEnabled = enabled;
         batchMenuItem.IsEnabled = enabled;
+        createSfxMenuItem.IsEnabled = enabled;
         addFilesToArchiveMenuItem.IsEnabled = enabled;
         unloadArchiveMenuItem.IsEnabled = enabled;
         extractNestedTarMenuItem.IsEnabled = enabled;

@@ -1,6 +1,6 @@
 # TANGERINE ZIP 命令行操作手册
 
-本文对应当前仓库中的 `TANGERINE-ZIP.exe`。同一个程序同时支持图形界面和命令行：**无参数**时打开主窗口；只传入**一个已经存在的文件路径**时在主窗口打开该文件；以 `help`、`compress`、`extract`、`list`、`add`、`batch-extract`、`convert`、`test`、`hash`、`repair`、`comment`、`vault`、`scan` 或 `snapshot` 开头时在终端执行命令，不打开主窗口。资源管理器右键菜单和内部归档工作进程使用保留参数，不属于公开命令行接口。
+本文对应当前仓库中的 `TANGERINE-ZIP.exe`。同一个程序同时支持图形界面和命令行：**无参数**时打开主窗口；只传入**一个已经存在的文件路径**时在主窗口打开该文件；以 `help`、`compress`、`extract`、`list`、`add`、`batch-extract`、`convert`、`sfx`、`test`、`hash`、`repair`、`comment`、`vault`、`scan` 或 `snapshot` 开头时在终端执行命令，不打开主窗口。资源管理器右键菜单和内部归档工作进程使用保留参数，不属于公开命令行接口。
 
 EXE 使用 Windows GUI 子系统，启动时不会新建命令行窗口。CLI 沿用已有终端或重定向管道；没有终端时不创建替代窗口。脚本需要可靠等待结束和读取退出码时，请显式等待，例如 `Start-Process -Wait -PassThru -NoNewWindow`，完整说明见 [`WINDOW_LAYOUT_AND_PROCESS_STARTUP.md`](WINDOW_LAYOUT_AND_PROCESS_STARTUP.md)。
 
@@ -66,6 +66,11 @@ TANGERINE-ZIP.exe compress <output> <source>... [options]
 | `.xz` / `xz` | XZ | 恰好一个普通文件 | 不支持 |
 | `.lz4` / `lz4` | LZ4 | 恰好一个普通文件 | 不支持 |
 | `.zst` / `zst` 或 `zstd` | Zstandard | 恰好一个普通文件 | 不支持 |
+| `.lz` / `lz` 或 `lzip` | LZip | 恰好一个普通文件 | 不支持 |
+| `.arj` / `arj` | ARJ | 一个或多个文件、目录 | 不支持 |
+| `.ace` / `ace` | ACE 存储模式（不缩小体积） | 一个或多个文件、目录；条目名须为 ASCII | 不支持 |
+| `.arc` / `arc` | 经典 ARC Packed | 一个或多个平铺文件；条目名为最长 12 个字符的 ASCII | 不支持 |
+| `.Z` / `z` 或 `lzw` | Unix compress (LZW) | 恰好一个普通文件 | 不支持 |
 | `.iso` / `iso` | ISO | 一个或多个文件、目录 | 不支持 |
 | `.wim` / `wim` | WIM | 一个或多个文件、目录 | 不支持 |
 
@@ -88,6 +93,14 @@ TANGERINE-ZIP.exe compress <output> <source>... [options]
 | `--recovery-percent N` | 仅 RAR，`0–10`；默认 `0` | 在 RAR 中写入恢复记录，需要官方 `rar.exe`。 |
 | `--exclude PATTERN` | 可重复；仅 ZIP、7z、RAR | 排除匹配的文件；规则交给所选格式的写入工具处理。 |
 | `--sfx` | 需同时指定 `--format 7z`，输出为 `.exe`，不可分卷 | 用内置 7-Zip SFX 模块创建自解压程序。 |
+| `--iso-volume TEXT` | 仅 ISO；默认 `TANGERINE_ZIP` | 1–32 个 ASCII 字符的卷标识。 |
+| `--iso-manufacturer TEXT` | 仅 ISO；默认空 | 最多 128 个 ASCII 字符的制造商标识。 |
+| `--iso-joliet on\|off` | 仅 ISO；默认 `on` | 启用或关闭 Joliet Unicode 文件名。 |
+| `--iso-deduplicate on\|off` | 仅 ISO；默认 `off` | 复用内容相同的文件数据。 |
+| `--iso-boot-image PATH` | 仅 ISO；默认无 | 加入一个 El Torito BIOS 启动映像。 |
+| `--iso-emulation none\|floppy1200\|floppy1440\|floppy2880\|harddisk` | 需有启动映像；默认 `none` | 设置仿真方式；软盘映像大小必须精确匹配。 |
+| `--iso-load-segment N` | 需有启动映像；`0–65535`；默认 `0` | 设置 BIOS 加载段。 |
+| `--iso-isolinux on\|off` | 需有启动映像；默认 `off` | 更新 ISOLINUX 启动信息表。 |
 
 只要提供 `--level`、`--method`、`--dictionary`、`--threads`、`--memory-limit` 或 `--volume` 之一，就启用该任务的高级写入方式；这些参数仅允许用于 ZIP、7z、RAR。未提供高级参数时使用格式的默认写入方式。大字典、较多线程和较高等级可能增加耗时或使低配置设备解压缓慢；改变默认算法、分卷或加密方式可能降低旧版解压软件的兼容性。
 
@@ -108,7 +121,7 @@ $env:TZIP_PASSWORD = "example-password"
 ./TANGERINE-ZIP.exe compress "D:\Backup\database.gz" "C:\Data\database.sql"
 ```
 
-RAR 创建依赖用户自行取得并放在 exe 同目录的官方 `rar.exe`。`DONT_CHECK_RAR_EXE_AT_START` 只能关闭 GUI 启动时的提示，不能免除执行 RAR 创建时对 `rar.exe` 的检查。
+RAR 创建依赖用户自行取得并放在 exe 同目录的官方 `rar.exe`。`DONT_CHECK_RAR_EXE_AT_START` 只能关闭 GUI 启动时的提示，不能免除执行 RAR 创建时对 `rar.exe` 的检查。ISO 写入器仅支持一个 BIOS 启动项，不能创建 UEFI 或 USB 混合启动映像。
 
 ## `list`：列出成员
 
@@ -191,6 +204,7 @@ TANGERINE-ZIP.exe extract <archive> <destination> [options]
 | `add` | `add <archive.zip\|archive.7z\|archive.rar> <file>...`：向压缩包根目录添加或强制替换同名文件，完成后保留原包备份。RAR 需要官方 `rar.exe`；加密包、分卷包和目录来源不适用。 |
 | `batch-extract` | `batch-extract <output-folder> <archive>... [--password TEXT\|--password-env NAME]`：每个输入对应一个独立的新目录；同名输出或已有输出会被拒绝。 |
 | `convert` | `convert <output-folder> <archive>... --format zip\|7z\|tar [--password TEXT\|--password-env NAME] [--output-password-env NAME]`：逐个解压并转换。输出密码只支持 ZIP、7z；结果与输入同名时不会覆盖。 |
+| `sfx` | `sfx <source-archive> <output.exe> [--password TEXT\|--password-env NAME]`：将任一可解压来源转换为基于 7z 的 Windows 自解压 EXE；拒绝覆盖已有输出，来源不变。图形界面入口始终显示在“压缩包工具”菜单中。 |
 | `test` | `test <archive> [--password TEXT\|--password-env NAME]`：读取成员并检查可用的 CRC；坏成员会列出并以 `CLINE0011` 返回非零退出码。 |
 | `hash` | `hash <file> [--algorithm SHA256\|SHA512\|MD5] [--expected HEX]`：显示哈希值，若与预期不符则返回错误。 |
 | `repair` | `repair <archive> [--password TEXT\|--password-env NAME]`：先备份原包，再把可读成员写入新的 ZIP；支持 ZIP、7z、RAR、TAR、GZip。 |
@@ -199,7 +213,7 @@ TANGERINE-ZIP.exe extract <archive> <destination> [options]
 | `scan` | `scan <file>`：调用本机 Microsoft Defender 执行不修改文件的自定义扫描。扫描器不存在、报告威胁或扫描失败时会返回错误；需要系统允许使用该组件，某些环境可能需要管理员权限。 |
 | `snapshot` | `snapshot <archive> <folder> [--keep N]`：创建经 SHA-256 校验的独立副本。`--keep 0` 默认保留全部；`1–1000` 只清理本功能为同名来源创建的旧快照。可从 Windows 任务计划程序定期调用。 |
 
-`add`、`comment`、`repair` 和 `snapshot` 不会直接覆盖原包。批量操作中后续项目失败时，先前已完成的输出仍保留。ARJ、ACE、ARC、LZW 和 LZip 可以浏览、预览、解压和执行 `test`，但不能创建或使用 `repair`。
+`add`、`comment`、`repair`、`snapshot` 和 `sfx` 不会直接覆盖原包。批量操作中后续项目失败时，先前已完成的输出仍保留。ARJ、ACE、ARC、LZW 可以创建、浏览、预览、解压和执行 `test`，但不能使用 `repair`；ACE 创建使用存储模式，不缩小体积。LZip 也能对单个文件创建 `.lz` 压缩流，不能使用 `repair`。
 
 ## 标准输出、错误输出与退出码
 

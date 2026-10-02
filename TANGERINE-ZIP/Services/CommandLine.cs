@@ -12,7 +12,7 @@ namespace TANGERINE_ZIP.Services;
 internal static class CommandLine
 {
     private static readonly HashSet<string> Commands = new(StringComparer.OrdinalIgnoreCase)
-        { "help", "compress", "extract", "list", "add", "batch-extract", "convert", "test", "hash", "repair", "comment", "vault", "scan", "snapshot" };
+        { "help", "compress", "extract", "list", "add", "batch-extract", "convert", "sfx", "test", "hash", "repair", "comment", "vault", "scan", "snapshot" };
 
     public static bool IsCommand(string[] args) => args.Length > 0 &&
         !args[0].StartsWith("--context-", StringComparison.Ordinal) &&
@@ -63,6 +63,7 @@ internal static class CommandLine
                     case "add": await AddAsync(args[1..], cancellation.Token); break;
                     case "batch-extract": await BatchExtractAsync(args[1..], cancellation.Token); break;
                     case "convert": await ConvertAsync(args[1..], cancellation.Token); break;
+                    case "sfx": await SfxAsync(args[1..], cancellation.Token); break;
                     case "test": await TestAsync(args[1..], cancellation.Token); break;
                     case "hash": await HashAsync(args[1..], cancellation.Token); break;
                     case "repair": await RepairAsync(args[1..], cancellation.Token); break;
@@ -99,7 +100,9 @@ internal static class CommandLine
     private static async Task CompressAsync(string[] args, CancellationToken token)
     {
         Parsed parsed = Parse("compress", args, "password", "password-env", "format", "level", "method",
-            "dictionary", "threads", "memory-limit", "volume", "solid", "recovery-percent", "exclude", "sfx");
+            "dictionary", "threads", "memory-limit", "volume", "solid", "recovery-percent", "exclude", "sfx",
+            "iso-volume", "iso-manufacturer", "iso-joliet", "iso-deduplicate", "iso-boot-image",
+            "iso-emulation", "iso-load-segment", "iso-isolinux");
         if (parsed.Positionals.Count < 2) throw Usage("compress");
         string output = Path.GetFullPath(parsed.Positionals[0]);
         string[] sources = parsed.Positionals.Skip(1).Select(Path.GetFullPath).ToArray();
@@ -144,8 +147,31 @@ internal static class CommandLine
             throw Usage("compress");
         if (password is not null && !ArchiveCapabilities.CanCreateWithPassword(format))
             throw new StageException("CLINE0003", LanguageManager.Get("PasswordFormatUnsupported")); //CLINE0003
+        bool isoFlags = parsed.HasAny("iso-volume", "iso-manufacturer", "iso-joliet",
+            "iso-deduplicate", "iso-boot-image", "iso-emulation", "iso-load-segment", "iso-isolinux");
+        if (isoFlags && format != FileDetector.FileType.Iso) throw Usage("compress");
+        IsoCreationOptions? iso = null;
+        if (format == FileDetector.FileType.Iso)
+        {
+            string emulation = (parsed.Single("iso-emulation") ?? "none").ToLowerInvariant() switch
+            {
+                "none" => "NoEmulation", "floppy1200" => "Diskette1200KiB",
+                "floppy1440" => "Diskette1440KiB", "floppy2880" => "Diskette2880KiB",
+                "harddisk" => "HardDisk", _ => throw Usage("compress")
+            };
+            string? image = parsed.Single("iso-boot-image");
+            iso = new IsoCreationOptions(parsed.Single("iso-volume") ?? "TANGERINE_ZIP",
+                parsed.Single("iso-manufacturer") ?? string.Empty,
+                ParseIsoToggle(parsed.Single("iso-joliet"), true),
+                ParseIsoToggle(parsed.Single("iso-deduplicate"), false),
+                image is not null, image is null ? null : Path.GetFullPath(image), emulation,
+                parsed.Int("iso-load-segment", 0, 0, 65535),
+                ParseIsoToggle(parsed.Single("iso-isolinux"), false));
+            if (image is null && parsed.HasAny("iso-emulation", "iso-load-segment", "iso-isolinux"))
+                throw Usage("compress");
+        }
         CompressionOptions options = new(password, advanced, level, method, dictionary, threads, memory, volume,
-            sfx, solidMode, recoveryPercent, excludes);
+            sfx, solidMode, recoveryPercent, excludes, iso);
         await new ArchiveWorkerClient().CreateAsync(sources, output, format, null, token, password, options);
         Console.WriteLine(string.Format(LanguageManager.Get("CliCreated"), output));
     }
@@ -257,6 +283,16 @@ internal static class CommandLine
             Console.WriteLine(entry.Name + ": " + entry.Message);
         if (failed != 0)
             throw new StageException("CLINE0011", LanguageManager.Get("CliIntegrityFailed")); //CLINE0011
+    }
+
+    private static async Task SfxAsync(string[] args, CancellationToken token)
+    {
+        Parsed parsed = Parse("sfx", args, "password", "password-env");
+        if (parsed.Positionals.Count != 2) throw Usage("sfx");
+        string output = Path.GetFullPath(parsed.Positionals[1]);
+        await ArchiveSfxService.CreateAsync(parsed.Positionals[0], output, GetPassword(parsed),
+            new ArchiveWorkerClient(), null, token);
+        Console.WriteLine(string.Format(LanguageManager.Get("SfxCreated"), output));
     }
 
     private static async Task HashAsync(string[] args, CancellationToken token)
@@ -393,6 +429,10 @@ internal static class CommandLine
             "bz2" or "bzip2" => FileDetector.FileType.BZip2,
             "xz" => FileDetector.FileType.Xz, "lz4" => FileDetector.FileType.Lz4,
             "zst" or "zstd" => FileDetector.FileType.Zstd,
+            "lz" or "lzip" => FileDetector.FileType.Lzip,
+            "arj" => FileDetector.FileType.Arj, "ace" => FileDetector.FileType.Ace,
+            "arc" => FileDetector.FileType.Arc,
+            "z" or "lzw" => FileDetector.FileType.Lzw,
             "iso" => FileDetector.FileType.Iso, "wim" => FileDetector.FileType.Wim,
             _ => FileDetector.FileType.Unknown
         };
@@ -400,6 +440,11 @@ internal static class CommandLine
 
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\t", "\\t")
         .Replace("\r", "\\r").Replace("\n", "\\n");
+
+    private static bool ParseIsoToggle(string? value, bool fallback) => value?.ToLowerInvariant() switch
+    {
+        null => fallback, "on" => true, "off" => false, _ => throw Usage("compress")
+    };
 
     private static StageException Usage(string command) => new("CLINE0007",
         LanguageManager.Get("CliInvalidArguments") + Environment.NewLine +
@@ -410,6 +455,7 @@ internal static class CommandLine
         "compress" => "CliHelp_compressV2", "extract" => "CliHelp_extract",
         "list" => "CliHelp_list", "add" => "CliHelp_add",
         "batch-extract" => "CliHelp_batch-extract", "convert" => "CliHelp_convert",
+        "sfx" => "CliHelp_sfx",
         "test" => "CliHelp_test", "hash" => "CliHelp_hash",
         "repair" => "CliHelp_repair", "comment" => "CliHelp_comment",
         "vault" => "CliHelp_vault", "scan" => "CliHelp_scan",
