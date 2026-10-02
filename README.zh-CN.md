@@ -13,8 +13,8 @@
 <p align="center">支持图形界面和命令行的 Windows 压缩包管理工具。</p>
 
 <p align="center">
-  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/latest">下载最新版本</a> ·
-  <a href="RELEASE_NOTES_v2.1.1.md">查看 v2.1.1 更新日志</a> ·
+  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5">下载 tanevo v2.1.5 预发布版</a> ·
+  <a href="RELEASE_NOTES_v2.1.5.md">查看 v2.1.5 更新日志</a> ·
   <a href="dev_doc1/README.md">开发文档</a>
 </p>
 
@@ -32,7 +32,7 @@
 
 ## 下载与首次启动
 
-从[最新 Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/latest)下载一个 Windows x64 可执行文件：
+从 [tanevo v2.1.5 预发布版](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5)下载一个 Windows x64 可执行文件：
 
 | 文件后缀 | 版本 | 运行要求 |
 | --- | --- | --- |
@@ -66,6 +66,7 @@ dotnet build TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release
 
 ## 文档与许可
 
+- [v2.1.5 预发布更新日志](RELEASE_NOTES_v2.1.5.md)
 - [v2.1.1 更新日志](RELEASE_NOTES_v2.1.1.md)
 - [v2.1.0 更新日志](RELEASE_NOTES_v2.1.0.md)
 - [v2.0.0 更新日志](RELEASE_NOTES_v2.0.0.md)
