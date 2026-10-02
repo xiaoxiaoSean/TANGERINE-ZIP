@@ -58,3 +58,12 @@ gh release create vX.Y.Z out/TANGERINE-ZIP-vX.Y.Z-fd.exe out/TANGERINE-ZIP-vX.Y.
 - `TANGERINE-ZIP-v2.1.1-fd.exe`：9,518,290 字节；SHA-256 `7B9FDBF83E21AA3EABF89D531F2009B38D63E13BBF6FB0F830E3327E179BF1DA`。
 - `TANGERINE-ZIP-v2.1.1-sc.exe`：83,794,728 字节；SHA-256 `F3AEBBDC8DD3860A59A233601DFEB28B8BDAA6E6A6FAA0D990BB874D9B247D29`。
 - 标签 `v2.1.1` 指向源码提交 `4f25130`；[GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.1) 标题为 `TANGERINE-ZIP-V2.1.1`，已发布为正式版本。远端两个附件的大小和 SHA-256 与本地一致。
+
+## v2.1.5 tanevo 预发布记录
+
+- 基线：`v2.1.1`。更新日志为 [`RELEASE_NOTES_v2.1.5.md`](../RELEASE_NOTES_v2.1.5.md)，英文在前、中文在后；README 的版本链接已指向本次预发布版。
+- 全局 `VName` 为 `tanevo`，主菜单使用本地化的“关于 {0} / About {0}”格式。主程序和两个附件的 FileVersion、ProductVersion 均为 `2.1.5`。
+- Release 编译零警告、零错误；`FolderProfile1` 与 `FolderProfile` 均发布成功，两个附件的 `help` 命令返回 `0`。
+- `TANGERINE-ZIP-v2.1.5-fd.exe`：10,009,810 字节；SHA-256 `10317C8A003741FAF9456B66224F7EDA515B5DF7219B592BF75DF0B2402BB194`。
+- `TANGERINE-ZIP-v2.1.5-sc.exe`：84,186,851 字节；SHA-256 `5462AD4328F71F960DDF3C0E0A056C8D932407CBEBE8D095979E3533F2C1998D`。
+- 注释标签 `v2.1.5` 指向提交 `7cd4bd41ab79cec0f087d8ed278f473de51c11bc`；[GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5) 标题为 `TANGERINE-ZIP-V2.1.5`，状态为 pre-release、非草稿。远端两个附件的大小与 SHA-256 均与本地一致。
