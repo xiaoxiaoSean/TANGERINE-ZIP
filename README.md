@@ -13,8 +13,8 @@
 <p align="center">A Windows archive manager with a WPF interface and command-line tools.</p>
 
 <p align="center">
-  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5">Download tanevo v2.1.5 pre-release</a> ·
-  <a href="RELEASE_NOTES_v2.1.5.md">What's new in v2.1.5</a> ·
+  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.1">Download tanevo v2.1.5.1 pre-release</a> ·
+  <a href="RELEASE_NOTES_v2.1.5.1.md">What's new in v2.1.5.1</a> ·
   <a href="dev_doc1/README.md">Developer documentation</a>
 </p>
 
@@ -33,7 +33,7 @@ Some operations depend on the archive format and its contents. Encrypted and spl
 
 ## Download and first run
 
-Download one Windows x64 executable from the [tanevo v2.1.5 pre-release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5):
+Download one Windows x64 executable from the [tanevo v2.1.5.1 pre-release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.1):
 
 | File suffix | Edition | Requirement |
 | --- | --- | --- |
@@ -67,6 +67,7 @@ The project includes two publish profiles: `FolderProfile` for the self-containe
 
 ## Documentation and license
 
+- [v2.1.5.1 pre-release notes](RELEASE_NOTES_v2.1.5.1.md)
 - [v2.1.5 pre-release notes](RELEASE_NOTES_v2.1.5.md)
 - [v2.1.1 release notes](RELEASE_NOTES_v2.1.1.md)
 - [v2.1.0 release notes](RELEASE_NOTES_v2.1.0.md)
@@ -74,3 +75,4 @@ The project includes two publish profiles: `FolderProfile` for the self-containe
 - [Developer documentation and format details](dev_doc1/README.md)
 - [Command-line reference](dev_doc1/command.md)
 - [MIT license](LICENSE)
+- [Hawkynt package and LGPL license notice](third_party/Hawkynt/README.md)

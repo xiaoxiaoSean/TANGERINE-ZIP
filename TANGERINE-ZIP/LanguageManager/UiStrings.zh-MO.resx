@@ -294,7 +294,7 @@
     <value>選擇輸出壓縮檔</value>
   </data>
   <data name="CreateArchiveFilter" xml:space="preserve">
-    <value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR|*.rar|LZip|*.lz|ARJ|*.arj|ARC|*.arc|Unix 壓縮 (LZW)|*.Z|ACE|*.ace</value>
+    <value>ZIP|*.zip|7Z|*.7z|TAR|*.tar|GZip|*.gz|BZip2|*.bz2|XZ|*.xz|LZ4|*.lz4|Zstandard|*.zst|ISO|*.iso|WIM|*.wim|RAR|*.rar|LZip|*.lz|ARJ|*.arj|ARC|*.arc|Unix 壓縮 (LZW)|*.Z|ACE（僅儲存）|*.ace</value>
   </data>
   <data name="CompressingText" xml:space="preserve">
     <value>正在壓縮</value>
