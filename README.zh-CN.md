@@ -13,7 +13,8 @@
 <p align="center">支持图形界面和命令行的 Windows 压缩包管理工具。</p>
 
 <p align="center">
-  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2">下载 tanevo v2.1.5.2 预发布版</a> ·
+  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.1">最新正式版：v2.1.1</a> ·
+  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2">最新预发布版：tanevo v2.1.5.2</a> ·
   <a href="RELEASE_NOTES_v2.1.5.2.md">查看 v2.1.5.2 更新日志</a> ·
   <a href="dev_doc1/README.md">开发文档</a>
 </p>
@@ -33,7 +34,7 @@
 
 ## 下载与首次启动
 
-从 [tanevo v2.1.5.2 预发布版](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2)下载一个 Windows x64 可执行文件：
+选择[最新正式版 v2.1.1](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.1)或[最新预发布版 tanevo v2.1.5.2](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2)，再从所选发布页下载一个 Windows x64 可执行文件：
 
 | 文件后缀 | 版本 | 运行要求 |
 | --- | --- | --- |
