@@ -76,3 +76,12 @@ gh release create vX.Y.Z out/TANGERINE-ZIP-vX.Y.Z-fd.exe out/TANGERINE-ZIP-vX.Y.
 - `TANGERINE-ZIP-v2.1.5.1-fd.exe`：16,838,338 字节；SHA-256 `50E97F845BC966322717AC816521D68BFE252E2D955C06C1C07D192B042212DD`。
 - `TANGERINE-ZIP-v2.1.5.1-sc.exe`：92,107,206 字节；SHA-256 `C839361A4AE8DB5161D111170BE6E72810820B92E150AAE4F21700E31A13F244`。
 - 发布源码提交为 `b61b127`，注释标签 `v2.1.5.1` 指向该提交；[GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.1) 标题为 `TANGERINE-ZIP-V2.1.5.1`，状态为 pre-release、非草稿。远端两个附件的大小和 GitHub 提供的 SHA-256 digest 均与本地一致。
+
+## v2.1.5.2 tanevo 预发布记录
+
+- 基线：`v2.1.5.1`。更新日志为 [`RELEASE_NOTES_v2.1.5.2.md`](../RELEASE_NOTES_v2.1.5.2.md)，英文在前、中文在后；英文和简中 README 均指向本次预发布版。
+- 主程序 `<Version>` 为 `2.1.5.2`，全局 `VName` 保持 `tanevo`。源码提交 `bb83541` 已推送至 `master`，注释标签 `v2.1.5.2` 指向该提交。
+- Release 编译零警告、零错误；`FolderProfile1` 与 `FolderProfile` 均成功发布。两份附件的 FileVersion 和 ProductVersion 均为 `2.1.5.2`，`help` 命令均以退出码 `0` 完成。
+- `TANGERINE-ZIP-v2.1.5.2-fd.exe`：16,858,818 字节；SHA-256 `CE8883192B91F948A6BD3AB4AE90CAE1B238B7B2AAC6CF28D34AF95AE129D6AE`。
+- `TANGERINE-ZIP-v2.1.5.2-sc.exe`：92,128,310 字节；SHA-256 `16E0CD34006A434904A2A857F384D7725D9979B76AE0D8136285708B517203FA`。
+- [GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2) 标题为 `TANGERINE-ZIP-V2.1.5.2`，状态为 pre-release、非草稿。远端两个附件的大小与 GitHub SHA-256 digest 均与本地一致，正文英文在中文之前。
