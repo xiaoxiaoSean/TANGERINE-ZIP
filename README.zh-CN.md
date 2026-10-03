@@ -13,8 +13,8 @@
 <p align="center">支持图形界面和命令行的 Windows 压缩包管理工具。</p>
 
 <p align="center">
-  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.1">下载 tanevo v2.1.5.1 预发布版</a> ·
-  <a href="RELEASE_NOTES_v2.1.5.1.md">查看 v2.1.5.1 更新日志</a> ·
+  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2">下载 tanevo v2.1.5.2 预发布版</a> ·
+  <a href="RELEASE_NOTES_v2.1.5.2.md">查看 v2.1.5.2 更新日志</a> ·
   <a href="dev_doc1/README.md">开发文档</a>
 </p>
 
@@ -33,7 +33,7 @@
 
 ## 下载与首次启动
 
-从 [tanevo v2.1.5.1 预发布版](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.1)下载一个 Windows x64 可执行文件：
+从 [tanevo v2.1.5.2 预发布版](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2)下载一个 Windows x64 可执行文件：
 
 | 文件后缀 | 版本 | 运行要求 |
 | --- | --- | --- |
@@ -53,7 +53,7 @@
 .\TANGERINE-ZIP.exe extract "C:\Backup\photos.zip" "C:\Restored"
 ```
 
-使用 `compress`、`list` 或 `extract` 前，先通过图形界面设置临时目录。完整参数和退出行为见[命令行手册](dev_doc1/command.md)。
+使用归档命令前，可运行 `temp set 目录` 或在图形界面设置临时目录。命令行输出统一为英文。完整参数和退出行为见[命令行手册](dev_doc1/command.md)，功能对应见[GUI/CLI 对照](dev_doc1/CLI_GUI_PARITY.md)。
 
 ## 从源码构建
 
@@ -67,6 +67,7 @@ dotnet build TANGERINE-ZIP/TANGERINE-ZIP.csproj -c Release
 
 ## 文档与许可
 
+- [v2.1.5.2 预发布更新日志](RELEASE_NOTES_v2.1.5.2.md)
 - [v2.1.5.1 预发布更新日志](RELEASE_NOTES_v2.1.5.1.md)
 - [v2.1.5 预发布更新日志](RELEASE_NOTES_v2.1.5.md)
 - [v2.1.1 更新日志](RELEASE_NOTES_v2.1.1.md)

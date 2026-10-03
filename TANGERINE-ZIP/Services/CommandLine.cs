@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Security.Cryptography;
+using System.Windows.Media;
 using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP.Services;
@@ -12,7 +13,7 @@ namespace TANGERINE_ZIP.Services;
 internal static class CommandLine
 {
     private static readonly HashSet<string> Commands = new(StringComparer.OrdinalIgnoreCase)
-        { "help", "compress", "extract", "list", "add", "batch-extract", "convert", "sfx", "test", "hash", "repair", "comment", "vault", "scan", "snapshot" };
+        { "help", "compress", "extract", "list", "add", "batch-extract", "convert", "sfx", "test", "hash", "repair", "comment", "vault", "scan", "snapshot", "edit", "nested-tar", "temp", "integration", "appearance", "profile" };
 
     public static bool IsCommand(string[] args) => args.Length > 0 &&
         !args[0].StartsWith("--context-", StringComparison.Ordinal) &&
@@ -22,6 +23,12 @@ internal static class CommandLine
 
     public static async Task<int> RunAsync(string[] args)
     {
+        // CLI output is deliberately stable English on every Windows locale.
+        // The archive worker is a separate process, so the environment marker
+        // carries this choice across its process boundary as well.
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
+        Environment.SetEnvironmentVariable("TZIP_CLI_ENGLISH", "1");
         // Attaching can replace the standard handles supplied by a script. Keep
         // redirected pipe/file handles intact; only attach for interactive output.
         // Failure simply means there is no caller console (e.g. Explorer launch).
@@ -44,7 +51,7 @@ internal static class CommandLine
             if (!Commands.Contains(command)) throw Usage(command);
             // The worker uses the configured app-owned temporary workspace. CLI calls
             // report missing or unreachable TEMP_D through stderr, without opening WPF.
-            if (command is not ("hash" or "vault" or "scan" or "snapshot"))
+            if (command is not ("hash" or "vault" or "scan" or "snapshot" or "temp" or "integration" or "appearance" or "profile"))
                 TempDirectorySettings.Initialize();
             using CancellationTokenSource cancellation = new();
             ConsoleCancelEventHandler cancelHandler = (_, eventArgs) =>
@@ -71,6 +78,12 @@ internal static class CommandLine
                     case "vault": Vault(args[1..]); break;
                     case "scan": await ScanAsync(args[1..], cancellation.Token); break;
                     case "snapshot": await SnapshotAsync(args[1..], cancellation.Token); break;
+                    case "edit": await EditAsync(args[1..], cancellation.Token); break;
+                    case "nested-tar": await NestedTarAsync(args[1..], cancellation.Token); break;
+                    case "temp": await TempAsync(args[1..]); break;
+                    case "integration": await IntegrationAsync(args[1..], cancellation.Token); break;
+                    case "appearance": await AppearanceAsync(args[1..]); break;
+                    case "profile": await ProfileAsync(args[1..]); break;
                     default: throw Usage(command);
                 }
                 return 0;
@@ -79,16 +92,21 @@ internal static class CommandLine
         }
         catch (OperationCanceledException)
         {
-            Console.Error.WriteLine(LanguageManager.Get("CliCancelled"));
+            Console.Error.WriteLine($"[CLINE0015] {LanguageManager.Get("CliCancelled")}"); //CLINE0015
             return 2;
         }
         catch (Exception exception)
         {
-            string stage = exception is StageException staged ? staged.StageCode : "CLINE0001";
+            string stage = exception switch
+            {
+                StageException staged => staged.StageCode,
+                ColorContrastException contrast => contrast.StageCode,
+                _ => "CLINE0001"
+            };
             // Runtime and third-party exception messages may be in the OS or
             // library language. Public CLI errors always use a translated
             // boundary message; StageException already carries one.
-            string message = exception is StageException
+            string message = exception is StageException or ColorContrastException
                 ? exception.Message : LanguageManager.Get("CliUnexpectedFailure");
             Console.Error.WriteLine($"[{stage}] {message}"); //CLINE0001
             if (stage.StartsWith("TMPDR", StringComparison.Ordinal))
@@ -102,7 +120,7 @@ internal static class CommandLine
         Parsed parsed = Parse("compress", args, "password", "password-env", "format", "level", "method",
             "dictionary", "threads", "memory-limit", "volume", "solid", "recovery-percent", "exclude", "sfx",
             "iso-volume", "iso-manufacturer", "iso-joliet", "iso-deduplicate", "iso-boot-image",
-            "iso-emulation", "iso-load-segment", "iso-isolinux");
+            "iso-emulation", "iso-load-segment", "iso-isolinux", "profile");
         if (parsed.Positionals.Count < 2) throw Usage("compress");
         string output = Path.GetFullPath(parsed.Positionals[0]);
         string[] sources = parsed.Positionals.Skip(1).Select(Path.GetFullPath).ToArray();
@@ -116,6 +134,7 @@ internal static class CommandLine
         string? password = GetPassword(parsed);
         bool advanced = parsed.HasAny("level", "method", "dictionary", "threads", "memory-limit", "volume",
             "solid", "recovery-percent", "exclude", "sfx");
+        if (parsed.Has("profile") && advanced) throw Usage("compress");
         int level = parsed.Int("level", 5, 0, format == FileDetector.FileType.Rar ? 5 : 9);
         int dictionary = parsed.Int("dictionary", 16, 1, 1024);
         int threads = parsed.Int("threads", 0, 0, 128);
@@ -172,6 +191,16 @@ internal static class CommandLine
         }
         CompressionOptions options = new(password, advanced, level, method, dictionary, threads, memory, volume,
             sfx, solidMode, recoveryPercent, excludes, iso);
+        if (parsed.Single("profile") is string profileName)
+        {
+            if (isoFlags || format == FileDetector.FileType.Iso) throw Usage("compress");
+            CompressionProfile profile = CompressionProfileStore.Load(format).FirstOrDefault(item =>
+                item.Name.Equals(profileName, StringComparison.OrdinalIgnoreCase)) ??
+                throw new StageException("CLINE0013", LanguageManager.Get("CliProfileMissing")); //CLINE0013
+            // Saved profiles deliberately omit secrets; a password supplied to
+            // this invocation remains the only credential sent to the worker.
+            options = profile.Options with { Password = password };
+        }
         await new ArchiveWorkerClient().CreateAsync(sources, output, format, null, token, password, options);
         Console.WriteLine(string.Format(LanguageManager.Get("CliCreated"), output));
     }
@@ -209,11 +238,15 @@ internal static class CommandLine
 
     private static async Task ListAsync(string[] args, CancellationToken token)
     {
-        Parsed parsed = Parse("list", args, "password", "password-env", "encoding", "json");
+        Parsed parsed = Parse("list", args, "password", "password-env", "encoding", "json", "search");
         if (parsed.Positionals.Count != 1) throw Usage("list");
         ArchiveWorkerClient client = new() { EntryEncodingName = ValidateEncoding(parsed.Single("encoding")) };
         IReadOnlyList<ArchiveEntryInfo> entries = await client.ListAsync(RequireArchive(parsed.Positionals[0]),
             token, GetPassword(parsed));
+        // Filtering the same member metadata as the GUI search keeps JSON and
+        // tabular output consistent, including directories and unknown sizes.
+        if (parsed.Single("search") is string query)
+            entries = entries.Where(entry => entry.Key.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
         if (parsed.Has("json"))
         {
             Console.WriteLine(JsonSerializer.Serialize(entries));
@@ -399,6 +432,310 @@ internal static class CommandLine
         Console.WriteLine(string.Format(LanguageManager.Get("SnapshotCreated"), output));
     }
 
+    /// <summary>
+    /// Executes the same archive rewrite used by the GUI clipboard and Delete menu.
+    /// Requiring explicit member keys and a destination prefix prevents an
+    /// unattended invocation from editing an unintended directory or archive.
+    /// The worker keeps the original archive as a sibling backup on success.
+    /// </summary>
+    private static async Task EditAsync(string[] args, CancellationToken token)
+    {
+        Parsed parsed = Parse("edit", args, "entry", "destination", "encoding");
+        if (parsed.Positionals.Count != 2) throw Usage("edit");
+        string archive = RequireArchive(parsed.Positionals[0]);
+        ArchiveEditAction action = parsed.Positionals[1].ToLowerInvariant() switch
+        {
+            "copy" => ArchiveEditAction.Copy,
+            "move" => ArchiveEditAction.Move,
+            "delete" => ArchiveEditAction.Delete,
+            _ => throw Usage("edit")
+        };
+        string[] selected = parsed.Many("entry").ToArray();
+        if (selected.Length == 0 || action == ArchiveEditAction.Delete && parsed.Has("destination") ||
+            action != ArchiveEditAction.Delete && !parsed.Has("destination")) throw Usage("edit");
+        string? encoding = ValidateEncoding(parsed.Single("encoding"));
+        ArchiveWorkerClient client = new() { EntryEncodingName = encoding };
+        IReadOnlyList<ArchiveEntryInfo> entries = await client.ListAsync(archive, token);
+        if (selected.Any(key => !entries.Any(entry =>
+            entry.Key.TrimEnd('/').Equals(key.TrimEnd('/'), StringComparison.OrdinalIgnoreCase) ||
+            entry.Key.StartsWith(key.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase))))
+            throw new StageException("CLINE0004", LanguageManager.Get("CliEntryMissing")); //CLINE0004
+        // The GUI passes a directory key ending in '/'. Normalize the shell
+        // argument to that contract so `--destination copied` creates
+        // copied/member.txt instead of a renamed root member.
+        string destination = (parsed.Single("destination") ?? string.Empty).Replace('\\', '/');
+        if (destination.Length > 0 && !destination.EndsWith('/')) destination += '/';
+        string backup = await client.EditAsync(archive, selected,
+            destination, action, null, token);
+        Console.WriteLine(string.Format(LanguageManager.Get("CliArchiveUpdated"), backup));
+    }
+
+    /// <summary>
+    /// Uses the archive worker's nested TAR detection and extraction path. A
+    /// specified outer TAR member must be present in the analyzed archive; when
+    /// omitted all detected TAR members are expanded into destination folders.
+    /// Noninteractive conflicts and safety issues fail closed by default.
+    /// </summary>
+    private static async Task NestedTarAsync(string[] args, CancellationToken token)
+    {
+        Parsed parsed = Parse("nested-tar", args, "entry", "password", "password-env",
+            "on-conflict", "on-issue");
+        if (parsed.Positionals.Count != 2) throw Usage("nested-tar");
+        string archive = RequireArchive(parsed.Positionals[0]);
+        string destination = Path.GetFullPath(parsed.Positionals[1]);
+        string? password = GetPassword(parsed);
+        OverwritePolicy policy = (parsed.Single("on-conflict") ?? "abort").ToLowerInvariant() switch
+        {
+            "abort" => OverwritePolicy.Ask,
+            "overwrite" => OverwritePolicy.OverwriteAll,
+            "skip" => OverwritePolicy.SkipAll,
+            _ => throw Usage("nested-tar")
+        };
+        string issue = (parsed.Single("on-issue") ?? "abort").ToLowerInvariant();
+        if (issue is not ("abort" or "skip")) throw Usage("nested-tar");
+        ArchiveWorkerClient client = new();
+        NestedTarInfo nested = await client.AnalyzeNestedTarAsync(archive, token, password);
+        string[] requested = parsed.Many("entry").ToArray();
+        if (requested.Any(key => !nested.TarEntryKeys.Contains(key, StringComparer.Ordinal)) ||
+            nested.TarEntryKeys.Count == 0)
+            throw new StageException("CLINE0012", LanguageManager.Get("CliNestedTarMissing")); //CLINE0012
+        IReadOnlyList<string> selected = requested.Length == 0 ? nested.TarEntryKeys : requested;
+        await client.ExtractNestedTarsAsync(archive, selected, destination, null, true,
+            policy, null, token, password,
+            (_, _) => Task.FromResult(ConflictChoice.Cancel),
+            (_, _) => Task.FromResult(new ExtractionAnswer(issue == "skip"
+                ? ExtractionDecision.Skip : ExtractionDecision.Stop)));
+        Console.WriteLine(string.Format(LanguageManager.Get("CliExtracted"), destination));
+    }
+
+    /// <summary>
+    /// Reads or changes the persisted TEMP_D selection without starting WPF.
+    /// The setter performs the same validation and atomic save as Settings.
+    /// </summary>
+    private static async Task TempAsync(string[] args)
+    {
+        Parsed parsed = Parse("temp", args);
+        if (parsed.Positionals.Count == 1 && parsed.Positionals[0].Equals("get", StringComparison.OrdinalIgnoreCase))
+        {
+            TempDirectorySettings.Initialize();
+            Console.WriteLine(TempDirectorySettings.CurrentPath);
+            return;
+        }
+        if (parsed.Positionals.Count == 2 && parsed.Positionals[0].Equals("set", StringComparison.OrdinalIgnoreCase))
+        {
+            await TempDirectorySettings.SetAsync(parsed.Positionals[1]);
+            Console.WriteLine(TempDirectorySettings.CurrentPath);
+            return;
+        }
+        throw Usage("temp");
+    }
+
+    /// <summary>
+    /// Exposes the GUI's Explorer and default-app operations through their
+    /// existing services. Explicit subcommands and extension arguments keep
+    /// registry changes reviewable in shell history; no broad change is made
+    /// merely by invoking the command without an action.
+    /// </summary>
+    private static async Task IntegrationAsync(string[] args, CancellationToken token)
+    {
+        Parsed parsed = Parse("integration", args);
+        if (parsed.Positionals.Count == 0) throw Usage("integration");
+        string action = parsed.Positionals[0].ToLowerInvariant();
+        if (parsed.Positionals.Count == 2 && action == "default")
+        {
+            string extension = parsed.Positionals[1].StartsWith('.')
+                ? parsed.Positionals[1].ToLowerInvariant() : "." + parsed.Positionals[1].ToLowerInvariant();
+            string executable = DefaultAppAssociationService.GetExecutablePath();
+            await Task.Run(() => DefaultAppAssociationService.SetThisAppDefault(extension, executable), token);
+            Console.WriteLine(string.Format(LanguageManager.Get("DefaultAppsVerified"), extension));
+            return;
+        }
+        if (parsed.Positionals.Count == 2 && action == "choose-default")
+        {
+            string extension = parsed.Positionals[1].StartsWith('.')
+                ? parsed.Positionals[1].ToLowerInvariant() : "." + parsed.Positionals[1].ToLowerInvariant();
+            string executable = DefaultAppAssociationService.GetExecutablePath();
+            // Match the GUI's explicit Windows Settings handoff: register this
+            // app as an available choice, then let the user select any app.
+            await Task.Run(() => DefaultAppAssociationService.RegisterHandler(extension, executable), token);
+            DefaultSettingsLaunch launch = await Task.Run(() =>
+                DefaultAppAssociationService.OpenWindowsSettings(useThisApp: false), token);
+            foreach (StageException warning in launch.Warnings)
+                Console.Error.WriteLine($"[{warning.StageCode}] {warning.Message}");
+            Console.WriteLine(launch.Uri);
+            return;
+        }
+        if (parsed.Positionals.Count != 1) throw Usage("integration");
+        switch (action)
+        {
+            case "unregister-defaults":
+                int removed = await Task.Run(() => DefaultAppUnregistrationService.Unregister(_ => { }), token);
+                Console.WriteLine(string.Format(LanguageManager.Get("DefaultAppsUnregisterCompleted"), removed));
+                break;
+            case "create-context-menu":
+                // Package extraction uses the app-owned temporary workspace.
+                // Other integration actions do not stage package files.
+                TempDirectorySettings.Initialize();
+                ContextMenuCreationResult created = await ContextMenuRegistrationService.CreateAsync(
+                    DefaultAppAssociationService.GetExecutablePath(), new QuietProgress<ContextMenuProgress>(), token);
+                Console.WriteLine(LanguageManager.Get(created == ContextMenuCreationResult.ModernAndClassic
+                    ? "ContextMenuBothCreated" : "ContextMenuClassicOnlyCreated"));
+                break;
+            case "delete-context-menu":
+                await ContextMenuRegistrationService.DeleteAsync(
+                    DefaultAppAssociationService.GetExecutablePath(), new QuietProgress<ContextMenuProgress>(), token);
+                Console.WriteLine(LanguageManager.Get("ContextMenuDeleted"));
+                break;
+            default: throw Usage("integration");
+        }
+    }
+
+    // The services require a progress sink, while scripts receive only a
+    // deterministic result line and a StageCode on failure.
+    private sealed class QuietProgress<T> : IProgress<T>
+    {
+        public void Report(T value) { }
+    }
+
+    /// <summary>
+    /// Uses the same validated color and mouse-effect settings as the GUI.
+    /// Color indexes are one-based to match COLOR1..COLOR5 configuration files.
+    /// A failed settings load remains a diagnostic rather than silently
+    /// replacing a user's configuration with default values.
+    /// </summary>
+    private static async Task AppearanceAsync(string[] args)
+    {
+        Parsed parsed = Parse("appearance", args);
+        if (parsed.Positionals.Count == 0) throw Usage("appearance");
+        string area = parsed.Positionals[0].ToLowerInvariant();
+        if (area == "mouse")
+        {
+            try
+            {
+                MouseEffectSettings.Initialize();
+                MouseEffectSettings.InitializeParameters();
+            }
+            catch (InvalidMouseEffectConfigurationException invalid)
+            {
+                throw new StageException(invalid.StageCode,
+                    LanguageManager.Get("CliAppearanceInvalidConfig"), invalid);
+            }
+            if (parsed.Positionals.Count == 2 && parsed.Positionals[1].Equals("get", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"enabled={MouseEffectSettings.IsEnabled.ToString().ToLowerInvariant()} radius={MouseEffectSettings.Radius.ToString(CultureInfo.InvariantCulture)} thickness={MouseEffectSettings.Thickness.ToString(CultureInfo.InvariantCulture)}");
+                return;
+            }
+            if (parsed.Positionals.Count != 3) throw Usage("appearance");
+            string property = parsed.Positionals[1].ToLowerInvariant();
+            string value = parsed.Positionals[2];
+            if (property == "enabled" && value is "on" or "off")
+                await MouseEffectSettings.SetEnabledAsync(value == "on");
+            else if (property is "radius" or "thickness" &&
+                double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double number))
+            {
+                if (property == "radius") await MouseEffectSettings.SetRadiusAsync(number);
+                else await MouseEffectSettings.SetThicknessAsync(number);
+            }
+            else throw Usage("appearance");
+            Console.WriteLine(LanguageManager.Get("CliSettingSaved"));
+            return;
+        }
+        if (area == "color")
+        {
+            try { await AppearanceSettings.InitializeAsync(); }
+            catch (InvalidColorConfigurationException invalid)
+            {
+                throw new StageException(invalid.StageCode,
+                    LanguageManager.Get("CliAppearanceInvalidConfig"), invalid);
+            }
+            catch (ColorContrastException contrast)
+            {
+                throw new StageException(contrast.StageCode, contrast.Message, contrast);
+            }
+            if (parsed.Positionals.Count < 2 || !int.TryParse(parsed.Positionals[1],
+                NumberStyles.None, CultureInfo.InvariantCulture, out int fileNumber) || fileNumber is < 1 or > 5)
+                throw Usage("appearance");
+            int index = fileNumber - 1;
+            if (parsed.Positionals.Count == 3 && parsed.Positionals[2].Equals("get", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine(AppearanceSettings.Format(AppearanceSettings.GetColor(index)));
+                return;
+            }
+            if (parsed.Positionals.Count == 3 && parsed.Positionals[2].Equals("reset-pair", StringComparison.OrdinalIgnoreCase) && index is 0 or 2)
+                await AppearanceSettings.ResetPairAsync(index);
+            else if (parsed.Positionals.Count == 3 && parsed.Positionals[2].Equals("reset", StringComparison.OrdinalIgnoreCase))
+                await AppearanceSettings.SetColorAsync(index, AppearanceSettings.GetDefaultColor(index));
+            else if (parsed.Positionals.Count == 4 && parsed.Positionals[2].Equals("set", StringComparison.OrdinalIgnoreCase) &&
+                AppearanceSettings.TryParse(parsed.Positionals[3], out Color color))
+                await AppearanceSettings.SetColorAsync(index, color);
+            else throw Usage("appearance");
+            Console.WriteLine(LanguageManager.Get("CliSettingSaved"));
+            return;
+        }
+        throw Usage("appearance");
+    }
+
+    /// <summary>
+    /// Manages the GUI's persisted compression profiles without duplicating
+    /// its validation or write path. The input JSON is a CompressionOptions
+    /// object; passwords are rejected by the shared profile store so a profile
+    /// file can never become an accidental credential store.
+    /// </summary>
+    private static async Task ProfileAsync(string[] args)
+    {
+        Parsed parsed = Parse("profile", args);
+        if (parsed.Positionals.Count < 2) throw Usage("profile");
+        string action = parsed.Positionals[0].ToLowerInvariant();
+        FileDetector.FileType format = GetFormat(parsed.Positionals[1], string.Empty);
+        if (format is not (FileDetector.FileType.Zip or FileDetector.FileType.SevenZip or FileDetector.FileType.Rar))
+            throw Usage("profile");
+        if (action == "list" && parsed.Positionals.Count == 2)
+        {
+            foreach (CompressionProfile profile in CompressionProfileStore.Load(format))
+                Console.WriteLine(profile.Name);
+            return;
+        }
+        if (parsed.Positionals.Count < 3) throw Usage("profile");
+        string name = parsed.Positionals[2];
+        if (action == "show" && parsed.Positionals.Count == 3)
+        {
+            CompressionProfile profile = FindProfile(format, name);
+            Console.WriteLine(JsonSerializer.Serialize(profile.Options, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+        if (action == "delete" && parsed.Positionals.Count == 3)
+        {
+            _ = FindProfile(format, name);
+            await CompressionProfileStore.DeleteAsync(format, name);
+            Console.WriteLine(LanguageManager.Get("CliProfileDeleted"));
+            return;
+        }
+        if (action == "save" && parsed.Positionals.Count == 4)
+        {
+            CompressionOptions? options;
+            try
+            {
+                string json = await File.ReadAllTextAsync(Path.GetFullPath(parsed.Positionals[3]));
+                options = JsonSerializer.Deserialize<CompressionOptions>(json);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                throw new StageException("CLINE0014", LanguageManager.Get("CliProfileInvalidFile"), error); //CLINE0014
+            }
+            if (options is null)
+                throw new StageException("CLINE0014", LanguageManager.Get("CliProfileInvalidFile")); //CLINE0014
+            await CompressionProfileStore.SaveAsync(new CompressionProfile(name, format, options));
+            Console.WriteLine(LanguageManager.Get("CliSettingSaved"));
+            return;
+        }
+        throw Usage("profile");
+    }
+
+    private static CompressionProfile FindProfile(FileDetector.FileType format, string name) =>
+        CompressionProfileStore.Load(format).FirstOrDefault(profile =>
+            profile.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) ??
+        throw new StageException("CLINE0013", LanguageManager.Get("CliProfileMissing")); //CLINE0013
+
     private static string? ValidateEncoding(string? name)
     {
         if (name is not null) _ = Encoding.GetEncoding(name);
@@ -459,7 +796,11 @@ internal static class CommandLine
         "test" => "CliHelp_test", "hash" => "CliHelp_hash",
         "repair" => "CliHelp_repair", "comment" => "CliHelp_comment",
         "vault" => "CliHelp_vault", "scan" => "CliHelp_scan",
-        "snapshot" => "CliHelp_snapshot", _ => "CliHelpV2"
+        "snapshot" => "CliHelp_snapshot", "edit" => "CliHelp_edit",
+        "nested-tar" => "CliHelp_nested-tar", "temp" => "CliHelp_temp",
+        "integration" => "CliHelp_integration", "appearance" => "CliHelp_appearance",
+        "profile" => "CliHelp_profile",
+        _ => "CliHelpV3"
     };
 
     private static void PrintHelp(string? command)

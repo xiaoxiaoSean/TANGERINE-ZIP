@@ -201,6 +201,10 @@ CLINE0008=the supplied command-line archive password contains characters unsuppo
 CLINE0009=the calculated file hash differs from the expected command-line value.
 CLINE0010=a credential retrieved from Windows Credential Manager differs from the supplied comparison value.
 CLINE0011=one or more archive members failed the command-line integrity check.
+CLINE0012=no matching nested TAR member was detected in the source archive.
+CLINE0013=the named compression profile does not exist for the selected archive format.
+CLINE0014=the proposed compression profile JSON file could not be read or parsed.
+CLINE0015=the command-line operation was cancelled by the caller or an abort decision.
 
 Default application settings codes:
 MAINW0026=constructing or displaying the default app settings window failed.

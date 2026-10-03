@@ -19,6 +19,13 @@ namespace TANGERINE_ZIP
             }
             if (args.Length == 1 && args[0] == Services.ArchiveWorker.Switch)
             {
+                // A CLI parent requests stable English diagnostics from this
+                // separate worker; GUI-launched workers retain the GUI locale.
+                if (Environment.GetEnvironmentVariable("TZIP_CLI_ENGLISH") == "1")
+                {
+                    CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+                    CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
+                }
                 // App.Startup runs on the dispatcher. Await pipe/archive work so
                 // its continuations can complete without blocking that dispatcher.
                 Environment.ExitCode = await Services.ArchiveWorker.ExecuteAsync();

@@ -1,6 +1,8 @@
 # TANGERINE ZIP 命令行操作手册
 
-本文对应当前仓库中的 `TANGERINE-ZIP.exe`。同一个程序同时支持图形界面和命令行：**无参数**时打开主窗口；只传入**一个已经存在的文件路径**时在主窗口打开该文件；以 `help`、`compress`、`extract`、`list`、`add`、`batch-extract`、`convert`、`sfx`、`test`、`hash`、`repair`、`comment`、`vault`、`scan` 或 `snapshot` 开头时在终端执行命令，不打开主窗口。资源管理器右键菜单和内部归档工作进程使用保留参数，不属于公开命令行接口。
+本文对应当前仓库中的 `TANGERINE-ZIP.exe`。同一个程序同时支持图形界面和命令行：**无参数**时打开主窗口；只传入**一个已经存在的文件路径**时在主窗口打开该文件；以 `help`、`compress`、`extract`、`list`、`add`、`batch-extract`、`convert`、`sfx`、`test`、`hash`、`repair`、`comment`、`vault`、`scan`、`snapshot`、`edit`、`nested-tar`、`temp`、`integration`、`appearance` 或 `profile` 开头时在终端执行命令，不打开主窗口。资源管理器右键菜单和内部归档工作进程使用保留参数，不属于公开命令行接口。
+
+命令行帮助、运行状态和错误文本固定为英文，与系统显示语言及 GUI 语言无关；机器可读数据和 StageCode 不翻译。独立归档工作进程由 CLI 启动时也使用英文资源。
 
 EXE 使用 Windows GUI 子系统，启动时不会新建命令行窗口。CLI 沿用已有终端或重定向管道；没有终端时不创建替代窗口。脚本需要可靠等待结束和读取退出码时，请显式等待，例如 `Start-Process -Wait -PassThru -NoNewWindow`，完整说明见 [`WINDOW_LAYOUT_AND_PROCESS_STARTUP.md`](WINDOW_LAYOUT_AND_PROCESS_STARTUP.md)。
 
@@ -14,7 +16,7 @@ EXE 使用 Windows GUI 子系统，启动时不会新建命令行窗口。CLI �
 
 ## 使用前准备
 
-除 `help`、`hash`、`vault`、`scan`、`snapshot` 外，命令行任务都会读取 **exe 同目录**下的无后缀 `TEMP_D`。该文件保存临时目录的绝对路径。先启动一次图形界面按提示设置，之后也可以在“设置 → 更多”修改。命令行不会弹出目录选择窗口；若 `TEMP_D` 缺失、目录不可达、不可写或空间不足，会向标准错误输出报告错误和 StageCode，并提示回到图形界面设置。`help` 无需设置临时目录。
+除 `help`、`hash`、`vault`、`scan`、`snapshot`、`temp`、`appearance`、`profile` 和 `integration` 的非菜单创建操作外，命令行任务都会读取 **exe 同目录**下的无后缀 `TEMP_D`。该文件保存临时目录的绝对路径。可运行 `temp set <目录>` 设置，也可在图形界面“设置 → 更多”修改。命令行不会弹出目录选择窗口；若 `TEMP_D` 缺失、目录不可达、不可写或空间不足，会向标准错误输出报告错误和 StageCode。`help` 无需设置临时目录。
 
 命令行与图形界面共用归档工作进程。创建和解压前会检查目标磁盘、内存及临时目录的可用空间；解压期间也会复核空间。临时工作文件由程序管理，输出压缩包与解压结果则位于你指定的位置。
 
@@ -81,6 +83,7 @@ TANGERINE-ZIP.exe compress <output> <source>... [options]
 | 参数 | 取值与默认值 | 作用和边界 |
 |---|---|---|
 | `--format VALUE` | 上表列出的值；默认由输出后缀推断 | 选择输出格式。 |
+| `--profile NAME` | ZIP、7z、RAR 已保存的配置名称 | 使用设置窗口或 `profile save` 存储的配置；需与压缩高级参数分开使用，可单独提供本次密码。 |
 | `--password TEXT` | 可选 | ZIP、7z、RAR 的密码。当前只接受可打印 ASCII 字符；密码会出现在主进程命令行中。 |
 | `--password-env NAME` | 可选 | 从环境变量 `NAME` 读取密码；与 `--password` 互斥。变量缺失或为空会报错。密码仍可能出现在实际压缩工具的子进程参数中。 |
 | `--level N` | ZIP/7z：`0–9`；RAR：`0–5`；默认 `5` | 压缩等级。更高值通常消耗更多 CPU 时间，实际压缩率取决于数据。 |
@@ -126,10 +129,10 @@ RAR 创建依赖用户自行取得并放在 exe 同目录的官方 `rar.exe`。`
 ## `list`：列出成员
 
 ```text
-TANGERINE-ZIP.exe list <archive> [--password TEXT | --password-env NAME] [--encoding NAME] [--json]
+TANGERINE-ZIP.exe list <archive> [--password TEXT | --password-env NAME] [--encoding NAME] [--search TEXT] [--json]
 ```
 
-`archive` 必须是现有且受支持的压缩包文件。读取成员时使用文件内容检测格式，而不是只看文件名后缀。`--password` 和 `--password-env` 与 `compress` 的规则相同。`--encoding` 指定成员**文件名**的解码方式，适合处理某些旧压缩包的乱码名称；例如 `--encoding gb18030`。编码名称无效时命令报错；该选项不转换文件内容。
+`archive` 必须是现有且受支持的压缩包文件。读取成员时使用文件内容检测格式，而不是只看文件名后缀。`--password` 和 `--password-env` 与 `compress` 的规则相同。`--encoding` 指定成员**文件名**的解码方式，适合处理某些旧压缩包的乱码名称；例如 `--encoding gb18030`。编码名称无效时命令报错；该选项不转换文件内容。`--search` 对完整成员路径执行与 GUI 相同的不区分大小写包含筛选，可与 `--json` 合用。
 
 默认输出到标准输出，首行为表头，之后每个成员一行，四列由制表符分隔：
 
@@ -140,7 +143,7 @@ TANGERINE-ZIP.exe list <archive> [--password TEXT | --password-env NAME] [--enco
 | 压缩后字节数 | 成员压缩大小；无法可靠获取时为 `-`。 |
 | 压缩方式 | 例如 `Deflate` 或 `LZMA2`；无法获取时为 `-`。 |
 
-这四列中的数字是**字节数**，不自动换算 MiB。控制台文字和表头按当前 UI 语言本地化；适合程序读取时建议使用 `--json`。
+这四列中的数字是**字节数**，不自动换算 MiB。控制台文字和表头固定为英文；适合程序读取时建议使用 `--json`。
 
 `--json` 输出一行 JSON 数组，每个元素包含下列属性：
 
@@ -182,7 +185,7 @@ TANGERINE-ZIP.exe extract <archive> <destination> [options]
 
 `--on-conflict overwrite` 会覆盖已有的目标文件，请确认目标目录；`skip` 会保留已有文件。`--on-issue skip` 可以让其他可读成员继续解压，但命令最终返回 `0` 时也可能有成员被跳过；当前命令行**不输出逐成员跳过清单**，需要完整性保证时应另行检查结果。无论设置什么选项，路径穿透成员都不会按归档里的危险路径写出；命令行没有将危险成员重定向到其他目录的参数。
 
-解压任务不是整个归档的事务。若中途取消或失败，之前成功写出的成员可能仍在目标目录；正在写入的单成员使用临时文件处理。`abort` 的目标冲突通常以取消状态结束。单文件压缩流按压缩文件名生成一个输出文件；`.tar.gz` 不会在命令行中自动执行 GUI 的内层 TAR 展开流程，若需要展开 TAR，可先解出 TAR，再对 TAR 调用一次 `extract`。
+解压任务不是整个归档的事务。若中途取消或失败，之前成功写出的成员可能仍在目标目录；正在写入的单成员使用临时文件处理。`abort` 的目标冲突通常以取消状态结束。单文件压缩流按压缩文件名生成一个输出文件；`.tar.gz` 的内层 TAR 可用 `nested-tar` 展开。
 
 示例：
 
@@ -212,20 +215,32 @@ TANGERINE-ZIP.exe extract <archive> <destination> [options]
 | `vault` | `vault list`、`vault save <name> --password-env NAME`、`vault check <name> --password-env NAME`、`vault delete <name>`：密码保存在当前 Windows 用户的凭据管理器中。没有有效登录会话时会报告 `PWVLT0009`。 |
 | `scan` | `scan <file>`：调用本机 Microsoft Defender 执行不修改文件的自定义扫描。扫描器不存在、报告威胁或扫描失败时会返回错误；需要系统允许使用该组件，某些环境可能需要管理员权限。 |
 | `snapshot` | `snapshot <archive> <folder> [--keep N]`：创建经 SHA-256 校验的独立副本。`--keep 0` 默认保留全部；`1–1000` 只清理本功能为同名来源创建的旧快照。可从 Windows 任务计划程序定期调用。 |
+| `edit` | `edit <archive> copy\|move\|delete --entry PATH [--entry PATH...] [--destination FOLDER] [--encoding NAME]`：调用 GUI 的归档内复制、移动或删除服务。复制和移动必须指定归档内目标目录，删除禁止指定。`--destination folder` 生成 `folder/成员名`。仅支持 ZIP、7z、TAR；成功后输出原文件备份路径。成员路径可通过 `list` 查询。 |
+| `nested-tar` | `nested-tar <archive> <destination> [--entry OUTER_TAR] [--password TEXT\|--password-env NAME] [--on-conflict abort\|overwrite\|skip] [--on-issue abort\|skip]`：展开 GUI 能检测的嵌套 TAR。省略 `--entry` 时展开所有检测到的 TAR；可多次指定。默认在冲突或安全警告时中止。 |
+| `temp` | `temp get` 或 `temp set <directory>`：读取或更改 GUI 设置中的临时目录。`set` 使用相同的校验与原子写入。 |
+| `integration` | `integration default <extension>`：将受支持扩展名设为本程序默认打开方式并核验；`integration choose-default <extension>`：注册可选处理程序并打开 Windows 设置页，供用户选择其他应用；`integration unregister-defaults`：移除本程序拥有的默认关联及注册；`integration create-context-menu` / `delete-context-menu`：创建或删除资源管理器菜单。扩展名支持 `zip`、`rar`、`7z`、`tar`、`gz`、`bz2`、`xz`、`lz4`、`zst`、`zstd`，可带前导点。现代菜单安装可能触发 Windows 提权提示。 |
+| `appearance` | `appearance mouse get`、`appearance mouse enabled on\|off`、`appearance mouse radius N`、`appearance mouse thickness N`、`appearance color 1..5 get\|reset\|set #RRGGBB`。颜色 1/2、3/4 为对比度配对；若单独重置无法通过校验，使用 `reset-pair` 同时恢复该对。数值范围与设置窗口一致。 |
+| `profile` | `profile list <zip\|7z\|rar>`、`profile show\|delete <格式> <名称>`、`profile save <格式> <名称> <CompressionOptions.json>`。`show` 输出 JSON；`save` 采用 GUI 的校验和原子写入，拒绝包含密码的配置。 |
+
+例如，将以下 JSON 保存为 `fast.json` 后，运行 `profile save 7z fast fast.json`，再用 `compress output.7z input --format 7z --profile fast`。JSON 属性名称与 `profile show` 输出一致；`Advanced` 为 `true` 时启用所列高级压缩设置。
+
+```json
+{"Advanced":true,"Level":3,"Method":"LZMA2","DictionaryMiB":16,"Threads":0,"MemoryLimitMiB":0,"VolumeMiB":0,"SelfExtracting":false,"SolidMode":"Default","RecoveryPercent":0,"ExcludePatterns":[]}
+```
 
 `add`、`comment`、`repair`、`snapshot` 和 `sfx` 不会直接覆盖原包。批量操作中后续项目失败时，先前已完成的输出仍保留。ARJ、ACE、ARC、LZW 可以创建、浏览、预览、解压和执行 `test`，但不能使用 `repair`；ACE 创建使用存储模式，不缩小体积。LZip 也能对单个文件创建 `.lz` 压缩流，不能使用 `repair`。
 
 ## 标准输出、错误输出与退出码
 
-帮助、列表和成功提示写入**标准输出**；失败信息写入**标准错误输出**，格式通常为 `[StageCode] 错误说明`。输出使用 UTF-8，提示语言取决于程序运行时的 UI 文化。`Ctrl+C` 会请求取消工作进程和当前任务。
+帮助、列表和成功提示写入**标准输出**；失败信息写入**标准错误输出**，格式通常为 `[StageCode] English message`。输出使用 UTF-8，文本固定为英文。`Ctrl+C` 会请求取消工作进程和当前任务。
 
 | 退出码 | 含义 |
 |---:|---|
 | `0` | 命令完成。使用 `skip` 时仍可能跳过冲突或问题成员。 |
 | `1` | 参数错误、输入或格式错误、空间不足、密码错误、压缩或解压失败等。 |
-| `2` | 操作被取消；默认冲突策略 `abort` 遇到已有目标文件时也可能返回此码。 |
+| `2` | 操作被取消；默认冲突策略 `abort` 遇到已有目标文件时也可能返回此码。取消错误输出带 `CLINE0015`。 |
 
-常见命令行阶段码包括：`CLINE0002`（输出已存在）、`CLINE0003`（格式不支持密码）、`CLINE0004`（指定成员不存在）、`CLINE0005`（输入不是受支持归档）、`CLINE0006`（密码环境变量不可用）、`CLINE0007`（参数无效）、`CLINE0008`（密码包含不支持的字符）。临时目录相关错误使用 `TMPDR` 前缀；工作进程和归档服务可能返回各自的阶段码。完整阶段码登记见项目的 `TANGERINE-ZIP/Resources/StageList.txt`。
+常见命令行阶段码包括：`CLINE0002`（输出已存在）、`CLINE0003`（格式不支持密码）、`CLINE0004`（指定成员不存在）、`CLINE0005`（输入不是受支持归档）、`CLINE0006`（密码环境变量不可用）、`CLINE0007`（参数无效）、`CLINE0008`（密码包含不支持的字符）、`CLINE0012`（没有匹配的嵌套 TAR）、`CLINE0013`（配置不存在）、`CLINE0014`（配置 JSON 无法读取或解析）。临时目录相关错误使用 `TMPDR` 前缀；归档内编辑、嵌套提取和工作进程分别可能返回 `ARCED`、`NESTR` 和 `WORKR` 阶段码。完整阶段码登记见项目的 `TANGERINE-ZIP/Resources/StageList.txt`。
 
 PowerShell 中可以检查退出码，并把错误输出单独保存：
 

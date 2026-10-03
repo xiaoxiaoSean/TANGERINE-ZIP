@@ -13,8 +13,8 @@
 <p align="center">A Windows archive manager with a WPF interface and command-line tools.</p>
 
 <p align="center">
-  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.1">Download tanevo v2.1.5.1 pre-release</a> ·
-  <a href="RELEASE_NOTES_v2.1.5.1.md">What's new in v2.1.5.1</a> ·
+  <a href="https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2">Download tanevo v2.1.5.2 pre-release</a> ·
+  <a href="RELEASE_NOTES_v2.1.5.2.md">What's new in v2.1.5.2</a> ·
   <a href="dev_doc1/README.md">Developer documentation</a>
 </p>
 
@@ -33,7 +33,7 @@ Some operations depend on the archive format and its contents. Encrypted and spl
 
 ## Download and first run
 
-Download one Windows x64 executable from the [tanevo v2.1.5.1 pre-release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.1):
+Download one Windows x64 executable from the [tanevo v2.1.5.2 pre-release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.2):
 
 | File suffix | Edition | Requirement |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ The same executable opens the graphical interface with no arguments and accepts 
 .\TANGERINE-ZIP.exe extract "C:\Backup\photos.zip" "C:\Restored"
 ```
 
-Set the temporary directory through the graphical interface before using `compress`, `list`, or `extract`. For all options and exit behavior, see the [command-line guide](dev_doc1/command.md).
+Set the temporary directory with `temp set DIRECTORY` or in the GUI before archive operations. CLI messages are always in English. For all options and exit behavior, see the [command-line guide](dev_doc1/command.md) and [GUI/CLI feature map](dev_doc1/CLI_GUI_PARITY.md).
 
 ## Build from source
 
@@ -67,6 +67,7 @@ The project includes two publish profiles: `FolderProfile` for the self-containe
 
 ## Documentation and license
 
+- [v2.1.5.2 pre-release notes](RELEASE_NOTES_v2.1.5.2.md)
 - [v2.1.5.1 pre-release notes](RELEASE_NOTES_v2.1.5.1.md)
 - [v2.1.5 pre-release notes](RELEASE_NOTES_v2.1.5.md)
 - [v2.1.1 release notes](RELEASE_NOTES_v2.1.1.md)

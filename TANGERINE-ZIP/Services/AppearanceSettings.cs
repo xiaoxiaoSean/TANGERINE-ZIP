@@ -211,7 +211,7 @@ internal static class AppearanceSettings
         return color;
     }
 
-    private static bool TryParse(string text, out Color color)
+    internal static bool TryParse(string text, out Color color)
     {
         color = default;
         if (text.Length != 7 || text[0] != '#') return false;
