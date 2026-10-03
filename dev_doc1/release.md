@@ -67,3 +67,12 @@ gh release create vX.Y.Z out/TANGERINE-ZIP-vX.Y.Z-fd.exe out/TANGERINE-ZIP-vX.Y.
 - `TANGERINE-ZIP-v2.1.5-fd.exe`：10,009,810 字节；SHA-256 `10317C8A003741FAF9456B66224F7EDA515B5DF7219B592BF75DF0B2402BB194`。
 - `TANGERINE-ZIP-v2.1.5-sc.exe`：84,186,851 字节；SHA-256 `5462AD4328F71F960DDF3C0E0A056C8D932407CBEBE8D095979E3533F2C1998D`。
 - 注释标签 `v2.1.5` 指向提交 `7cd4bd41ab79cec0f087d8ed278f473de51c11bc`；[GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5) 标题为 `TANGERINE-ZIP-V2.1.5`，状态为 pre-release、非草稿。远端两个附件的大小与 SHA-256 均与本地一致。
+
+## v2.1.5.1 tanevo 预发布记录
+
+- 基线：`v2.1.5`。更新日志为 [`RELEASE_NOTES_v2.1.5.1.md`](../RELEASE_NOTES_v2.1.5.1.md)，英文在前、中文在后；英文与简中 README 均指向新预发布版。
+- 全局 `VName` 保持 `tanevo`；主程序及两个附件的 FileVersion、ProductVersion 均为 `2.1.5.1`。
+- 使用已还原依赖进行 Release 编译（`--no-restore`），结果为零警告、零错误；`FolderProfile1` 和 `FolderProfile` 均发布成功，两个附件的 `help` 命令返回 `0`。普通构建的自动还原因执行环境无法读取用户目录下的 NuGet.Config 而失败，未影响已有依赖下的构建和发布。
+- `TANGERINE-ZIP-v2.1.5.1-fd.exe`：16,838,338 字节；SHA-256 `50E97F845BC966322717AC816521D68BFE252E2D955C06C1C07D192B042212DD`。
+- `TANGERINE-ZIP-v2.1.5.1-sc.exe`：92,107,206 字节；SHA-256 `C839361A4AE8DB5161D111170BE6E72810820B92E150AAE4F21700E31A13F244`。
+- 发布源码提交为 `b61b127`，注释标签 `v2.1.5.1` 指向该提交；[GitHub Release](https://github.com/xiaoxiaoSean/TANGERINE-ZIP/releases/tag/v2.1.5.1) 标题为 `TANGERINE-ZIP-V2.1.5.1`，状态为 pre-release、非草稿。远端两个附件的大小和 GitHub 提供的 SHA-256 digest 均与本地一致。
