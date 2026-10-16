@@ -1,5 +1,9 @@
 StageCode format: five uppercase ASCII letters (component head) + four decimal digits (failure branch).
 The code is stable across languages. MessageTipGenerator displays it using localized StageCodeTip1/StageCodeTip2 labels.
+ErrorDialog is the static UI entry point for exception dialogs. It preserves StageException.StageCode,
+uses the boundary code for unexpected failures, and shows localized possible causes and actions.
+Suggestion categories do not allocate new stage codes; they are selected by exception type first,
+then by the existing five-letter component head. Missing or malformed codes display UNKWN0001.
 Callers preserve an existing StageException.StageCode; only unexpected exceptions receive the boundary's fallback code.
 UNKWN=malformed or absent diagnostic identifier (MessageTipGenerator fallback)
 ABTWN=AboutWindow
@@ -55,7 +59,7 @@ Temporary workspace codes:
 TMPDR0001=TEMP_D is missing or empty; ask the user to select a directory.
 TMPDR0002=the configured parent directory is unavailable, unwritable, or has insufficient space.
 TMPDR0004=atomic write/readback of TEMP_D failed.
-TMPDR0005=creating or validating the private TangerineZipWorkspace directory failed.
+TMPDR0005=creating or validating the private TZIP-WORKSPACE directory failed.
 TMPDR0006=first-instance startup cleanup of the private workspace failed.
 PROGM0009=unexpected failure at the startup cleanup boundary.
 PROGM0010=unhandled exception escaping the main WPF application loop.

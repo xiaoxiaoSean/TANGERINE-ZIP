@@ -1,5 +1,7 @@
 # TANGERINE ZIP 开发文档
 
+异常对话框、本土化排查建议与 StageCode 管理见 [`ERROR_DIALOG.md`](ERROR_DIALOG.md)。
+
 GUI 与 CLI 功能对应、英文命令输出和新命令的异常边界见 [`CLI_GUI_PARITY.md`](CLI_GUI_PARITY.md)；命令语法见 [`command.md`](command.md)。
 
 新搜索布局、拖入创建、COLOR5、拖出解压、首次使用引导及横向约定见 [`../dev__doc1`](../dev__doc1/)。

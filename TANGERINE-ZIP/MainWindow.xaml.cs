@@ -1559,8 +1559,7 @@ public partial class MainWindow : Window
     private void ShowException(string fallbackStageCode, Exception exception)
     {
         string stageCode = exception is StageException stageException ? stageException.StageCode : fallbackStageCode;
-        ThemedPromptWindow.Inform(this, LanguageManager.Get("ErrorTitle"),
-            MessageTipGenerator.GenerateTip(stageCode, exception.Message)); //MAINW0006
+        ErrorDialog.Show(this, stageCode, exception.Message, exception); //MAINW0006
     }
 
     private void AboutMenu_Click(object sender, EventArgs e)

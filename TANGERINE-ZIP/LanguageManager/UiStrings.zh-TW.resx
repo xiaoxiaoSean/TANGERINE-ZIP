@@ -1346,4 +1346,64 @@
   <data name="LegacySourceChanged" xml:space="preserve"><value>建立壓縮檔時來源檔案發生變更。</value></data>
   <data name="LegacyMemberTooLarge" xml:space="preserve"><value>此檔案超過 ARJ/ARC 寫入器的 2 GiB 限制。</value></data>
   <data name="ArcHeaderInvalid" xml:space="preserve"><value>ARC 檔案標頭無效或已損壞。</value></data>
+  <data name="ErrorPossibleCause" xml:space="preserve">
+    <value>可能原因：</value>
+  </data>
+  <data name="ErrorSuggestedAction" xml:space="preserve">
+    <value>建議操作：</value>
+  </data>
+  <data name="ErrorCauseGeneral" xml:space="preserve">
+    <value>操作遇到未預期的情況。</value>
+  </data>
+  <data name="ErrorActionGeneral" xml:space="preserve">
+    <value>請重試；若問題持續，請記錄階段碼並聯絡支援人員。</value>
+  </data>
+  <data name="ErrorCausePermission" xml:space="preserve">
+    <value>可能沒有足夠權限存取檔案或系統設定。</value>
+  </data>
+  <data name="ErrorActionPermission" xml:space="preserve">
+    <value>請檢查權限，關閉占用檔案的程式後重試；僅在操作需要時使用系統管理員權限。</value>
+  </data>
+  <data name="ErrorCauseMissing" xml:space="preserve">
+    <value>所需檔案或資料夾可能已移動或刪除。</value>
+  </data>
+  <data name="ErrorActionMissing" xml:space="preserve">
+    <value>請檢查來源及目標路徑，重新選擇存在的檔案或資料夾。</value>
+  </data>
+  <data name="ErrorCauseArchive" xml:space="preserve">
+    <value>壓縮檔可能損毀、不完整、已加密，或格式不受支援。</value>
+  </data>
+  <data name="ErrorActionArchive" xml:space="preserve">
+    <value>請用其他工具驗證壓縮檔，取得完整副本，並確認格式或密碼。</value>
+  </data>
+  <data name="ErrorCauseMemory" xml:space="preserve">
+    <value>可用記憶體可能不足。</value>
+  </data>
+  <data name="ErrorActionMemory" xml:space="preserve">
+    <value>請關閉耗用大量記憶體的程式，或縮小壓縮檔及選取範圍後重試。</value>
+  </data>
+  <data name="ErrorCauseIo" xml:space="preserve">
+    <value>檔案可能被占用、磁碟空間不足，或儲存裝置無法使用。</value>
+  </data>
+  <data name="ErrorActionIo" xml:space="preserve">
+    <value>請檢查剩餘空間和裝置連線，關閉占用檔案的程式後重試。</value>
+  </data>
+  <data name="ErrorCausePassword" xml:space="preserve">
+    <value>密碼可能缺失或錯誤，或不支援該壓縮檔的加密方式。</value>
+  </data>
+  <data name="ErrorActionPassword" xml:space="preserve">
+    <value>請核對密碼，並使用建立該壓縮檔的程式檢查檔案。</value>
+  </data>
+  <data name="ErrorCauseSettings" xml:space="preserve">
+    <value>設定值或設定檔可能無效或無法存取。</value>
+  </data>
+  <data name="ErrorActionSettings" xml:space="preserve">
+    <value>請檢查相關設定及路徑，恢復有效值後重試。</value>
+  </data>
+  <data name="ErrorCauseTool" xml:space="preserve">
+    <value>所需的外部壓縮工具可能缺失或無法啟動。</value>
+  </data>
+  <data name="ErrorActionTool" xml:space="preserve">
+    <value>請確認所需工具已安裝且可存取，然後重試。</value>
+  </data>
 </root>

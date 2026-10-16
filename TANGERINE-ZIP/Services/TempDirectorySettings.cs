@@ -9,7 +9,7 @@ namespace TANGERINE_ZIP.Services;
 internal static class TempDirectorySettings
 {
     private const string FileName = "TEMP_D";
-    private const string WorkspaceName = "TangerineZipWorkspace";
+    private const string WorkspaceName = "TZIP-WORKSPACE";
     private const long StartupHeadroom = 64L * 1024 * 1024;
     private static readonly SemaphoreSlim SaveGate = new(1, 1);
     private static string? _currentPath;

@@ -28,8 +28,7 @@ public partial class App : Application
         string stage = e.Exception is StageException staged ? staged.StageCode : "PROGM0010";
         try
         {
-            MessageBox.Show(MessageTipGenerator.GenerateTip(stage, e.Exception.Message),
-                LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //PROGM0010
+            ErrorDialog.Show(null, stage, e.Exception.Message, e.Exception); //PROGM0010
         }
         finally { Shutdown(1); }
     }

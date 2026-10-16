@@ -98,6 +98,13 @@ internal static class ArchiveWorker
                         ResourcePreflight.Check(request.Destination!, 64L * 1024 * 1024, 128L * 1024 * 1024);
                         await service.ExtractNestedTarsAsync(request.Path, request.TarKeys!, request.Destination!, request.Selection, request.Subfolders, request.Policy, progress, CancellationToken.None, request.Password, conflicts);
                         break;
+                    case "extract-auto":
+                        NestedTarInfo nested = await service.AnalyzeNestedTarAsync(request.Path, CancellationToken.None, request.Password);
+                        if (nested.FlattenAutomatically)
+                            await service.ExtractNestedTarsAsync(request.Path, nested.TarEntryKeys, request.Destination!, request.Selection, false, request.Policy, progress, CancellationToken.None, request.Password, conflicts);
+                        else
+                            await service.ExtractAsync(request.Path, request.Destination!, request.Selection, request.Policy, progress, CancellationToken.None, request.Password, conflicts);
+                        break;
                     case "edit":
                         result = result with { BackupPath = await ArchiveEditService.EditAsync(request.Path,
                             request.Selection!, request.Destination ?? string.Empty, request.EditAction!.Value,
@@ -279,6 +286,8 @@ internal sealed class ArchiveWorkerClient
         (await RunAsync(new("list-tar", path, TarKeys: [key], Password: password), null, token)).Entries!;
     public Task ExtractAsync(string path, string destination, IReadOnlyCollection<string>? selection, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null, Func<ArchiveConflict, CancellationToken, Task<ConflictChoice>>? conflictResolver = null, Func<ExtractionIssue, CancellationToken, Task<ExtractionAnswer>>? issueResolver = null) =>
         RunAsync(new("extract", path, destination, Selection: selection?.ToArray(), Policy: policy, Password: password), progress, token, conflictResolver, issueResolver);
+    public Task ExtractAutomaticallyAsync(string path, string destination, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null, Func<ArchiveConflict, CancellationToken, Task<ConflictChoice>>? conflictResolver = null, Func<ExtractionIssue, CancellationToken, Task<ExtractionAnswer>>? issueResolver = null) =>
+        RunAsync(new("extract-auto", path, destination, Policy: policy, Password: password), progress, token, conflictResolver, issueResolver);
     public Task ExtractNestedTarsAsync(string path, IReadOnlyList<string> keys, string destination, IReadOnlyCollection<string>? selection, bool subfolders, OverwritePolicy policy, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null, Func<ArchiveConflict, CancellationToken, Task<ConflictChoice>>? conflictResolver = null, Func<ExtractionIssue, CancellationToken, Task<ExtractionAnswer>>? issueResolver = null) =>
         RunAsync(new("extract-tar", path, destination, TarKeys: keys.ToArray(), Selection: selection?.ToArray(), Subfolders: subfolders, Policy: policy, Password: password), progress, token, conflictResolver, issueResolver);
     public Task CreateAsync(IReadOnlyList<string> sources, string path, FileDetector.FileType type, IProgress<ArchiveProgress>? progress, CancellationToken token, string? password = null, CompressionOptions? options = null) =>

@@ -1358,4 +1358,64 @@ Existing file: {1}</value>
   <data name="CliProfileMissing" xml:space="preserve"><value>The named compression profile was not found.</value></data>
   <data name="CliProfileInvalidFile" xml:space="preserve"><value>The compression options file could not be read or parsed.</value></data>
   <data name="CliProfileDeleted" xml:space="preserve"><value>Compression profile deleted.</value></data>
+  <data name="ErrorPossibleCause" xml:space="preserve">
+    <value>Possible cause:</value>
+  </data>
+  <data name="ErrorSuggestedAction" xml:space="preserve">
+    <value>Suggested action:</value>
+  </data>
+  <data name="ErrorCauseGeneral" xml:space="preserve">
+    <value>The operation failed because of an unexpected condition.</value>
+  </data>
+  <data name="ErrorActionGeneral" xml:space="preserve">
+    <value>Retry the operation. If it fails again, record the stage code and contact support.</value>
+  </data>
+  <data name="ErrorCausePermission" xml:space="preserve">
+    <value>Access to a file or system setting may be denied.</value>
+  </data>
+  <data name="ErrorActionPermission" xml:space="preserve">
+    <value>Check file permissions, close programs using the file, and retry. Use administrator access only when the operation requires it.</value>
+  </data>
+  <data name="ErrorCauseMissing" xml:space="preserve">
+    <value>A required file or folder may have moved or been deleted.</value>
+  </data>
+  <data name="ErrorActionMissing" xml:space="preserve">
+    <value>Check the source and destination paths, then select an existing file or folder.</value>
+  </data>
+  <data name="ErrorCauseArchive" xml:space="preserve">
+    <value>The archive may be damaged, incomplete, encrypted, or in an unsupported format.</value>
+  </data>
+  <data name="ErrorActionArchive" xml:space="preserve">
+    <value>Verify the archive with another tool, obtain a complete copy, and confirm its format or password.</value>
+  </data>
+  <data name="ErrorCauseMemory" xml:space="preserve">
+    <value>Available memory may be insufficient for this operation.</value>
+  </data>
+  <data name="ErrorActionMemory" xml:space="preserve">
+    <value>Close other memory-intensive programs and retry with a smaller archive or selection.</value>
+  </data>
+  <data name="ErrorCauseIo" xml:space="preserve">
+    <value>A file may be locked, the disk may be full, or the storage device may be unavailable.</value>
+  </data>
+  <data name="ErrorActionIo" xml:space="preserve">
+    <value>Check free space and storage connection, close programs using the file, then retry.</value>
+  </data>
+  <data name="ErrorCausePassword" xml:space="preserve">
+    <value>The password may be missing or incorrect, or the archive encryption may be unsupported.</value>
+  </data>
+  <data name="ErrorActionPassword" xml:space="preserve">
+    <value>Enter the correct password and check the archive with the program that created it.</value>
+  </data>
+  <data name="ErrorCauseSettings" xml:space="preserve">
+    <value>A configuration value or settings file may be invalid or unavailable.</value>
+  </data>
+  <data name="ErrorActionSettings" xml:space="preserve">
+    <value>Review the relevant setting and its path, restore a valid value, then retry.</value>
+  </data>
+  <data name="ErrorCauseTool" xml:space="preserve">
+    <value>A required external archive tool may be missing or unable to start.</value>
+  </data>
+  <data name="ErrorActionTool" xml:space="preserve">
+    <value>Check that the required tool is installed and accessible, then retry.</value>
+  </data>
 </root>

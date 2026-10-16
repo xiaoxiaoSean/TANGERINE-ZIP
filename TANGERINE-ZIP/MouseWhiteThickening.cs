@@ -28,8 +28,7 @@ internal static class MouseWhiteThickening
             // Report the failure with its module stage code, then keep the original visuals.
             if (window.Content is FrameworkElement content) content.Effect = null;
             string stageCode = exception is StageException stageException ? stageException.StageCode : "MWFXT0003";
-            MessageBox.Show(window, MessageTipGenerator.GenerateTip(stageCode, exception.Message),
-                LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //MWFXT0003
+            ErrorDialog.Show(window, stageCode, exception.Message, exception); //MWFXT0003
         }
     }
 
@@ -82,8 +81,7 @@ internal static class MouseWhiteThickening
             }
             catch (Exception exception)
             {
-                MessageBox.Show(window, MessageTipGenerator.GenerateTip("MWFXT0004", exception.Message),
-                    LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //MWFXT0004
+                ErrorDialog.Show(window, "MWFXT0004", exception); //MWFXT0004
             }
         }
 
@@ -96,8 +94,7 @@ internal static class MouseWhiteThickening
             }
             catch (Exception exception)
             {
-                MessageBox.Show(window, MessageTipGenerator.GenerateTip("MWFXT0005", exception.Message),
-                    LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //MWFXT0005
+                ErrorDialog.Show(window, "MWFXT0005", exception); //MWFXT0005
             }
         }
 

@@ -116,6 +116,9 @@ internal sealed class ArchiveService
                 List<IArchiveEntry> fileEntries = archive.Entries.Where(entry => !entry.IsDirectory).ToList();
                 if (fileEntries.Any(entry => entry.IsEncrypted) && string.IsNullOrEmpty(password))
                     throw new StageException("PWDAR0001", LanguageManager.Get("ArchivePasswordRequired")); //PWDAR0001
+                // Automatic flattening is only possible for a single TAR member.
+                // Opening every member here made ordinary context-menu extraction read the archive twice.
+                if (fileEntries.Count != 1) return NestedTarInfo.None;
                 List<string> tarEntries = [];
                 long authenticationTotal = Math.Max(fileEntries.Where(entry => entry.IsEncrypted).Sum(entry => Math.Max(entry.Size, 1)), 1);
                 long authenticated = 0;
@@ -210,7 +213,8 @@ internal sealed class ArchiveService
                     InlineProgress<ArchiveProgress> nestedProgress = new(item =>
                     {
                         int totalPercent = ((index * 100) + item.Percentage) / Math.Max(tarEntryKeys.Count, 1);
-                        progress?.Report(new ArchiveProgress(totalPercent, item.EntryKey));
+                        progress?.Report(new ArchiveProgress(totalPercent, item.EntryKey,
+                            item.BytesDone, item.BytesTotal, item.BytesPerSecond));
                     });
                     await ExtractSharpCompressAsync(temporaryTarPath, targetPath, selectedInnerEntries, overwritePolicy, nestedProgress, cancellationToken, conflicts: conflicts);
                 }

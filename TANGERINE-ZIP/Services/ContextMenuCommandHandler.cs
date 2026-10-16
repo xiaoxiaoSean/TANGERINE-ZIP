@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using TANGERINE_ZIP.Tools;
 
 namespace TANGERINE_ZIP.Services;
@@ -122,12 +123,30 @@ internal static class ContextMenuCommandHandler
                 string destination = Path.Combine(parent, Path.GetFileNameWithoutExtension(path));
                 progress.Report(new ArchiveProgress(0, string.Format(LanguageManager.Get("ContextDestinationStatus"), destination)));
                 passwords.TryGetValue(path, out string? password);
-                NestedTarInfo nested;
+                ResourcePreflight.Check(destination, 64L * 1024 * 1024, 128L * 1024 * 1024);
+                Directory.CreateDirectory(destination);
+                Stopwatch watch = Stopwatch.StartNew();
+                Progress<ArchiveProgress> fileProgress = new(item =>
+                {
+                    percentages[path] = item.Percentage;
+                    int overall = percentages.Values.Sum() / paths.Length;
+                    progress.Report(new ArchiveProgress(overall, $"{Path.GetFileName(path)}: {item.EntryKey}",
+                        item.BytesDone, item.BytesTotal,
+                        item.BytesDone.HasValue ? item.BytesDone.Value / Math.Max(watch.Elapsed.TotalSeconds, 0.1) : null));
+                });
+                async Task<ConflictChoice> ResolveBatchConflictAsync(ArchiveConflict conflict, CancellationToken conflictToken)
+                {
+                    ConflictChoice choice = await conflictResolver(conflict, conflictToken);
+                    if (choice == ConflictChoice.Cancel) batchCancellation.Cancel();
+                    return choice;
+                }
                 while (true)
                 {
                     try
                     {
-                        nested = await client.AnalyzeNestedTarAsync(path, operationToken, password);
+                        await client.ExtractAutomaticallyAsync(path, destination, OverwritePolicy.Ask, fileProgress,
+                            operationToken, password, ResolveBatchConflictAsync,
+                            (issue, issueToken) => ExtractionPrompt.AskAsync(null, issue, issueToken));
                         break;
                     }
                     catch (StageException exception) when (exception.StageCode is "PWDAR0001" or "PWDAR0002")
@@ -146,28 +165,6 @@ internal static class ContextMenuCommandHandler
                         finally { passwordPromptLock.Release(); }
                     }
                 }
-                ResourcePreflight.Check(destination, 64L * 1024 * 1024, 128L * 1024 * 1024);
-                Directory.CreateDirectory(destination);
-                Progress<ArchiveProgress> fileProgress = new(item =>
-                {
-                    percentages[path] = item.Percentage;
-                    int overall = percentages.Values.Sum() / paths.Length;
-                    progress.Report(new ArchiveProgress(overall, $"{Path.GetFileName(path)}: {item.EntryKey}",
-                        item.BytesDone, item.BytesTotal, item.BytesPerSecond));
-                });
-                async Task<ConflictChoice> ResolveBatchConflictAsync(ArchiveConflict conflict, CancellationToken conflictToken)
-                {
-                    ConflictChoice choice = await conflictResolver(conflict, conflictToken);
-                    if (choice == ConflictChoice.Cancel) batchCancellation.Cancel();
-                    return choice;
-                }
-                if (nested.FlattenAutomatically)
-                    await client.ExtractNestedTarsAsync(path, nested.TarEntryKeys, destination, null, false, OverwritePolicy.Ask,
-                        fileProgress, operationToken, password, ResolveBatchConflictAsync,
-                        (issue, issueToken) => ExtractionPrompt.AskAsync(null, issue, issueToken));
-                else
-                    await client.ExtractAsync(path, destination, null, OverwritePolicy.Ask, fileProgress, operationToken, password, ResolveBatchConflictAsync,
-                        (issue, issueToken) => ExtractionPrompt.AskAsync(null, issue, issueToken));
                 percentages[path] = 100;
             }
             finally

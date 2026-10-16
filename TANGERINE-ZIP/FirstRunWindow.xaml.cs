@@ -76,8 +76,7 @@ internal sealed partial class FirstRunWindow : Window
         try { ThemedPromptWindow.Inform(this, Title, LanguageManager.Get("FirstRunDeclineAdvice")); }
         catch (Exception exception)
         {
-            MessageBox.Show(MessageTipGenerator.GenerateTip("FIRUN0002", exception.Message),
-                LanguageManager.Get("ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error); //FIRUN0002
+            ErrorDialog.Show(this, "FIRUN0002", exception); //FIRUN0002
         }
         finally { DialogResult = false; }
     }

@@ -1345,4 +1345,64 @@
   <data name="LegacySourceChanged" xml:space="preserve"><value>创建压缩包时来源文件发生了变化。</value></data>
   <data name="LegacyMemberTooLarge" xml:space="preserve"><value>此文件超过 ARJ/ARC 写入器的 2 GiB 限制。</value></data>
   <data name="ArcHeaderInvalid" xml:space="preserve"><value>ARC 文件头无效或已损坏。</value></data>
+  <data name="ErrorPossibleCause" xml:space="preserve">
+    <value>可能原因：</value>
+  </data>
+  <data name="ErrorSuggestedAction" xml:space="preserve">
+    <value>建议操作：</value>
+  </data>
+  <data name="ErrorCauseGeneral" xml:space="preserve">
+    <value>操作遇到未预期的情况。</value>
+  </data>
+  <data name="ErrorActionGeneral" xml:space="preserve">
+    <value>请重试；若问题持续，请记录阶段码并联系支持人员。</value>
+  </data>
+  <data name="ErrorCausePermission" xml:space="preserve">
+    <value>文件或系统设置的访问权限可能不足。</value>
+  </data>
+  <data name="ErrorActionPermission" xml:space="preserve">
+    <value>请检查权限，关闭占用文件的程序后重试；仅在操作需要时使用管理员权限。</value>
+  </data>
+  <data name="ErrorCauseMissing" xml:space="preserve">
+    <value>所需文件或文件夹可能已移动或删除。</value>
+  </data>
+  <data name="ErrorActionMissing" xml:space="preserve">
+    <value>请检查来源和目标路径，重新选择存在的文件或文件夹。</value>
+  </data>
+  <data name="ErrorCauseArchive" xml:space="preserve">
+    <value>压缩包可能损坏、不完整、已加密，或格式不受支持。</value>
+  </data>
+  <data name="ErrorActionArchive" xml:space="preserve">
+    <value>请用其他工具验证压缩包，获取完整副本，并确认格式或密码。</value>
+  </data>
+  <data name="ErrorCauseMemory" xml:space="preserve">
+    <value>可用内存可能不足。</value>
+  </data>
+  <data name="ErrorActionMemory" xml:space="preserve">
+    <value>请关闭占用大量内存的程序，或缩小压缩包及选中范围后重试。</value>
+  </data>
+  <data name="ErrorCauseIo" xml:space="preserve">
+    <value>文件可能被占用、磁盘空间不足，或存储设备不可用。</value>
+  </data>
+  <data name="ErrorActionIo" xml:space="preserve">
+    <value>请检查剩余空间和设备连接，关闭占用文件的程序后重试。</value>
+  </data>
+  <data name="ErrorCausePassword" xml:space="preserve">
+    <value>密码可能缺失或错误，或者不支持该压缩包的加密方式。</value>
+  </data>
+  <data name="ErrorActionPassword" xml:space="preserve">
+    <value>请核对密码，并使用创建该压缩包的程序检查文件。</value>
+  </data>
+  <data name="ErrorCauseSettings" xml:space="preserve">
+    <value>配置值或设置文件可能无效或无法访问。</value>
+  </data>
+  <data name="ErrorActionSettings" xml:space="preserve">
+    <value>请检查相关设置及路径，恢复有效值后重试。</value>
+  </data>
+  <data name="ErrorCauseTool" xml:space="preserve">
+    <value>所需的外部压缩工具可能缺失或无法启动。</value>
+  </data>
+  <data name="ErrorActionTool" xml:space="preserve">
+    <value>请确认所需工具已安装且可访问，然后重试。</value>
+  </data>
 </root>

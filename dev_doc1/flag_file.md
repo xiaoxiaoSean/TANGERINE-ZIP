@@ -16,7 +16,7 @@
 
 | 文件名 | 保存的内容 | 缺失时 |
 | --- | --- | --- |
-| `TEMP_D` | UTF-8 编码的临时目录绝对路径。程序在该目录下使用 `TangerineZipWorkspace` 存放可清理的暂存内容。 | 启动时要求选择临时目录。 |
+| `TEMP_D` | UTF-8 编码的临时目录绝对路径。程序在该目录下使用 `TZIP-WORKSPACE` 存放可清理的暂存内容。 | 启动时要求选择临时目录。 |
 | `MOUSE_EFFECT_CONFIG1` | 鼠标光晕半径；不变区域性数字，范围 40–360 DIP，默认 140。 | 启动时创建并写入默认值。 |
 | `MOUSE_EFFECT_CONFIG2` | 鼠标中心描边扩张量；不变区域性数字，范围 0.20–1.25 DIP，默认 0.95。 | 启动时创建并写入默认值。 |
 | `COLOR1` | 文字及列表文字颜色，`#RRGGBB`；默认 `#FFFFFF`。 | 启动时创建默认值。 |
@@ -31,6 +31,6 @@
 
 - 旧版资源管理器菜单曾使用 `LocalState/custom_commands/TZIP-mode.txt`。当前版本不创建、不读取它；更换或移除菜单时只做遗留清理。
 - `rar.exe` 是创建 RAR 所需的外部工具，不是标记文件；是否能创建 RAR 取决于执行时能否找到它。
-- `.tmp`、`.bak`、`.001`、`.part1.rar` 和 `TangerineZipWorkspace` 分别是临时输出、备份、分卷文件与专用目录，不是功能开关。
+- `.tmp`、`.bak`、`.001`、`.part1.rar` 和 `TZIP-WORKSPACE` 分别是临时输出、备份、分卷文件与专用目录，不是功能开关。
 
 本表按当前代码核对：`MouseEffectSettings`、`CompressionOptionsWindow`、`RarToolService`、`TempDirectorySettings`、`AppearanceSettings` 和 `ContextMenuRegistrationService`。历史文档中关于 RAR 启动检查的描述与当前调用路径不一致，应以本表注明的当前行为为准。

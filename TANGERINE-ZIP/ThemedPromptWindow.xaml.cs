@@ -35,6 +35,14 @@ internal sealed partial class ThemedPromptWindow : Window
         return prompt._choice;
     }
 
-    public static void Inform(Window? owner, string title, string message) =>
-        Ask(owner, title, message, (LanguageManager.Get("Confirm"), MessageBoxResult.OK));
+    public static void Inform(Window? owner, string title, string message)
+    {
+        // Existing call sites already format diagnostic text. Route those
+        // through the dedicated error window while ordinary notices retain
+        // their existing prompt behavior.
+        if (message.StartsWith(LanguageManager.Get("StageCodeTip1"), StringComparison.Ordinal))
+            Tools.ErrorDialog.ShowFormatted(owner, message);
+        else
+            Ask(owner, title, message, (LanguageManager.Get("Confirm"), MessageBoxResult.OK));
+    }
 }

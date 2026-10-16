@@ -94,10 +94,7 @@ namespace TANGERINE_ZIP
                 Services.MouseEffectSettings.UseDisabledFallback();
                 string stageCode = exception is Services.StageException stageException
                     ? stageException.StageCode : "PROGM0001";
-                System.Windows.MessageBox.Show(
-                    Tools.MessageTipGenerator.GenerateTip(stageCode, exception.Message),
-                    LanguageManager.Get("ErrorTitle"),
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error); //PROGM0001
+                Tools.ErrorDialog.Show(null, stageCode, exception.Message, exception); //PROGM0001
             }
             while (true)
             {
@@ -323,10 +320,7 @@ namespace TANGERINE_ZIP
         {
             string stageCode = exception is Services.StageException stageException
                 ? stageException.StageCode : fallbackStageCode;
-            System.Windows.MessageBox.Show(
-                Tools.MessageTipGenerator.GenerateTip(stageCode, exception.Message),
-                LanguageManager.Get("ErrorTitle"),
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error); //PROGM0002/PROGM0003
+            Tools.ErrorDialog.Show(null, stageCode, exception.Message, exception); //PROGM0002/PROGM0003
         }
 
     }
